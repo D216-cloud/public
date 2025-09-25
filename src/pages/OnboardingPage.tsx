@@ -8,25 +8,44 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/components/ui/use-toast';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
 import { API_URL } from '@/utils/config';
-import { 
-  ArrowLeft, 
-  ArrowRight, 
-  Sparkles, 
-  Users, 
-  Target, 
-  MessageSquare, 
-  Calendar, 
-  TrendingUp, 
-  Lightbulb, 
-  Check, 
-  Twitter, 
-  Loader2, 
+import {
+  ArrowLeft,
+  ArrowRight,
+  Sparkles,
+  Users,
+  Target,
+  MessageSquare,
+  Calendar,
+  TrendingUp,
+  Lightbulb,
+  Check,
+  Twitter,
+  Loader2,
   CheckCircle2,
   X,
-  RotateCcw
+  RotateCcw,
+  Building,
+  Code,
+  Briefcase,
+  Palette,
+  Heart,
+  Plane,
+  Utensils,
+  User,
+  Camera,
+  Gamepad2,
+  Music,
+  Brain,
+  Eye,
+  Package,
+  Clock,
+  Shield
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 // Enhanced UI Constants for a more premium feel
 const steps = [
@@ -66,10 +85,10 @@ const niches = [
 const contentTypes = [
   { id: "tips", label: "quick tips", icon: Brain },
   { id: "personal", label: "personal stories", icon: Heart },
-  { id: "industry", label: "industry updates", icon: TrendingUpIcon },
+  { id: "industry", label: "industry updates", icon: TrendingUp },
   { id: "behind-scenes", label: "behind the scenes", icon: Eye },
   { id: "educational", label: "learning content", icon: Brain },
-  { id: "motivational", label: "inspiring quotes", icon: TrendingUpIcon },
+  { id: "motivational", label: "inspiring quotes", icon: TrendingUp },
   { id: "humor", label: "funny moments", icon: Sparkles },
   { id: "product", label: "product updates", icon: Package },
 ]
@@ -139,6 +158,7 @@ export default function OnboardingPage() {
               autoPosting: data.autoPosting || false,
               twitterConnected: data.twitterConnected || false,
               twitterHandle: data.twitterHandle || "",
+              isCompleted: data.isCompleted || false
             })
             // If onboarding is already completed, redirect to dashboard
             if (data.isCompleted) {
