@@ -1,6 +1,9 @@
 // Simple test script to verify the API is working
 const jwt = require('jsonwebtoken');
 
+// Use environment variable for API URL or default to localhost:5000
+const API_URL = process.env.API_URL || 'http://localhost:5000';
+
 // Create a test token (in a real scenario, this would come from a login)
 // Note: the token should have 'id' property, not '_id'
 const testUser = {
@@ -12,9 +15,10 @@ const testUser = {
 const token = jwt.sign(testUser, process.env.JWT_SECRET || 'supersecretkey');
 
 console.log('Testing API with token:', token);
+console.log('Using API URL:', API_URL);
 
 // Test the generate content endpoint
-fetch('http://localhost:5000/api/posts/generate-content', {
+fetch(`${API_URL}/api/posts/generate-content`, {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -36,7 +40,7 @@ fetch('http://localhost:5000/api/posts/generate-content', {
 .catch(console.error);
 
 // Test the post to X endpoint
-fetch('http://localhost:5000/api/posts/post-to-x', {
+fetch(`${API_URL}/api/posts/post-to-x`, {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -59,7 +63,7 @@ fetch('http://localhost:5000/api/posts/post-to-x', {
 .catch(console.error);
 
 // Test the generated content history endpoint
-fetch('http://localhost:5000/api/posts/generated-content-history', {
+fetch(`${API_URL}/api/posts/generated-content-history`, {
   method: 'GET',
   headers: {
     'Authorization': `Bearer ${token}`

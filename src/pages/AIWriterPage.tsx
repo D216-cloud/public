@@ -56,6 +56,7 @@ import {
 } from "lucide-react"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils" // Assuming you have this utility from Shadcn
+import { API_URL } from "@/utils/config" // Import API_URL for consistent backend connection
 
 const contentTemplates = [
   {
@@ -369,7 +370,7 @@ export default function AIWriterPage() {
       }
       
       // Call backend API to generate content using Gemini API
-      const response = await fetch('http://localhost:5000/api/posts/generate-content', {
+      const generateResponse = await fetch(`${API_URL}/api/posts/generate-content`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -385,13 +386,13 @@ export default function AIWriterPage() {
         })
       });
       
-      const data = await response.json();
+      const generateData = await generateResponse.json();
       
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to generate content');
+      if (!generateResponse.ok) {
+        throw new Error(generateData.message || 'Failed to generate content');
       }
       
-      setGeneratedContent(data.content);
+      setGeneratedContent(generateData.content);
       setTimeout(() => {
         setShowContent(true);
       }, 100);
@@ -399,7 +400,7 @@ export default function AIWriterPage() {
       // Store in localStorage
       const postData = {
         id: Date.now(),
-        content: data.content,
+        content: generateData.content,
         template: selectedTemplate,
         tone: selectedTone,
         length: selectedLength,
@@ -464,7 +465,7 @@ export default function AIWriterPage() {
       }, 100);
       
       // Store in localStorage
-      const postData = {
+      const fallbackPostData = {
         id: Date.now(),
         content: randomContent,
         template: selectedTemplate,
@@ -478,7 +479,7 @@ export default function AIWriterPage() {
       
       // Save to localStorage
       const existingPosts = JSON.parse(localStorage.getItem('aiGeneratedPosts') || '[]');
-      existingPosts.unshift(postData);
+      existingPosts.unshift(fallbackPostData);
       localStorage.setItem('aiGeneratedPosts', JSON.stringify(existingPosts.slice(0, 50))); // Keep only last 50 posts
     } finally {
       setIsGenerating(false);
@@ -579,8 +580,33 @@ export default function AIWriterPage() {
         throw new Error('User not authenticated');
       }
       
+      // Call backend API to generate content using Gemini API
+      const response = await fetch(`${API_URL}/api/posts/generate-content`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          topic: topic,
+          template: selectedTemplate,
+          tone: selectedTone,
+          length: selectedLength,
+          audience: selectedAudience,
+          style: selectedStyle
+        })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to generate content');
+      }
+      
+      const generatedContent = data.content;
+
       // Call backend API to post to X
-      const response = await fetch('http://localhost:5000/api/posts/post-to-x', {
+      const postResponse = await fetch(`${API_URL}/api/posts/post-to-x`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -597,14 +623,14 @@ export default function AIWriterPage() {
         })
       });
       
-      const data = await response.json();
+      const postResult = await postResponse.json();
       
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to post to X');
+      if (!postResponse.ok) {
+        throw new Error(postResult.message || 'Failed to post to X');
       }
       
       // Store post data in localStorage
-      const postData = {
+      const xPostData = {
         id: Date.now(),
         content: generatedContent,
         template: selectedTemplate,
@@ -618,9 +644,9 @@ export default function AIWriterPage() {
       };
       
       // Save to localStorage
-      const existingPosts = JSON.parse(localStorage.getItem('xPostedContent') || '[]');
-      existingPosts.unshift(postData);
-      localStorage.setItem('xPostedContent', JSON.stringify(existingPosts.slice(0, 100))); // Keep only last 100 posts
+      const existingXPosts = JSON.parse(localStorage.getItem('xPostedContent') || '[]');
+      existingXPosts.unshift(xPostData);
+      localStorage.setItem('xPostedContent', JSON.stringify(existingXPosts.slice(0, 100))); // Keep only last 100 posts
       
       // Show success message
       setPostSuccess(true);
