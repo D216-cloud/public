@@ -236,7 +236,7 @@ export default function LoginPage() {
         callback: handleGoogleCredentialResponse,
         auto_select: false, // Don't auto-select accounts
         cancel_on_tap_outside: false,
-        ux_mode: 'redirect', // Use redirect mode for better compatibility
+        ux_mode: 'popup', // Use popup mode for localhost development
         context: 'signin',
       });
       

@@ -53,7 +53,8 @@ const testFullAPI = async () => {
     
     // 3. Test content generation
     console.log('Testing content generation...');
-    const generateResponse = await fetch('http://localhost:5000/api/posts/generate-content', {
+    const API_URL = process.env.API_URL || 'http://localhost:5000';
+    const generateResponse = await fetch(`${API_URL}/api/posts/generate-content`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -80,7 +81,7 @@ const testFullAPI = async () => {
     
     // 4. Test posting to X
     console.log('Testing post to X...');
-    const postResponse = await fetch('http://localhost:5000/api/posts/post-to-x', {
+    const postResponse = await fetch(`${API_URL}/api/posts/post-to-x`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -107,7 +108,7 @@ const testFullAPI = async () => {
     
     // 5. Test getting generated content history
     console.log('Testing generated content history...');
-    const historyResponse = await fetch('http://localhost:5000/api/posts/generated-content-history', {
+    const historyResponse = await fetch(`${API_URL}/api/posts/generated-content-history`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`

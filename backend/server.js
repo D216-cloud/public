@@ -22,24 +22,17 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
+    // Get frontend URL from environment variable
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:8080';
+    
+    // For development, only allow localhost URLs
     const allowedOrigins = [
-      'http://localhost:8080',
+      frontendUrl, // Frontend URL (default: http://localhost:8080)
       'http://localhost:5173', 
       'http://127.0.0.1:8080',
       'http://localhost:3000',
-      'http://localhost:5000',
-      'https://public-1rk3.onrender.com', // Deployed frontend URL
-      process.env.FRONTEND_URL || 'http://localhost:8080',
-      // Allow local network IPs (common development ranges)
-      /^http:\/\/192\.168\.\d+\.\d+:3000$/,
-      /^http:\/\/192\.168\.\d+\.\d+:5173$/,
-      /^http:\/\/192\.168\.\d+\.\d+:8080$/,
-      /^http:\/\/10\.0\.\d+\.\d+:3000$/,
-      /^http:\/\/10\.0\.\d+\.\d+:5173$/,
-      /^http:\/\/10\.0\.\d+\.\d+:8080$/,
-      /^http:\/\/172\.\d+\.\d+\.\d+:3000$/,
-      /^http:\/\/172\.\d+\.\d+\.\d+:5173$/,
-      /^http:\/\/172\.\d+\.\d+\.\d+:8080$/
+      'http://localhost:5000'
+      // Note: Removed deployed URLs like https://public-1rk3.onrender.com for development
     ];
     
     // Check if origin matches any allowed pattern
@@ -55,6 +48,7 @@ app.use(cors({
       callback(null, true);
     } else {
       console.log('Blocked origin:', origin);
+      console.log('Allowed frontend URL:', frontendUrl);
       callback(new Error('Not allowed by CORS'));
     }
   },
