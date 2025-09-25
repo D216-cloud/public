@@ -1,51 +1,32 @@
 "use client"
-import { useState, useEffect, useRef, useCallback } from "react"
-import { motion, AnimatePresence, Variants } from "framer-motion"
-import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Checkbox } from "@/components/ui/checkbox"
-import { useNavigate } from "react-router-dom"
-import { API_URL } from "@/utils/config"
-import { toast } from "@/hooks/use-toast"
-import { Toaster } from "@/components/ui/toaster"
-import {
-  Twitter,
-  Target,
-  Users,
-  TrendingUp,
-  Sparkles,
-  ArrowRight,
-  ArrowLeft,
-  CheckCircle,
-  User,
-  Building,
-  Briefcase,
-  Heart,
-  Camera,
-  Gamepad2,
-  Utensils,
-  Plane,
-  Code,
-  Palette,
-  Music,
-  Loader2,
-  AlertCircle,
-  Shield,
-  Zap,
-  Brain,
-  Eye,
-  Clock,
-  MessageCircle,
-  TrendingUp as TrendingUpIcon,
-  Package,
-} from "lucide-react"
-import { Link } from "react-router-dom"
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/components/ui/use-toast';
+import { API_URL } from '@/utils/config';
+import { 
+  ArrowLeft, 
+  ArrowRight, 
+  Sparkles, 
+  Users, 
+  Target, 
+  MessageSquare, 
+  Calendar, 
+  TrendingUp, 
+  Lightbulb, 
+  Check, 
+  Twitter, 
+  Loader2, 
+  CheckCircle2,
+  X,
+  RotateCcw
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 // Enhanced UI Constants for a more premium feel
 const steps = [
@@ -60,7 +41,7 @@ const steps = [
 
 const goals = [
   { id: "followers", label: "grow followers", description: "build your audience organically", icon: Users },
-  { id: "engagement", label: "boost engagement", description: "spark conversations", icon: MessageCircle },
+  { id: "engagement", label: "boost engagement", description: "spark conversations", icon: MessageSquare },
   { id: "brand", label: "build brand", description: "create your unique voice", icon: Building },
   { id: "leads", label: "generate leads", description: "convert followers to customers", icon: Target },
   { id: "thought-leadership", label: "thought leadership", description: "share expert insights", icon: Brain },
@@ -108,27 +89,29 @@ const frequencies = [
 ]
 
 export default function OnboardingPage() {
-  const [currentStep, setCurrentStep] = useState(1)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [twitterAuthStep, setTwitterAuthStep] = useState<'handle' | 'authorizing' | 'success' | 'error'>('handle')
-  const [isAnimating, setIsAnimating] = useState(false)
-  const navigate = useNavigate()
-  const saveTimeoutRef = useRef<NodeJS.Timeout>()
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     goals: [] as string[],
-    audience: "",
-    niche: "",
+    audience: '',
+    niche: '',
     contentTypes: [] as string[],
-    competitors: "",
-    postingFrequency: "",
-    tone: "",
+    competitors: '',
+    postingFrequency: '',
+    tone: '',
     autoPosting: false,
     twitterConnected: false,
-    twitterHandle: "",
-  })
+    twitterHandle: '',
+    isCompleted: false
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [twitterAuthStep, setTwitterAuthStep] = useState<'idle' | 'authorizing' | 'success' | 'error'>('idle');
+  const [showSuccess, setShowSuccess] = useState(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const progress = (currentStep / steps.length) * 100
+  const progress = (currentStep / steps.length) * 100;
 
   // Load existing onboarding data if available
   useEffect(() => {
@@ -232,7 +215,6 @@ export default function OnboardingPage() {
     if (!isValid) {
       return
     }
-    setIsAnimating(true)
     setIsLoading(true)
     // Save current step data
     await saveProgress()
@@ -243,7 +225,6 @@ export default function OnboardingPage() {
       await completeOnboarding()
     }
     setTimeout(() => {
-      setIsAnimating(false)
       setIsLoading(false)
     }, 400)
   }
@@ -342,7 +323,7 @@ export default function OnboardingPage() {
           description: "launching your ai dashboard...",
         })
         // Immediate redirect to prevent loops
-        window.location.href = '/dashboard'
+        navigate('/dashboard')
       } else {
         const errorMessage = typeof completeResult.message === 'string' ? completeResult.message : 'Failed to complete onboarding'
         throw new Error(errorMessage)
@@ -661,7 +642,7 @@ export default function OnboardingPage() {
                             animate={{ scale: 1, opacity: 1 }}
                             transition={{ type: "spring", stiffness: 500, damping: 25, delay: 0.1 }}
                           >
-                            <CheckCircle className="h-6 w-6 text-blue-500" />
+                            <CheckCircle2 className="h-6 w-6 text-blue-500" />
                           </motion.div>
                         )}
                       </div>
@@ -797,7 +778,7 @@ export default function OnboardingPage() {
                             animate={{ scale: 1 }}
                             transition={{ type: "spring", stiffness: 450, damping: 20 }}
                           >
-                            <CheckCircle className="h-5 w-5 text-blue-500" />
+                            <CheckCircle2 className="h-5 w-5 text-blue-500" />
                           </motion.div>
                         )}
                       </div>
@@ -870,7 +851,7 @@ export default function OnboardingPage() {
               <div className="space-y-6">
                 <motion.div className="space-y-4">
                   <Label className="text-sm font-medium text-gray-700 flex items-center space-x-2">
-                    <Clock className="h-5 w-5 text-blue-500" />
+                    <Calendar className="h-5 w-5 text-blue-500" />
                     <span>Posting Rhythm</span>
                   </Label>
                   <RadioGroup
@@ -954,7 +935,7 @@ export default function OnboardingPage() {
                       className="h-5 w-5"
                     />
                     <Label htmlFor="autoPosting" className="cursor-pointer text-base font-semibold text-gray-800 flex-1 flex items-center space-x-3">
-                      <Zap className="h-5 w-5 text-blue-500" />
+                      <Lightbulb className="h-5 w-5 text-blue-500" />
                       <span>Enable AI Auto-Posting</span>
                       <Badge variant="outline" className="text-xs ml-auto bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 border-purple-300 px-3 py-1 font-medium">
                         PRO FEATURE
@@ -1013,7 +994,7 @@ export default function OnboardingPage() {
                   transition={{ duration: 0.4 }}
                 >
                   {twitterAuthStep === 'success' ? (
-                    <CheckCircle className="h-16 w-16 text-emerald-500 animate-pulse" />
+                    <CheckCircle2 className="h-16 w-16 text-emerald-500 animate-pulse" />
                   ) : (
                     <Twitter className="h-16 w-16 text-blue-600" />
                   )}
@@ -1032,7 +1013,7 @@ export default function OnboardingPage() {
                 )}
               </motion.div>
               <AnimatePresence mode="wait">
-                {twitterAuthStep === 'handle' && (
+                {twitterAuthStep === 'idle' && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -1087,16 +1068,14 @@ export default function OnboardingPage() {
                     exit={{ opacity: 0, y: -20 }}
                     className="w-full max-w-md mx-auto space-y-5"
                   >
-                    <div className="space-y-5">
-                      <div className="flex justify-center">
-                        <motion.div
-                          className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                        />
-                      </div>
-                      <p className="text-center text-sm text-gray-600 font-medium">Securing connection with X...</p>
+                    <div className="flex justify-center">
+                      <motion.div
+                        className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      />
                     </div>
+                    <p className="text-center text-sm text-gray-600 font-medium">Securing connection with X...</p>
                   </motion.div>
                 )}
                 {twitterAuthStep === 'success' && (
@@ -1111,12 +1090,12 @@ export default function OnboardingPage() {
                       transition={{ delay: 0.2, type: "spring", stiffness: 350 }}
                       className="text-emerald-600 font-semibold text-center text-lg"
                     >
-                      <CheckCircle className="h-8 w-8 mx-auto mb-3" />
+                      <CheckCircle2 className="h-8 w-8 mx-auto mb-3" />
                       <p>Successfully linked to <span className="font-bold">@{formData.twitterHandle}</span></p>
                     </motion.div>
                     <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
                       <Button
-                        onClick={() => setTwitterAuthStep('handle')}
+                        onClick={() => setTwitterAuthStep('idle')}
                         variant="outline"
                         className="w-full text-base py-6 font-medium border-gray-300 hover:bg-gray-50"
                       >
@@ -1132,7 +1111,7 @@ export default function OnboardingPage() {
                     className="w-full max-w-md mx-auto space-y-5"
                   >
                     <div className="flex justify-center">
-                      <AlertCircle className="h-8 w-8 text-red-500" />
+                      <X className="h-8 w-8 text-red-500" />
                     </div>
                     <p className="text-center text-sm text-gray-600 font-medium">Connection Failed</p>
                     <div className="space-y-3">
@@ -1142,7 +1121,7 @@ export default function OnboardingPage() {
                         </Button>
                       </motion.div>
                       <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
-                        <Button variant="outline" onClick={() => setTwitterAuthStep('handle')} className="w-full text-base py-6 font-medium border-gray-300 hover:bg-gray-50">
+                        <Button variant="outline" onClick={() => setTwitterAuthStep('idle')} className="w-full text-base py-6 font-medium border-gray-300 hover:bg-gray-50">
                           Edit Handle
                         </Button>
                       </motion.div>
@@ -1305,7 +1284,6 @@ export default function OnboardingPage() {
           </motion.div>
         </div>
       </div>
-      <Toaster />
     </div>
   )
 }

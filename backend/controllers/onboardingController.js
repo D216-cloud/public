@@ -75,10 +75,10 @@ const saveOnboardingData = async (req, res) => {
         competitors: competitors || '',
         postingFrequency: postingFrequency || '',
         tone: tone || '',
-        autoPosting: autoPosting || false,
-        twitterConnected: twitterConnected || false,
+        autoPosting: autoPosting !== undefined ? autoPosting : false,
+        twitterConnected: twitterConnected !== undefined ? twitterConnected : false,
         twitterHandle: twitterHandle || null,
-        isCompleted: isCompleted || false
+        isCompleted: isCompleted !== undefined ? isCompleted : false
       });
       console.log('✅ New onboarding data created successfully');
     }
@@ -178,6 +178,7 @@ const completeOnboarding = async (req, res) => {
       if (twitterConnected !== undefined) onboarding.twitterConnected = twitterConnected;
       if (twitterHandle) onboarding.twitterHandle = twitterHandle;
       
+      // Always mark as completed when this endpoint is called
       onboarding.isCompleted = true;
       onboarding.completedAt = new Date();
       
@@ -194,8 +195,8 @@ const completeOnboarding = async (req, res) => {
         competitors: competitors || '',
         postingFrequency: postingFrequency || '',
         tone: tone || '',
-        autoPosting: autoPosting || false,
-        twitterConnected: twitterConnected || false,
+        autoPosting: autoPosting !== undefined ? autoPosting : false,
+        twitterConnected: twitterConnected !== undefined ? twitterConnected : false,
         twitterHandle: twitterHandle || null,
         isCompleted: true,
         completedAt: new Date()

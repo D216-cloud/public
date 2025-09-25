@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Twitter, ArrowLeft, CheckCircle, Chrome, Sparkles, TrendingUp, Clock, Users, Loader2, Wifi, ArrowRight } from "lucide-react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 
 // Add Google login script
 declare global {
@@ -53,6 +53,7 @@ const postAuthQuestions = [
 ]
 
 export default function LoginPage() {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false)
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null)
   const [postAuthStep, setPostAuthStep] = useState(0)
@@ -129,19 +130,19 @@ export default function LoginPage() {
         const result = await response.json();
         if (result.success && result.data && result.data.isCompleted) {
           // Onboarding is completed, go to dashboard
-          window.location.href = "/dashboard";
+          navigate("/dashboard");
         } else {
           // Onboarding not completed, go to onboarding
-          window.location.href = "/onboarding";
+          navigate("/onboarding");
         }
       } else {
         // No onboarding data found, go to onboarding
-        window.location.href = "/onboarding";
+        navigate("/onboarding");
       }
     } catch (error) {
       console.error('Error checking onboarding status:', error);
       // Default to onboarding if there's an error
-      window.location.href = "/onboarding";
+      navigate("/onboarding");
     }
   };
 
@@ -185,8 +186,16 @@ export default function LoginPage() {
       console.error("Google login error:", error);
       setIsLoading(false);
       setLoadingProvider(null);
-      // Show error message to user
-      alert(`Authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
+      // Show user-friendly error message
+      let errorMessage = "Authentication failed: Failed to fetch. Please try again later.";
+      if (error instanceof Error) {
+        if (error.message.includes("fetch") || error.message.includes("Failed to fetch")) {
+          errorMessage = "Authentication failed: Network error. Please check your connection and try again.";
+        } else {
+          errorMessage = `Authentication failed: ${error.message}. Please try again.`;
+        }
+      }
+      alert(errorMessage);
     }
   };
 
@@ -227,7 +236,7 @@ export default function LoginPage() {
         callback: handleGoogleCredentialResponse,
         auto_select: false, // Don't auto-select accounts
         cancel_on_tap_outside: false,
-        ux_mode: 'popup', // Always use popup mode for better mobile compatibility
+        ux_mode: 'redirect', // Use redirect mode for better compatibility
         context: 'signin',
       });
       
@@ -296,7 +305,7 @@ export default function LoginPage() {
       if (token) {
         await checkOnboardingStatus(token);
       } else {
-        window.location.href = "/dashboard";
+        navigate("/dashboard");
       }
     }, 2000);
   }

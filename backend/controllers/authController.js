@@ -50,8 +50,12 @@ const googleLogin = async (req, res) => {
       token,
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Google login error:', error);
+    // Return a more user-friendly error message
+    if (error.message.includes('fetch') || error.message.includes('network')) {
+      return res.status(503).json({ message: 'Authentication service temporarily unavailable. Please try again later.' });
+    }
+    return res.status(401).json({ message: 'Authentication failed. Please try again.' });
   }
 };
 

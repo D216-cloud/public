@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { API_URL } from '@/utils/config';
 
 interface ProtectedRouteProps {
@@ -16,6 +16,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireOnboar
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
+  const location = useLocation();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -68,7 +69,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireOnboar
     };
 
     checkAuth();
-  }, []);
+  }, [location]); // Re-check auth when location changes
 
   const performAuthCheck = async (token: string) => {
     try {

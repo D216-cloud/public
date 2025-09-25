@@ -107,7 +107,7 @@ export default function SignupPage() {
         
         // Redirect to onboarding after a brief delay
         setTimeout(() => {
-          window.location.href = "/onboarding";
+          navigate("/onboarding");
         }, 1500);
         
         setIsLoading(false);
@@ -119,8 +119,16 @@ export default function SignupPage() {
       console.error("Google login error:", error);
       setIsLoading(false);
       setLoadingProvider(null);
-      // Show error message to user
-      alert(`Authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
+      // Show user-friendly error message
+      let errorMessage = "Authentication failed: Failed to fetch. Please try again later.";
+      if (error instanceof Error) {
+        if (error.message.includes("fetch") || error.message.includes("Failed to fetch")) {
+          errorMessage = "Authentication failed: Network error. Please check your connection and try again.";
+        } else {
+          errorMessage = `Authentication failed: ${error.message}. Please try again.`;
+        }
+      }
+      alert(errorMessage);
     }
   };
 
@@ -161,7 +169,7 @@ export default function SignupPage() {
         callback: handleGoogleCredentialResponse,
         auto_select: false, // Don't auto-select accounts
         cancel_on_tap_outside: false,
-        ux_mode: 'popup', // Always use popup mode for better mobile compatibility
+        ux_mode: 'redirect', // Use redirect mode for better compatibility
         context: 'signup',
       });
       
