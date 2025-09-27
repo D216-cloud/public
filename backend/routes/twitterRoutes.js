@@ -10,7 +10,9 @@ const {
   toggleAutoPost,
   getTwitterStatus,
   confirmTwitterConnection,
-  disconnectTwitter
+  disconnectTwitter,
+  verifyTwitterUsername,  // Add this new function
+  connectTwitterDirect    // Add this new function
 } = require('../controllers/twitterController');
 
 const router = express.Router();
@@ -24,6 +26,16 @@ router.get('/auth', protect, beginTwitterAuth);
 // @desc    Handle Twitter OAuth callback
 // @access  Public
 router.get('/callback', handleTwitterCallback);
+
+// @route   POST /api/twitter/verify-username
+// @desc    Verify Twitter username exists
+// @access  Private
+router.post('/verify-username', protect, verifyTwitterUsername);
+
+// @route   POST /api/twitter/connect-direct
+// @desc    Connect Twitter account directly (without OAuth)
+// @access  Private
+router.post('/connect-direct', protect, connectTwitterDirect);
 
 // @route   POST /api/twitter/send-otp
 // @desc    Send OTP to email for verification

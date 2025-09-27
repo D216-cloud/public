@@ -1,4 +1,5 @@
 "use client"
+// Twitter verification flow implementation
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -43,7 +44,9 @@ import {
   Eye,
   Package,
   Clock,
-  Shield
+  Shield,
+  Mail,
+  Copy
 } from 'lucide-react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 
@@ -55,7 +58,8 @@ const steps = [
   { id: 4, title: "content", description: "what you'll create" },
   { id: 5, title: "style", description: "your unique voice" },
   { id: 6, title: "settings", description: "ai preferences" },
-  { id: 7, title: "connect", description: "link your account" },
+  { id: 7, title: "verify", description: "account verification" },
+  { id: 8, title: "connect", description: "link your account" },
 ]
 
 const goals = [
@@ -129,6 +133,14 @@ export default function OnboardingPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [twitterAuthStep, setTwitterAuthStep] = useState<'idle' | 'authorizing' | 'success' | 'error'>('idle');
   const [showSuccess, setShowSuccess] = useState(false);
+  // Verification states
+  const [verificationMethod, setVerificationMethod] = useState<'email' | 'tweet' | null>(null);
+  const [email, setEmail] = useState('');
+  const [otp, setOtp] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [isSendingOTP, setIsSendingOTP] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [countdown, setCountdown] = useState(0);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const progress = (currentStep / steps.length) * 100;
@@ -184,6 +196,15 @@ export default function OnboardingPage() {
       }
     }
   }, [])
+
+  // Countdown timer for OTP resend
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (countdown > 0) {
+      timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [countdown]);
 
   // Debounced save function to prevent multiple API calls
   const debouncedSave = useCallback(
@@ -292,11 +313,14 @@ export default function OnboardingPage() {
           return false
         }
         break
-      case 7: // Connect X step
+      case 7: // Verify step
+        // No validation needed for verification step as it's handled in the verification flow
+        break
+      case 8: // Connect X step
         if (!formData.twitterConnected || !formData.twitterHandle) {
           toast({
             title: "connect your x account",
-            description: "this unlocks your ai's full potential",
+            description: "enter your x handle to connect directly",
             variant: "destructive"
           })
           return false
@@ -388,6 +412,198 @@ export default function OnboardingPage() {
     debouncedSave(updatedFormData)
   }
 
+  // Send OTP for email verification
+  const handleSendOTP = async () => {
+    if (!email) {
+      toast({
+        title: "Enter your email",
+        description: "Please provide the email linked to your Twitter account",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setIsSendingOTP(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const response = await fetch(`${API_URL}/api/twitter/send-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ twitterId: `temp_${Date.now()}`, email })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setVerificationMethod('email');
+        setCountdown(300); // 5 minutes
+        toast({
+          title: "OTP sent",
+          description: "Check your email for the verification code"
+        });
+      } else {
+        throw new Error(result.message || 'Failed to send OTP');
+      }
+    } catch (error) {
+      toast({
+        title: "Failed to send OTP",
+        description: error instanceof Error ? error.message : "Please try again",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSendingOTP(false);
+    }
+  };
+
+  // Verify OTP
+  const handleVerifyOTP = async () => {
+    if (!otp) {
+      toast({
+        title: "Enter OTP",
+        description: "Please enter the 6-digit code sent to your email",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setIsVerifying(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const response = await fetch(`${API_URL}/api/twitter/verify-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ twitterId: `temp_${Date.now()}`, otp })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        toast({
+          title: "Email verified",
+          description: "Your Twitter account has been successfully verified"
+        });
+        // Move to next step after successful verification
+        setTimeout(() => {
+          setCurrentStep(currentStep + 1);
+        }, 1500);
+      } else {
+        throw new Error(result.message || 'Invalid OTP');
+      }
+    } catch (error) {
+      toast({
+        title: "Verification failed",
+        description: error instanceof Error ? error.message : "Invalid OTP",
+        variant: "destructive"
+      });
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  // Generate verification code for tweet verification
+  const handleGenerateVerificationCode = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const response = await fetch(`${API_URL}/api/twitter/generate-verify-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ twitterId: `temp_${Date.now()}` })
+      });
+
+      const result = await response.json();
+      
+      if (result.success && result.verificationCode) {
+        setVerificationMethod('tweet');
+        setVerificationCode(result.verificationCode);
+        toast({
+          title: "Verification code generated",
+          description: "Post the code as a tweet from your connected account"
+        });
+      } else {
+        throw new Error(result.message || 'Failed to generate verification code');
+      }
+    } catch (error) {
+      toast({
+        title: "Failed to generate code",
+        description: error instanceof Error ? error.message : "Please try again",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Check for verification tweet
+  const handleCheckVerificationTweet = async () => {
+    if (!verificationCode) {
+      toast({
+        title: "No verification code",
+        description: "Please generate a verification code first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setIsVerifying(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const response = await fetch(`${API_URL}/api/twitter/check-verify-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ twitterId: `temp_${Date.now()}`, code: verificationCode })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        toast({
+          title: "Account verified",
+          description: "Your Twitter account has been successfully verified via tweet"
+        });
+        // Move to next step after successful verification
+        setTimeout(() => {
+          setCurrentStep(currentStep + 1);
+        }, 1500);
+      } else {
+        throw new Error(result.message || 'Verification tweet not found');
+      }
+    } catch (error) {
+      toast({
+        title: "Verification failed",
+        description: error instanceof Error ? error.message : "Verification tweet not found",
+        variant: "destructive"
+      });
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
   // Enhanced Twitter connection handler
   const handleConnectTwitter = async () => {
     if (!formData.twitterHandle) {
@@ -404,25 +620,59 @@ export default function OnboardingPage() {
       if (!token) {
         throw new Error('Not authenticated')
       }
-      // Begin OAuth flow
-      const response = await fetch(`${API_URL}/api/twitter/auth`, {
-        method: 'GET',
+      
+      // First verify the username exists
+      const verifyResponse = await fetch(`${API_URL}/api/twitter/verify-username`, {
+        method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        }
+        },
+        body: JSON.stringify({ username: formData.twitterHandle.trim() })
       })
+      
+      const verifyResult = await verifyResponse.json()
+      
+      if (!verifyResult.success) {
+        throw new Error(verifyResult.message || 'Twitter username not found')
+      }
+      
+      // Connect to Twitter directly (without OAuth)
+      const response = await fetch(`${API_URL}/api/twitter/connect-direct`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ username: formData.twitterHandle.trim() })
+      })
+      
       const result = await response.json()
-      if (result.success && result.authUrl) {
-        // Redirect to Twitter OAuth
-        window.location.href = result.authUrl;
+      if (result.success) {
+        const updatedFormData = {
+          ...formData,
+          twitterConnected: true,
+          twitterHandle: formData.twitterHandle.trim()
+        }
+        setFormData(updatedFormData)
+        setTwitterAuthStep('success')
+        await saveProgress(updatedFormData)
+        toast({
+          title: "Account Connected",
+          description: `Your X account @${formData.twitterHandle.trim()} is now connected directly without OAuth.`,
+        })
+        // Complete onboarding automatically after successful Twitter connection
+        setTimeout(() => {
+          completeOnboarding()
+        }, 1500) // Give user time to see success message
       } else {
-        throw new Error(result.message || 'Failed to initiate Twitter connection')
+        throw new Error(result.message || 'Connection failed')
       }
     } catch (error) {
       setTwitterAuthStep('error')
       toast({
-        title: "connection error",
-        description: error instanceof Error ? error.message : "please check your handle and try again",
+        title: "Connection Error",
+        description: error instanceof Error ? error.message : "Please check your handle and try again. We connect directly without OAuth.",
         variant: "destructive"
       })
     } finally {
@@ -1002,6 +1252,186 @@ export default function OnboardingPage() {
               variants={containerVariants}
               initial="hidden"
               animate="visible"
+              className="space-y-6"
+            >
+              <div className="text-center space-y-4">
+                <h2 className="text-2xl font-semibold text-gray-800 leading-tight">Verify Your Twitter Account</h2>
+                <p className="text-sm text-gray-500 max-w-sm mx-auto">To ensure security, we need to verify that you own the Twitter account you'll be connecting.</p>
+              </div>
+              
+              <div className="space-y-6 max-w-md mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <motion.div
+                    className={`p-5 rounded-xl cursor-pointer text-center group transition-all duration-300 border-2 ${verificationMethod === 'email' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}
+                    onClick={() => setVerificationMethod('email')}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Mail className="h-8 w-8 mx-auto mb-3 text-blue-500" />
+                    <h3 className="text-base font-semibold text-gray-800 mb-1">Email Verification</h3>
+                    <p className="text-xs text-gray-500">Receive a code via email</p>
+                  </motion.div>
+                  
+                  <motion.div
+                    className={`p-5 rounded-xl cursor-pointer text-center group transition-all duration-300 border-2 ${verificationMethod === 'tweet' ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-gray-300'}`}
+                    onClick={() => setVerificationMethod('tweet')}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <MessageSquare className="h-8 w-8 mx-auto mb-3 text-purple-500" />
+                    <h3 className="text-base font-semibold text-gray-800 mb-1">Tweet Verification</h3>
+                    <p className="text-xs text-gray-500">Post a code from your account</p>
+                  </motion.div>
+                </div>
+                
+                {verificationMethod === 'email' && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-4 p-5 bg-blue-50 rounded-xl border border-blue-100"
+                  >
+                    <h4 className="font-medium text-gray-800 flex items-center">
+                      <Mail className="h-4 w-4 mr-2" />
+                      Email Verification
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      Enter the email linked to your Twitter account. We'll send a 6-digit code to that email.
+                    </p>
+                    
+                    <div className="space-y-3">
+                      <Input
+                        type="email"
+                        placeholder="your.email@domain.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="text-sm"
+                      />
+                      
+                      <Button 
+                        onClick={handleSendOTP}
+                        disabled={isSendingOTP || !email}
+                        className="w-full"
+                      >
+                        {isSendingOTP ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Sending OTP...
+                          </>
+                        ) : (
+                          "Send Verification Code"
+                        )}
+                      </Button>
+                    </div>
+                    
+                    {verificationMethod === 'email' && email && (
+                      <div className="space-y-3 pt-3">
+                        <Input
+                          type="text"
+                          placeholder="Enter 6-digit code"
+                          value={otp}
+                          onChange={(e) => setOtp(e.target.value)}
+                          maxLength={6}
+                          className="text-sm"
+                        />
+                        
+                        <div className="flex space-x-2">
+                          <Button 
+                            onClick={handleVerifyOTP}
+                            disabled={isVerifying || otp.length !== 6}
+                            className="flex-1"
+                          >
+                            {isVerifying ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Verifying...
+                              </>
+                            ) : (
+                              "Verify Code"
+                            )}
+                          </Button>
+                          
+                          <Button 
+                            onClick={handleSendOTP}
+                            disabled={isSendingOTP || countdown > 0}
+                            variant="outline"
+                          >
+                            {countdown > 0 ? `Resend in ${countdown}s` : "Resend"}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+                
+                {verificationMethod === 'tweet' && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-4 p-5 bg-purple-50 rounded-xl border border-purple-100"
+                  >
+                    <h4 className="font-medium text-gray-800 flex items-center">
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Tweet Verification
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      Post this exact text as a tweet from your Twitter account:
+                    </p>
+                    
+                    <div className="p-3 bg-white rounded-lg border border-gray-200">
+                      <p className="text-sm font-mono break-all">
+                        Verifying my TwitterAI account: {verificationCode || 'Generating code...'}
+                      </p>
+                    </div>
+                    
+                    <div className="flex space-x-2">
+                      <Button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(`Verifying my TwitterAI account: ${verificationCode}`);
+                          toast({
+                            title: "Copied to clipboard",
+                            description: "Tweet text copied successfully"
+                          });
+                        }}
+                        disabled={!verificationCode}
+                        variant="outline"
+                        className="flex-1"
+                      >
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copy Text
+                      </Button>
+                      
+                      <Button 
+                        onClick={handleGenerateVerificationCode}
+                        variant="outline"
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    <Button 
+                      onClick={handleCheckVerificationTweet}
+                      disabled={isVerifying || !verificationCode}
+                      className="w-full mt-2"
+                    >
+                      {isVerifying ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Checking...
+                        </>
+                      ) : (
+                        "I've Posted the Tweet"
+                      )}
+                    </Button>
+                  </motion.div>
+                )}
+              </div>
+            </motion.div>
+          )}
+          {currentStep === 8 && (
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
               className="space-y-6 text-center"
             >
               <motion.h2
@@ -1017,7 +1447,7 @@ export default function OnboardingPage() {
                 transition={{ delay: 0.2 }}
                 className="text-sm text-gray-500 max-w-md mx-auto"
               >
-                Link your profile to let AI analyze your audience patterns and create hyper-personalized content that grows your presence.
+                Enter your X handle to connect your account directly. We'll verify your account and start generating content.
               </motion.p>
               <motion.div
                 className="relative w-40 h-40 mx-auto mb-8"
@@ -1081,7 +1511,7 @@ export default function OnboardingPage() {
                         </div>
                         <Input
                           id="twitterHandle"
-                          placeholder="yourhandle"
+                          placeholder="yourhandle (no @ symbol needed)"
                           value={formData.twitterHandle}
                           onChange={(e) => {
                             const updatedFormData = { ...formData, twitterHandle: e.target.value }
@@ -1090,6 +1520,9 @@ export default function OnboardingPage() {
                           className="pl-10 text-base py-3 focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-0 border-gray-200"
                         />
                       </div>
+                      <p className="text-xs text-gray-500 text-center">
+                        Enter your X handle to connect your account directly. We'll verify your account and start generating content.
+                      </p>
                     </div>
                     <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
                       <Button
@@ -1098,7 +1531,7 @@ export default function OnboardingPage() {
                         className="w-full text-base py-7 text-white font-semibold bg-gradient-to-r from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 shadow-lg hover:shadow-xl transition-shadow duration-300"
                       >
                         <Twitter className="h-5 w-5 mr-2" />
-                        Link My X Account
+                        Connect Directly
                       </Button>
                     </motion.div>
                     <motion.div
@@ -1107,7 +1540,7 @@ export default function OnboardingPage() {
                       className="flex items-center justify-center space-x-2 text-sm text-gray-500 bg-gray-50 p-3 rounded-xl"
                     >
                       <Shield className="h-4 w-4 text-green-500" />
-                      <span className="font-medium">Secure OAuth • We never store your password.</span>
+                      <span className="font-medium">Direct Connection • We verify your account without OAuth</span>
                     </motion.div>
                   </motion.div>
                 )}
@@ -1141,7 +1574,8 @@ export default function OnboardingPage() {
                       className="text-emerald-600 font-semibold text-center text-lg"
                     >
                       <CheckCircle2 className="h-8 w-8 mx-auto mb-3" />
-                      <p>Successfully linked to <span className="font-bold">@{formData.twitterHandle}</span></p>
+                      <p>Successfully connected to <span className="font-bold">@{formData.twitterHandle}</span></p>
+                      <p className="text-sm mt-2 text-gray-600">Your account is verified and ready for AI-powered growth</p>
                     </motion.div>
                     <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
                       <Button

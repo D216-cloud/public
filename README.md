@@ -1,142 +1,127 @@
 # TwitterAI Pro
 
-A comprehensive Twitter automation and AI-powered content generation platform.
+TwitterAI Pro is an AI-powered platform that helps users grow their Twitter presence through automated content creation and strategic posting.
 
-## About This Project
+## Features
 
-This is a full-stack web application that helps users grow their Twitter presence through AI-powered content generation and scheduling.
+- AI-powered content generation
+- Automated Twitter posting
+- Audience growth analytics
+- User-friendly dashboard
+- Twitter account verification without OAuth
 
-## Quick Start
+## Prerequisites
 
-To run both frontend and backend simultaneously:
-
-```bash
-npm run dev:all
-```
-
-This will start:
-- Frontend on http://localhost:8080
-- Backend API on http://localhost:5000
-
-Or run them separately:
-
-```bash
-# Terminal 1 - Start backend
-npm run dev:backend
-
-# Terminal 2 - Start frontend
-npm run dev:frontend
-```
-
-## Twitter Integration
-
-For detailed information about the secure Twitter integration flow, including OAuth setup and verification methods, please see our [Twitter Integration Guide](TWITTER_INTEGRATION.md).
-
-## Deployment
-
-For detailed deployment instructions, please see our [Deployment Guide](DEPLOYMENT.md).
-
-## Development Setup
-
-### Prerequisites
-- Node.js 18+
+- Node.js (v14 or higher)
 - MongoDB
-- Google OAuth credentials
-- Twitter API credentials
-- Cloudinary account
+- Twitter Developer Account
+- Google OAuth Credentials
+- Gmail Account for Email Notifications
 
-### Installation
+## Installation
 
-1. Clone the repository
-2. Install dependencies:
+1. Clone the repository:
    ```bash
+   git clone <repository-url>
+   cd twitterai-pro
+   ```
+
+2. Install backend dependencies:
+   ```bash
+   cd backend
    npm install
-   cd backend && npm install
    ```
 
-3. Set up environment variables:
-   - Copy `.env.example` to `.env` in both root and backend directories
-   - Fill in your API keys and database URL
-
-4. Start the development servers:
+3. Install frontend dependencies:
    ```bash
-   # Backend
-   cd backend && npm run dev
-
-   # Frontend
-   npm run dev
+   cd ../
+   npm install
    ```
 
-## Deployment Setup
+4. Create a `.env` file in the root directory based on `.env.example` and configure your environment variables.
 
-### Environment Variables Configuration
+## Environment Variables Setup
 
-For deployment, you need to configure environment variables in both frontend and backend:
+### Twitter API Configuration
+To enable Twitter username verification, you need to set up Twitter API credentials:
 
-1. **Frontend (.env)**:
+1. Create a Twitter Developer account at [developer.twitter.com](https://developer.twitter.com/)
+2. Create a new app in the Twitter Developer Dashboard
+3. Generate a Bearer Token for your app
+4. Add the following to your `.env` file:
    ```
-   VITE_API_URL=https://your-backend-domain.com
-   VITE_GOOGLE_CLIENT_ID=your_production_google_client_id
-   ```
-
-2. **Backend (.env)**:
-   ```
-   FRONTEND_URL=https://your-frontend-domain.com
-   MONGO_URI=your_production_mongodb_connection_string
-   JWT_SECRET=your_secure_jwt_secret
-   GOOGLE_CLIENT_ID=your_production_google_client_id
-   GOOGLE_CLIENT_SECRET=your_production_google_client_secret
-   CLOUDINARY_CLOUD_NAME=your_production_cloudinary_name
-   CLOUDINARY_API_KEY=your_production_cloudinary_key
-   CLOUDINARY_API_SECRET=your_production_cloudinary_secret
+   TWITTER_BEARER_TOKEN=your_bearer_token_here
+   TWITTER_CLIENT_ID=your_twitter_client_id_here
+   TWITTER_CLIENT_SECRET=your_twitter_client_secret_here
    ```
 
-### Deployment Process
+### MongoDB Configuration
+```
+MONGO_URI=your_mongodb_connection_string_here
+```
 
-For detailed deployment instructions, please refer to our [Deployment Guide](DEPLOYMENT.md).
+### JWT Configuration
+```
+JWT_SECRET=your_jwt_secret_here
+```
 
-1. Set up your production environment variables in both `.env` files
-2. Build the frontend:
-   ```bash
-   npm run build
-   ```
-3. Deploy the backend to your preferred hosting platform (e.g., Render, Heroku, etc.)
-4. Deploy the frontend to your preferred static hosting platform (e.g., Vercel, Netlify, etc.)
-5. Ensure both services can communicate with each other through the configured URLs
+### Google OAuth Configuration
+```
+GOOGLE_CLIENT_ID=your_google_client_id_here
+GOOGLE_CLIENT_SECRET=your_google_client_secret_here
+```
 
-### Deployment Steps
+### Email Configuration (Gmail)
+```
+EMAIL_USER=your_gmail_address@gmail.com
+EMAIL_PASS=your_gmail_app_password
+```
 
-1. Set up your production environment variables in both directories
-2. Build the frontend:
-   ```bash
-   npm run build
-   ```
-3. Deploy the backend to your preferred hosting platform (e.g., Render, Heroku, AWS)
-4. Deploy the frontend build to your preferred hosting platform (e.g., Vercel, Netlify, AWS S3)
-5. Ensure both frontend and backend URLs are correctly configured in the environment variables
+## Running the Application
 
-### Mobile Testing
-
-For testing OAuth authentication on mobile devices:
-
-#### Backend Network Access
-1. The backend server needs to be accessible from your mobile device
-2. Find your computer's local IP address (e.g., `192.168.1.100`)
-3. Start the backend with network access:
+1. Start the backend server:
    ```bash
    cd backend
    npm run dev
    ```
-4. The server will be available at `http://YOUR_IP:5000`
 
-#### Frontend Configuration
-1. Start the frontend development server
-2. Access the app from your mobile browser using your computer's IP:
-   - `http://YOUR_IP:5173` (Vite dev server)
-3. The app will automatically detect mobile access and adjust API calls
+2. Start the frontend development server:
+   ```bash
+   cd ../
+   npm run dev
+   ```
 
-#### Google OAuth Setup
-1. In Google Cloud Console, add authorized redirect URIs for mobile testing:
-   - `http://YOUR_IP:5173`
-   - `http://localhost:5173` (for desktop testing)
-2. Ensure your Google Client ID allows
+3. Open your browser and navigate to `http://localhost:8080`
+
+## Twitter Account Verification
+
+This application implements a unique Twitter verification flow that doesn't require users to leave the app or re-authenticate via OAuth:
+
+1. Users enter their Twitter username in the Settings page
+2. The system verifies the username exists on X (Twitter) using the Twitter API
+3. If valid, users enter their X account email
+4. A verification code is sent to that email
+5. Users enter the code to complete verification and connect their account
+
+This approach respects user privacy while ensuring account ownership verification.
+
+## Troubleshooting
+
+### Twitter API 401 Error
+If you encounter a 401 Unauthorized error when verifying Twitter usernames:
+1. Ensure your `TWITTER_BEARER_TOKEN` is correctly set in the `.env` file
+2. Verify that your Twitter Developer account is approved and active
+3. Check that your app has the correct permissions in the Twitter Developer Dashboard
+
+### Common Issues
+- Make sure all environment variables are properly configured
+- Ensure MongoDB is running and accessible
+- Check that ports 5000 (backend) and 8080 (frontend) are available
+
+## License
+
+MIT License
+
+## Support
+
+For support, please open an issue on the repository or contact the development team.

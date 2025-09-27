@@ -412,6 +412,145 @@ const disconnectTwitter = async (req, res) => {
   }
 };
 
+/**
+ * Verify Twitter username exists
+ * @route POST /api/twitter/verify-username
+ * @access Private
+ */
+const verifyTwitterUsername = async (req, res) => {
+  try {
+    const { username } = req.body;
+    
+    if (!username) {
+      return res.status(400).json({
+        success: false,
+        message: 'Twitter username is required'
+      });
+    }
+
+    // Check if Twitter Bearer Token is configured
+    if (!process.env.TWITTER_BEARER_TOKEN) {
+      console.error('TWITTER_BEARER_TOKEN not configured in environment variables');
+      return res.status(500).json({
+        success: false,
+        message: 'Twitter API not properly configured. Please contact support.'
+      });
+    }
+
+    // Use Twitter API to verify username exists with Bearer Token authentication
+    const { TwitterApi } = require('twitter-api-v2');
+    const twitterClient = new TwitterApi(process.env.TWITTER_BEARER_TOKEN);
+
+    try {
+      // Check if user exists
+      const user = await twitterClient.v2.userByUsername(username);
+      
+      if (user.data) {
+        return res.json({
+          success: true,
+          message: 'Username verified successfully',
+          userId: user.data.id
+        });
+      } else {
+        return res.status(404).json({
+          success: false,
+          message: 'Twitter username not found'
+        });
+      }
+    } catch (twitterError) {
+      console.error('Twitter API error:', twitterError);
+      
+      // Handle specific Twitter API errors
+      if (twitterError.code === 401) {
+        return res.status(401).json({
+          success: false,
+          message: 'Twitter API authentication failed. Please contact support.'
+        });
+      } else if (twitterError.code === 404) {
+        return res.status(404).json({
+          success: false,
+          message: 'Twitter username not found'
+        });
+      } else if (twitterError.code === 429) {
+        return res.status(429).json({
+          success: false,
+          message: 'Twitter API rate limit exceeded. Please try again later.'
+        });
+      }
+      
+      // Generic error handling
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to verify Twitter username. Please try again later.'
+      });
+    }
+  } catch (error) {
+    console.error('Verify Twitter username error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to verify Twitter username. Please try again later.'
+    });
+  }
+};
+
+/**
+ * Connect Twitter account directly (without OAuth)
+ * @route POST /api/twitter/connect-direct
+ * @access Private
+ */
+const connectTwitterDirect = async (req, res) => {
+  try {
+    const { username } = req.body;
+    
+    if (!username) {
+      return res.status(400).json({
+        success: false,
+        message: 'Twitter username is required'
+      });
+    }
+
+    // Create a simple connection without OAuth tokens
+    const User = require('../models/User');
+    const UserTwitterConnection = require('../models/UserTwitterConnections');
+    
+    // Update user document
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      {
+        twitterConnected: true,
+        twitterUsername: username,
+        twitterId: `temp_${Date.now()}` // Temporary ID since we don't have real OAuth
+      },
+      { new: true }
+    );
+
+    // Create connection record
+    await UserTwitterConnection.findOneAndUpdate(
+      { userId: req.user.id },
+      {
+        userId: req.user.id,
+        twitterId: `temp_${Date.now()}`,
+        screenName: username,
+        verified: false, // Not verified through OAuth
+        connectedAt: new Date()
+      },
+      { upsert: true, new: true }
+    );
+
+    res.json({
+      success: true,
+      message: 'Twitter account connected successfully',
+      username: username
+    });
+  } catch (error) {
+    console.error('Connect Twitter direct error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to connect Twitter account'
+    });
+  }
+};
+
 module.exports = {
   beginTwitterAuth,
   handleTwitterCallback,
@@ -422,5 +561,7 @@ module.exports = {
   toggleAutoPost,
   getTwitterStatus,
   confirmTwitterConnection,
-  disconnectTwitter
+  disconnectTwitter,
+  verifyTwitterUsername,
+  connectTwitterDirect
 };

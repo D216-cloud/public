@@ -45,6 +45,12 @@ export default function SettingsPage() {
   const [twitterStatus, setTwitterStatus] = useState<TwitterStatus>({ connected: false, username: null, twitterId: null })
   const [isConnectingTwitter, setIsConnectingTwitter] = useState(false)
   const [twitterUsername, setTwitterUsername] = useState('')
+  const [isVerifyingEmail, setIsVerifyingEmail] = useState(false)
+  const [verificationEmail, setVerificationEmail] = useState('')
+  const [verificationCode, setVerificationCode] = useState('')
+  const [isSendingCode, setIsSendingCode] = useState(false)
+  const [isVerifyingCode, setIsVerifyingCode] = useState(false)
+  const [showEmailVerification, setShowEmailVerification] = useState(false)
   const imageInputRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
   const [notifications, setNotifications] = useState({
@@ -221,37 +227,247 @@ export default function SettingsPage() {
     setIsConnectingTwitter(true)
     try {
       const token = localStorage.getItem('token')
-      if (!token) return
+      if (!token) {
+        toast({
+          title: "Authentication required",
+          description: "Please log in to connect your Twitter account",
+          variant: "destructive"
+        })
+        return
+      }
 
-      // Use the correct endpoint for Twitter OAuth flow
-      const response = await fetch(`${API_URL}/api/twitter/auth`, {
-        method: 'GET',
+      // Verify Twitter username exists without OAuth redirect
+      const response = await fetch(`${API_URL}/api/twitter/verify-username`, {
+        method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        }
+        },
+        body: JSON.stringify({ username: twitterUsername.trim() })
       })
 
       const result = await response.json()
 
-      if (result.success && result.authUrl) {
-        // Redirect to Twitter OAuth
-        window.location.href = result.authUrl
-      } else {
+      if (result.success) {
+        // Username exists, show email verification form
+        setShowEmailVerification(true)
         toast({
-          title: "Connection failed",
-          description: result.message || "Failed to initiate Twitter connection",
+          title: "Username verified",
+          description: `@${twitterUsername.trim()} found on X. Please enter your email for verification.`
+        })
+      } else {
+        // Handle specific error cases
+        let errorMessage = result.message || "Please check your Twitter username"
+        
+        if (response.status === 401) {
+          errorMessage = "Twitter API authentication failed. Please contact support."
+        } else if (response.status === 404) {
+          errorMessage = "Twitter username not found. Please check the username and try again."
+        } else if (response.status === 429) {
+          errorMessage = "Twitter API rate limit exceeded. Please try again in a few minutes."
+        } else if (response.status >= 500) {
+          errorMessage = "Twitter verification service temporarily unavailable. Please try again later."
+        }
+        
+        toast({
+          title: "Verification failed",
+          description: errorMessage,
           variant: "destructive"
         })
       }
     } catch (error) {
       console.error('Error connecting Twitter:', error)
+      // Handle network errors specifically
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        toast({
+          title: "Network error",
+          description: "Unable to connect to Twitter verification service. Please check your internet connection and try again.",
+          variant: "destructive"
+        })
+      } else {
+        const errorMessage = error instanceof Error ? error.message : "Please check your connection and try again"
+        toast({
+          title: "Connection error",
+          description: errorMessage,
+          variant: "destructive"
+        })
+      }
+    } finally {
+      setIsConnectingTwitter(false)
+    }
+  }
+
+  // Send verification code to email
+  const handleSendVerificationCode = async () => {
+    if (!verificationEmail.trim()) {
       toast({
-        title: "Connection error",
-        description: "Please check your connection and try again",
+        title: "Email required",
+        description: "Please enter your email address",
+        variant: "destructive"
+      })
+      return
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(verificationEmail)) {
+      toast({
+        title: "Invalid email",
+        description: "Please enter a valid email address",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setIsSendingCode(true)
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) return
+
+      // Get Twitter ID from previous verification
+      const twitterResponse = await fetch(`${API_URL}/api/twitter/verify-username`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ username: twitterUsername.trim() })
+      })
+
+      const twitterResult = await twitterResponse.json()
+      if (!twitterResult.success) {
+        throw new Error("Failed to verify Twitter username")
+      }
+
+      // Send verification code to email
+      const response = await fetch(`${API_URL}/api/twitter/send-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+          twitterId: twitterResult.userId,
+          email: verificationEmail.trim()
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        toast({
+          title: "Code sent",
+          description: "Verification code sent to your email. Please check your inbox."
+        })
+      } else {
+        // Handle specific error cases
+        let errorMessage = result.message || "Failed to send verification code"
+        
+        if (response.status === 400) {
+          errorMessage = "Invalid request. Please check your email address."
+        } else if (response.status >= 500) {
+          errorMessage = "Email service temporarily unavailable. Please try again later."
+        }
+        
+        throw new Error(errorMessage)
+      }
+    } catch (error) {
+      console.error('Error sending verification code:', error)
+      const errorMessage = error instanceof Error ? error.message : "Please check your connection and try again"
+      toast({
+        title: "Error",
+        description: errorMessage,
         variant: "destructive"
       })
     } finally {
-      setIsConnectingTwitter(false)
+      setIsSendingCode(false)
+    }
+  }
+
+  // Verify the code sent to email
+  const handleVerifyCode = async () => {
+    if (!verificationCode.trim()) {
+      toast({
+        title: "Code required",
+        description: "Please enter the verification code",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setIsVerifyingCode(true)
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) return
+
+      // Get Twitter ID from previous verification
+      const twitterResponse = await fetch(`${API_URL}/api/twitter/verify-username`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ username: twitterUsername.trim() })
+      })
+
+      const twitterResult = await twitterResponse.json()
+      if (!twitterResult.success) {
+        throw new Error("Failed to verify Twitter username")
+      }
+
+      // Verify the code
+      const response = await fetch(`${API_URL}/api/twitter/verify-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+          twitterId: twitterResult.userId,
+          otp: verificationCode.trim()
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        // Connect Twitter account directly after successful verification
+        const connectResponse = await fetch(`${API_URL}/api/twitter/connect-direct`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ username: twitterUsername.trim() })
+        })
+
+        const connectResult = await connectResponse.json()
+        
+        if (connectResult.success) {
+          await fetchTwitterStatus() // Refresh status
+          setShowEmailVerification(false)
+          setVerificationEmail('')
+          setVerificationCode('')
+          toast({
+            title: "Connected Successfully",
+            description: `Connected to @${twitterUsername.trim()} and verified your email!`
+          })
+        } else {
+          throw new Error(connectResult.message || "Failed to connect Twitter account")
+        }
+      } else {
+        throw new Error(result.message || "Invalid verification code")
+      }
+    } catch (error) {
+      console.error('Error verifying code:', error)
+      const errorMessage = error instanceof Error ? error.message : "Please check your connection and try again"
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive"
+      })
+    } finally {
+      setIsVerifyingCode(false)
     }
   }
 
@@ -587,6 +803,115 @@ export default function SettingsPage() {
                       >
                         <span>Disconnect</span>
                       </Button>
+                    </div>
+                  </>
+                ) : showEmailVerification ? (
+                  // Email verification state
+                  <>
+                    <div className="flex flex-col sm:flex-row items-center justify-between p-5 border rounded-lg space-y-4 sm:space-y-0 bg-blue-50 border-blue-200 shadow-sm">
+                      <div className="flex items-center space-x-4">
+                        <Avatar className="h-12 w-12 sm:h-16 sm:w-16">
+                          <AvatarFallback className="bg-blue-500 text-white text-lg">@</AvatarFallback>
+                        </Avatar>
+                        <div className="text-center sm:text-left">
+                          <p className="font-medium text-base sm:text-lg text-blue-700">Verify your email for @{twitterUsername}</p>
+                          <p className="text-sm text-blue-600">Enter the email associated with your X account</p>
+                        </div>
+                      </div>
+                      <Badge variant="outline" className="text-sm px-3 py-1.5 text-blue-600 border-blue-300 rounded-full">
+                        Step 2 of 2
+                      </Badge>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="verificationEmail" className="text-sm font-medium text-gray-700">
+                          X Account Email
+                        </Label>
+                        <Input
+                          id="verificationEmail"
+                          type="email"
+                          placeholder="your.email@x.com"
+                          value={verificationEmail}
+                          onChange={(e) => setVerificationEmail(e.target.value)}
+                          className="h-12 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-lg transition-all duration-300"
+                        />
+                        <p className="text-xs text-gray-500">
+                          Enter the email address associated with your X account for verification
+                        </p>
+                      </div>
+                      
+                      <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+                        <Button 
+                          onClick={handleSendVerificationCode}
+                          disabled={isSendingCode || !verificationEmail.trim()}
+                          className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-md hover:shadow-lg px-6 rounded-lg transition-all duration-300 font-medium"
+                        >
+                          {isSendingCode ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                              <span>Sending Code...</span>
+                            </>
+                          ) : (
+                            <span>Send Verification Code</span>
+                          )}
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="verificationCode" className="text-sm font-medium text-gray-700">
+                          Verification Code
+                        </Label>
+                        <Input
+                          id="verificationCode"
+                          placeholder="Enter 6-digit code"
+                          value={verificationCode}
+                          onChange={(e) => setVerificationCode(e.target.value)}
+                          className="h-12 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-lg transition-all duration-300"
+                        />
+                        <p className="text-xs text-gray-500">
+                          Check your email for the verification code we sent
+                        </p>
+                      </div>
+                      
+                      <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+                        <Button 
+                          onClick={handleVerifyCode}
+                          disabled={isVerifyingCode || !verificationCode.trim()}
+                          className="flex-1 h-12 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-md hover:shadow-lg px-6 rounded-lg transition-all duration-300 font-medium"
+                        >
+                          {isVerifyingCode ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                              <span>Verifying...</span>
+                            </>
+                          ) : (
+                            <span>Verify & Connect</span>
+                          )}
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          onClick={() => {
+                            setShowEmailVerification(false)
+                            setVerificationEmail('')
+                            setVerificationCode('')
+                          }}
+                          className="h-12 border-gray-300 hover:bg-gray-50 rounded-lg transition-all duration-300 font-medium"
+                        >
+                          <span>Back</span>
+                        </Button>
+                      </div>
+                      
+                      <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
+                        <div className="flex items-start space-x-3">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <p className="text-sm text-blue-700">
+                            <span className="font-medium">Note:</span> We'll send a verification code to your email. 
+                            This helps us confirm you own the X account.
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </>
                 ) : (

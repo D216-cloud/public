@@ -123,4 +123,114 @@ const sendWelcomeEmail = async (userEmail, userName) => {
   }
 };
 
-module.exports = { sendWelcomeEmail };
+/**
+ * Send a verification code email for Twitter account verification
+ * @param {string} userEmail - The email address of the user
+ * @param {string} userName - The name of the user
+ * @param {string} verificationCode - The verification code to send
+ * @param {string} twitterUsername - The Twitter username being verified
+ * @returns {Promise<Object>} - Result of the email sending operation
+ */
+const sendVerificationCodeEmail = async (userEmail, userName, verificationCode, twitterUsername) => {
+  try {
+    // Validate required environment variables
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      throw new Error('Email credentials not configured in environment variables');
+    }
+
+    // Create transporter
+    const transporter = createTransporter();
+
+    // Define email content with styled HTML
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: userEmail,
+      subject: 'Twitter Account Verification Code',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Twitter Verification Code</title>
+        </head>
+        <body style="margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f5f7fa;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f7fa; padding: 20px 0;">
+            <tr>
+              <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                  <!-- Header -->
+                  <tr>
+                    <td style="background: linear-gradient(135deg, #1DA1F2 0%, #0d8bd9 100%); padding: 30px 20px; text-align: center;">
+                      <h1 style="color: white; margin: 0; font-size: 28px; font-weight: bold;">TwitterAI Pro</h1>
+                      <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 16px;">Twitter Account Verification</p>
+                    </td>
+                  </tr>
+                  
+                  <!-- Content -->
+                  <tr>
+                    <td style="padding: 40px 30px;">
+                      <h2 style="color: #333; margin-top: 0; font-size: 24px;">Hello, ${userName}!</h2>
+                      
+                      <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 20px 0;">
+                        You've requested to verify your Twitter account <strong>@${twitterUsername}</strong> with TwitterAI Pro.
+                      </p>
+                      
+                      <div style="background-color: #f8f9fa; border-radius: 8px; padding: 25px; margin: 30px 0; border: 1px solid #eaeaea; text-align: center;">
+                        <h3 style="color: #1DA1F2; margin-top: 0; font-size: 18px;">Your Verification Code</h3>
+                        <div style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #333; margin: 20px 0; background: white; padding: 15px; border-radius: 8px; border: 2px dashed #1DA1F2;">
+                          ${verificationCode}
+                        </div>
+                        <p style="color: #666; font-size: 14px; margin: 0;">
+                          This code will expire in 5 minutes
+                        </p>
+                      </div>
+                      
+                      <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 20px 0;">
+                        Please enter this code in the verification field on our website to complete the verification process.
+                      </p>
+                      
+                      <div style="background-color: #fff8e6; border-left: 4px solid #ffc107; padding: 15px; margin: 25px 0; border-radius: 0 8px 8px 0;">
+                        <p style="color: #333; font-size: 14px; margin: 0;">
+                          <strong>Security Notice:</strong> If you didn't request this verification, please ignore this email or contact our support team.
+                        </p>
+                      </div>
+                      
+                      <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 20px 0;">
+                        If you have any questions, our support team is always ready to help at 
+                        <a href="mailto:support@twitteraipro.com" style="color: #1DA1F2; text-decoration: none;">support@twitteraipro.com</a>.
+                      </p>
+                    </td>
+                  </tr>
+                  
+                  <!-- Footer -->
+                  <tr>
+                    <td style="background-color: #f8f9fa; padding: 20px 30px; border-top: 1px solid #eee; text-align: center;">
+                      <p style="color: #777; font-size: 14px; margin: 0;">
+                        &copy; ${new Date().getFullYear()} TwitterAI Pro. All rights reserved.
+                      </p>
+                      <p style="color: #999; font-size: 12px; margin: 10px 0 0;">
+                        123 AI Street, Tech City, TC 10001
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+    };
+
+    // Send email
+    const result = await transporter.sendMail(mailOptions);
+    console.log('Verification code email sent successfully to:', userEmail);
+    return { success: true, messageId: result.messageId };
+  } catch (error) {
+    console.error('Error sending verification code email:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+module.exports = { sendWelcomeEmail, sendVerificationCodeEmail };

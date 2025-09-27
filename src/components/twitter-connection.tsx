@@ -54,7 +54,7 @@ export default function TwitterConnection({
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  // Connect to Twitter using OAuth
+  // Connect to Twitter directly (without OAuth)
   const handleConnectTwitter = async () => {
     if (!twitterHandle.trim()) {
       toast({
@@ -72,27 +72,49 @@ export default function TwitterConnection({
         throw new Error('Not authenticated. Please log in again.');
       }
 
-      // Begin OAuth flow
-      const response = await fetch(`${API_URL}/api/twitter/auth`, {
-        method: 'GET',
+      // First verify the username exists
+      const verifyResponse = await fetch(`${API_URL}/api/twitter/verify-username`, {
+        method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        }
+        },
+        body: JSON.stringify({ username: twitterHandle.trim() })
+      });
+
+      const verifyResult = await verifyResponse.json();
+      
+      if (!verifyResult.success) {
+        throw new Error(verifyResult.message || 'Twitter username not found');
+      }
+
+      // Connect to Twitter directly (without OAuth)
+      const response = await fetch(`${API_URL}/api/twitter/connect-direct`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ username: twitterHandle.trim() })
       });
 
       const result = await response.json();
       
-      if (result.success && result.authUrl) {
-        // Redirect to Twitter OAuth
-        window.location.href = result.authUrl;
+      if (result.success) {
+        setConnectionStep('connected');
+        setTwitterId(`temp_${Date.now()}`);
+        toast({
+          title: "Connected successfully",
+          description: `Connected to @${twitterHandle} without leaving the app!`
+        });
       } else {
-        throw new Error(result.message || 'Failed to initiate Twitter connection. Please check that your Twitter API credentials are properly configured.');
+        throw new Error(result.message || 'Failed to connect to Twitter.');
       }
     } catch (error) {
       setConnectionStep('error');
       toast({
         title: "Connection failed",
-        description: error instanceof Error ? error.message : "Failed to connect to Twitter. Please ensure your Twitter API credentials are properly configured in your environment variables.",
+        description: error instanceof Error ? error.message : "Failed to connect to Twitter.",
         variant: "destructive"
       });
     }

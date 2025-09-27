@@ -2,6 +2,7 @@ const { TwitterApi } = require('twitter-api-v2');
 const UserTwitterConnection = require('../models/UserTwitterConnections');
 const User = require('../models/User');
 const crypto = require('crypto');
+const { sendVerificationCodeEmail } = require('../utils/sendMail');
 
 /**
  * Twitter Service
@@ -191,18 +192,28 @@ const createOrUpdateConnection = async (userId, connectionData) => {
  * Send OTP via email
  * @param {string} email - Recipient email
  * @param {string} otp - OTP to send
+ * @param {string} userId - User ID
  * @returns {Promise<boolean>} - Success status
  */
-const sendOTPViaEmail = async (email, otp) => {
+const sendOTPViaEmail = async (email, otp, userId) => {
   try {
-    // In a real implementation, you would use nodemailer here
-    // For now, we'll just log it
-    console.log(`Sending OTP ${otp} to ${email}`);
+    // Get user information
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Send verification code email
+    const result = await sendVerificationCodeEmail(
+      email, 
+      user.name || 'User', 
+      otp, 
+      'Twitter Account'
+    );
     
-    // This would be implemented with nodemailer in a real app
-    // const nodemailer = require('nodemailer');
-    // const transporter = nodemailer.createTransporter({...});
-    // await transporter.sendMail({...});
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to send email');
+    }
     
     return true;
   } catch (error) {
@@ -233,7 +244,7 @@ const generateAndSendOTP = async (userId, twitterId, email) => {
   );
   
   // Send OTP via email
-  const emailSent = await sendOTPViaEmail(email, otp);
+  const emailSent = await sendOTPViaEmail(email, otp, userId);
   
   if (!emailSent) {
     throw new Error('Failed to send OTP email');

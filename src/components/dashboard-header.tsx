@@ -105,14 +105,34 @@ export function DashboardHeader() {
       const token = localStorage.getItem('token')
       if (!token) return
 
-      const response = await fetch(`${API_URL}/api/twitter/auth`, {
-        method: 'GET',
+      // First verify the username exists
+      const verifyResponse = await fetch(`${API_URL}/api/twitter/verify-username`, {
+        method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        }
-      })
+        },
+        body: JSON.stringify({ username: twitterUsername.trim() })
+      });
 
-      const result = await response.json()
+      const verifyResult = await verifyResponse.json();
+      
+      if (!verifyResult.success) {
+        console.error('Twitter username not found:', verifyResult.message);
+        return;
+      }
+
+      // Connect to Twitter directly (without OAuth)
+      const response = await fetch(`${API_URL}/api/twitter/connect-direct`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ username: twitterUsername.trim() })
+      });
+
+      const result = await response.json();
 
       if (result.success) {
         await fetchTwitterStatus()
