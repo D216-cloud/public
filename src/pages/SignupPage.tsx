@@ -132,6 +132,57 @@ export default function SignupPage() {
     }
   };
 
+  // Handle Twitter login
+  const handleTwitterLogin = async () => {
+    try {
+      setIsLoading(true);
+      setLoadingProvider("twitter");
+      
+      // Get API URL from environment variables or use default
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      
+      // Get the JWT token from localStorage
+      const token = localStorage.getItem('token');
+      
+      if (token) {
+        // User is already logged in, use the authenticated flow
+        const response = await fetch(`${apiUrl}/api/twitter/auth`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+          // Redirect to Twitter OAuth URL
+          window.location.href = data.authUrl;
+        } else {
+          throw new Error(data.message || 'Failed to initiate Twitter authentication');
+        }
+      } else {
+        // User is not logged in, use the public flow
+        window.location.href = `${apiUrl}/api/twitter/auth/public`;
+      }
+    } catch (error) {
+      console.error("Twitter login error:", error);
+      setIsLoading(false);
+      setLoadingProvider(null);
+      // Show user-friendly error message
+      let errorMessage = "Twitter authentication failed. Please try again later.";
+      if (error instanceof Error) {
+        if (error.message.includes("fetch") || error.message.includes("Failed to fetch")) {
+          errorMessage = "Twitter authentication failed: Network error. Please check your connection and try again.";
+        } else {
+          errorMessage = `Twitter authentication failed: ${error.message}. Please try again.`;
+        }
+      }
+      alert(errorMessage);
+    }
+  };
+
   // Initialize Google login
   const initializeGoogleLogin = () => {
     const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -290,7 +341,7 @@ export default function SignupPage() {
           <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm rounded-2xl">
             <CardHeader className="text-center pb-6">
               <CardTitle className="text-2xl">Get Started</CardTitle>
-              <CardDescription className="text-base">Sign up with Google to continue</CardDescription>
+              <CardDescription className="text-base">Sign up with Google or Twitter to continue</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Google login button */}
@@ -299,6 +350,26 @@ export default function SignupPage() {
                 className="cursor-pointer"
                 onClick={handleGoogleAuth}
               ></div>
+              
+              {/* Twitter login button */}
+              <Button
+                variant="outline"
+                className="w-full h-12 text-base font-medium border-2 hover:bg-gray-50 rounded-lg flex items-center justify-center space-x-2"
+                onClick={handleTwitterLogin}
+                disabled={isLoading}
+              >
+                {isLoading && loadingProvider === "twitter" ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Signing up with Twitter...</span>
+                  </>
+                ) : (
+                  <>
+                    <Twitter className="h-5 w-5 text-[#1DA1F2]" />
+                    <span>Sign up with Twitter</span>
+                  </>
+                )}
+              </Button>
               
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">

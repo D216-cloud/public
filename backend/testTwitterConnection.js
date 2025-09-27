@@ -1,52 +1,88 @@
-/**
- * Test script for Twitter connection flow
- * This script tests the Twitter OAuth flow and verification process
- */
-
-const express = require('express');
+const { verifyTwitterUsername } = require('./utils/twitterAuth');
 const { TwitterApi } = require('twitter-api-v2');
+require('dotenv').config();
 
-// Load environment variables
-require('dotenv').config({ path: '../.env' });
-
-// Twitter API configuration
-const TWITTER_CLIENT_ID = process.env.TWITTER_CLIENT_ID;
-const TWITTER_CLIENT_SECRET = process.env.TWITTER_CLIENT_SECRET;
-const TWITTER_CALLBACK_URL = process.env.TWITTER_CALLBACK_URL || 'http://localhost:5000/api/twitter/callback';
-
-console.log('Twitter Connection Test');
-console.log('======================');
-console.log('Client ID:', TWITTER_CLIENT_ID ? '✓ Set' : '✗ Not set');
-console.log('Client Secret:', TWITTER_CLIENT_SECRET ? '✓ Set' : '✗ Not set');
-console.log('Callback URL:', TWITTER_CALLBACK_URL);
-
-// Test Twitter API initialization
-try {
-  if (TWITTER_CLIENT_ID && TWITTER_CLIENT_SECRET) {
-    const client = new TwitterApi({
-      clientId: TWITTER_CLIENT_ID,
-      clientSecret: TWITTER_CLIENT_SECRET,
-    });
-    
-    console.log('✓ Twitter API client initialized successfully');
-    
-    // Generate OAuth URL for testing
-    const { url, codeVerifier } = client.generateOAuth2AuthLink(TWITTER_CALLBACK_URL, {
-      scope: ['tweet.read', 'tweet.write', 'users.read', 'offline.access']
-    });
-    
-    console.log('OAuth URL:', url);
-    console.log('Code Verifier (save this for callback):', codeVerifier);
-  } else {
-    console.log('✗ Twitter API credentials not configured');
-    console.log('Please set TWITTER_CLIENT_ID and TWITTER_CLIENT_SECRET in your .env file');
+async function testTwitterConnection() {
+  console.log('Testing Twitter API connection...');
+  
+  // Check if required environment variables are set
+  const requiredVars = [
+    'TWITTER_BEARER_TOKEN',
+    'TWITTER_CLIENT_ID',
+    'TWITTER_CLIENT_SECRET'
+  ];
+  
+  const missingVars = requiredVars.filter(varName => !process.env[varName]);
+  
+  if (missingVars.length > 0) {
+    console.error('Missing environment variables:', missingVars);
+    return;
   }
-} catch (error) {
-  console.error('✗ Error initializing Twitter API client:', error.message);
+  
+  console.log('All required environment variables are set');
+  console.log('TWITTER_BEARER_TOKEN length:', process.env.TWITTER_BEARER_TOKEN?.length || 0);
+  
+  try {
+    // Test 1: Bearer Token authentication
+    console.log('\n1. Testing Bearer Token authentication...');
+    
+    // Check if Bearer Token looks valid
+    if (!process.env.TWITTER_BEARER_TOKEN || process.env.TWITTER_BEARER_TOKEN.length < 20) {
+      console.error('❌ Bearer Token appears to be invalid or too short');
+      return;
+    }
+    
+    const client = new TwitterApi(process.env.TWITTER_BEARER_TOKEN);
+    
+    // Test fetching a public user (using elonmusk as it's a well-known account)
+    console.log('Fetching user info for @elonmusk...');
+    const user = await client.v2.userByUsername('elonmusk');
+    
+    if (user.data) {
+      console.log('✅ Bearer Token authentication successful!');
+      console.log(`User: ${user.data.name} (@${user.data.username})`);
+      console.log(`User ID: ${user.data.id}`);
+    } else {
+      console.log('❌ Failed to fetch user info');
+      console.log('Response:', user);
+    }
+  } catch (error) {
+    console.error('❌ Bearer Token authentication failed:', error.message);
+    console.error('Error details:', error);
+  }
+  
+  try {
+    // Test 2: OAuth 2.0 credentials
+    console.log('\n2. Testing OAuth 2.0 credentials...');
+    const client = new TwitterApi({
+      clientId: process.env.TWITTER_CLIENT_ID,
+      clientSecret: process.env.TWITTER_CLIENT_SECRET,
+    });
+    
+    console.log('✅ OAuth 2.0 credentials validated (no errors on client creation)');
+  } catch (error) {
+    console.error('❌ OAuth 2.0 credentials validation failed:', error.message);
+  }
+  
+  try {
+    // Test 3: Using our utility function
+    console.log('\n3. Testing utility function...');
+    const result = await verifyTwitterUsername('elonmusk');
+    
+    if (result.data) {
+      console.log('✅ Utility function works correctly!');
+      console.log(`User: ${result.data.name} (@${result.data.username})`);
+    } else {
+      console.log('❌ Utility function returned no data');
+      console.log('Response:', result);
+    }
+  } catch (error) {
+    console.error('❌ Utility function test failed:', error.message);
+    console.error('Error details:', error);
+  }
+  
+  console.log('\nTwitter API connection test completed.');
 }
 
-console.log('\nTo test the full flow:');
-console.log('1. Visit the OAuth URL above');
-console.log('2. Authorize the application');
-console.log('3. Copy the authorization code from the callback URL');
-console.log('4. Use the code and code verifier to complete the OAuth flow');
+// Run the test
+testTwitterConnection();

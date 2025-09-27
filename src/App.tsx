@@ -15,6 +15,7 @@ import SettingsPage from './pages/SettingsPage'
 import OnboardingPage from './pages/OnboardingPage'
 import DemoPage from './pages/DemoPage'
 import AIWriterPage from './pages/AIWriterPage'
+import TwitterSignupPage from './pages/TwitterSignupPage' // Add this import
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
+              <Route path="/twitter-signup" element={<TwitterSignupPage />} /> {/* Add this route */}
               <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <DashboardPage />

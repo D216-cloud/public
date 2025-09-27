@@ -62,6 +62,7 @@ export default function LoginPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [showTwitterConnect, setShowTwitterConnect] = useState(false)
   const [twitterHandle, setTwitterHandle] = useState("")
+  const [showTwitterLogin, setShowTwitterLogin] = useState(false)
 
   // Initialize Google login when component mounts
   useEffect(() => {
@@ -310,6 +311,57 @@ export default function LoginPage() {
     }, 2000);
   }
 
+  // Handle Twitter login
+  const handleTwitterLogin = async () => {
+    try {
+      setIsLoading(true);
+      setLoadingProvider("twitter");
+      
+      // Get API URL from environment variables or use default
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      
+      // Get the JWT token from localStorage
+      const token = localStorage.getItem('token');
+      
+      if (token) {
+        // User is already logged in, use the authenticated flow
+        const response = await fetch(`${apiUrl}/api/twitter/auth`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+          // Redirect to Twitter OAuth URL
+          window.location.href = data.authUrl;
+        } else {
+          throw new Error(data.message || 'Failed to initiate Twitter authentication');
+        }
+      } else {
+        // User is not logged in, use the public flow
+        window.location.href = `${apiUrl}/api/twitter/auth/public`;
+      }
+    } catch (error) {
+      console.error("Twitter login error:", error);
+      setIsLoading(false);
+      setLoadingProvider(null);
+      // Show user-friendly error message
+      let errorMessage = "Twitter authentication failed. Please try again later.";
+      if (error instanceof Error) {
+        if (error.message.includes("fetch") || error.message.includes("Failed to fetch")) {
+          errorMessage = "Twitter authentication failed: Network error. Please check your connection and try again.";
+        } else {
+          errorMessage = `Twitter authentication failed: ${error.message}. Please try again.`;
+        }
+      }
+      alert(errorMessage);
+    }
+  };
+
   // Render post-auth questions
   if (postAuthStep > 0) {
     const currentQuestion = postAuthQuestions[postAuthStep - 1]
@@ -555,7 +607,7 @@ export default function LoginPage() {
                   <span>Back to Home</span>
                   <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-200" />
                 </span>
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-700 to-blue-800 transform -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-700 to-blue-800 rounded-lg opacity-0 group-hover:opacity-10 transition-opacity duration-700 ease-out" />
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 opacity-75 blur" />
               </button>
             </div>
@@ -602,6 +654,26 @@ export default function LoginPage() {
                 className="cursor-pointer"
                 onClick={handleGoogleAuth}
               ></div>
+              
+              {/* Twitter login button */}
+              <Button
+                variant="outline"
+                className="w-full h-12 text-base font-medium border-2 hover:bg-gray-50 rounded-lg flex items-center justify-center space-x-2"
+                onClick={handleTwitterLogin}
+                disabled={isLoading}
+              >
+                {isLoading && loadingProvider === "twitter" ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Signing in with Twitter...</span>
+                  </>
+                ) : (
+                  <>
+                    <Twitter className="h-5 w-5 text-[#1DA1F2]" />
+                    <span>Sign in with Twitter</span>
+                  </>
+                )}
+              </Button>
               
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">

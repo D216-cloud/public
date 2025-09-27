@@ -12,7 +12,8 @@ const {
   confirmTwitterConnection,
   disconnectTwitter,
   verifyTwitterUsername,  // Add this new function
-  connectTwitterDirect    // Add this new function
+  connectTwitterDirect,    // Add this new function
+  beginTwitterAuthPublic   // Add this new public function
 } = require('../controllers/twitterController');
 
 const router = express.Router();
@@ -21,6 +22,11 @@ const router = express.Router();
 // @desc    Begin Twitter OAuth flow
 // @access  Private
 router.get('/auth', protect, beginTwitterAuth);
+
+// @route   GET /api/twitter/auth/public
+// @desc    Begin Twitter OAuth flow for non-authenticated users
+// @access  Public
+router.get('/auth/public', beginTwitterAuthPublic);
 
 // @route   GET /api/twitter/callback
 // @desc    Handle Twitter OAuth callback
