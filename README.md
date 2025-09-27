@@ -77,6 +77,13 @@ EMAIL_USER=your_gmail_address@gmail.com
 EMAIL_PASS=your_gmail_app_password
 ```
 
+**Important**: For Gmail, you must use an App Password instead of your regular password. Follow these steps:
+1. Enable 2-Factor Authentication on your Google account
+2. Generate an App Password for "Mail" 
+3. Use the 16-character code as your EMAIL_PASS (without spaces)
+
+For detailed instructions, see [GMAIL_SETUP_GUIDE.md](GMAIL_SETUP_GUIDE.md)
+
 ## Running the Application
 
 1. Start the backend server:

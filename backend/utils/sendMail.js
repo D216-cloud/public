@@ -123,7 +123,7 @@ const sendWelcomeEmail = async (userEmail, userName) => {
     // Provide more specific error messages for common issues
     let errorMessage = error.message;
     if (error.code === 'EAUTH' || (error.message && error.message.includes('Invalid login'))) {
-      errorMessage = 'Email authentication failed. Please ensure you are using an App Password if you have 2-Factor Authentication enabled. Check your EMAIL_USER and EMAIL_PASS in your .env file.';
+      errorMessage = 'Email authentication failed. Please ensure you are using a valid Gmail App Password. Check the GMAIL_SETUP_GUIDE.md file for detailed instructions.';
     } else if (error.code === 'EENVELOPE') {
       errorMessage = 'Invalid email address. Please check the recipient email address.';
     } else if (error.code === 'ECONNECTION') {
@@ -244,7 +244,7 @@ const sendVerificationCodeEmail = async (userEmail, userName, verificationCode, 
     // Provide more specific error messages for common issues
     let errorMessage = error.message;
     if (error.code === 'EAUTH' || (error.message && error.message.includes('Invalid login'))) {
-      errorMessage = 'Email authentication failed. Please ensure you are using an App Password if you have 2-Factor Authentication enabled. Check your EMAIL_USER and EMAIL_PASS in your .env file.';
+      errorMessage = 'Email authentication failed. Please ensure you are using a valid Gmail App Password. Check the GMAIL_SETUP_GUIDE.md file for detailed instructions.';
     } else if (error.code === 'EENVELOPE') {
       errorMessage = 'Invalid email address. Please check the recipient email address.';
     } else if (error.code === 'ECONNECTION') {

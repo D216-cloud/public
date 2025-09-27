@@ -265,7 +265,7 @@ const sendOTP = async (req, res) => {
     let errorMessage = error.message || 'Failed to send OTP';
     
     if (errorMessage.includes('Email authentication failed')) {
-      errorMessage = 'Email authentication failed. Please ensure you are using an App Password if you have 2-Factor Authentication enabled. Check your EMAIL_USER and EMAIL_PASS in your .env file.';
+      errorMessage = 'Email authentication failed. Please ensure you are using a valid Gmail App Password. Check the GMAIL_SETUP_GUIDE.md file for detailed instructions.';
     } else if (errorMessage.includes('Failed to send verification email')) {
       errorMessage = 'Unable to send verification email. Please check your email address and try again.';
     }
@@ -578,9 +578,9 @@ const verifyTwitterUsernameController = async (req, res) => {
         }
         
         return res.status(404).json({
-          success: false,
-          message: result.message || 'Twitter username not found'
-        });
+            success: false,
+            message: result.message || 'Twitter username not found'
+          });
       }
     } catch (twitterError) {
       console.error('Twitter API error:', twitterError);
@@ -761,7 +761,7 @@ const requestTwitterVerification = async (req, res) => {
       if (emailError.message && emailError.message.includes('Invalid login')) {
         return res.status(500).json({
           success: false,
-          message: 'Email authentication failed. Please ensure you are using an App Password if you have 2-Factor Authentication enabled. Check your EMAIL_USER and EMAIL_PASS in your .env file.'
+          message: 'Email authentication failed. Please ensure you are using a valid Gmail App Password. Check the GMAIL_SETUP_GUIDE.md file for detailed instructions.'
         });
       }
       

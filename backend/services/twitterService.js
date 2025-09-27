@@ -221,7 +221,7 @@ const sendOTPViaEmail = async (email, otp, userId) => {
     
     // Provide more specific error messages for common issues
     if (error.code === 'EAUTH' || (error.message && error.message.includes('Invalid login'))) {
-      throw new Error('Email authentication failed. Please ensure you are using an App Password if you have 2-Factor Authentication enabled.');
+      throw new Error('Email authentication failed. Please ensure you are using a valid Gmail App Password. Check the GMAIL_SETUP_GUIDE.md file for detailed instructions.');
     } else if (error.code === 'EENVELOPE') {
       throw new Error('Invalid email address. Please check the recipient email address.');
     } else if (error.code === 'ECONNECTION') {
