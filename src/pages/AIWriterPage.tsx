@@ -686,7 +686,7 @@ export default function AIWriterPage() {
   const { date: currentDate, time: currentTime } = getCurrentDateTime()
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 pt-16">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 pt-28">
       <DashboardHeader />
 
       <main className="container mx-auto px-4 py-6 lg:py-8">

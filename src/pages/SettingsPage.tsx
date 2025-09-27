@@ -223,28 +223,23 @@ export default function SettingsPage() {
       const token = localStorage.getItem('token')
       if (!token) return
 
-      const response = await fetch(`${API_URL}/api/twitter/connect`, {
-        method: 'POST',
+      // Use the correct endpoint for Twitter OAuth flow
+      const response = await fetch(`${API_URL}/api/twitter/auth`, {
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ username: twitterUsername })
+        }
       })
 
       const result = await response.json()
 
-      if (result.success) {
-        await fetchTwitterStatus() // Refresh status
-        setTwitterUsername('') // Clear input
-        toast({
-          title: "✅ Connected!",
-          description: `Successfully connected to @${result.twitterUser.username}`,
-        })
+      if (result.success && result.authUrl) {
+        // Redirect to Twitter OAuth
+        window.location.href = result.authUrl
       } else {
         toast({
           title: "Connection failed",
-          description: result.message || "Failed to connect Twitter account",
+          description: result.message || "Failed to initiate Twitter connection",
           variant: "destructive"
         })
       }

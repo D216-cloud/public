@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { verifyGoogleToken } = require('../config/googleAuth');
 const { cloudinary } = require('../config/cloudinary');
+const { sendWelcomeEmail } = require('../utils/sendMail');
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -32,6 +33,9 @@ const googleLogin = async (req, res) => {
         googleId: googleUser.sub,
         profilePicture: googleUser.picture,
       });
+      
+      // Send welcome email to new users
+      await sendWelcomeEmail(googleUser.email, googleUser.name);
     } else if (!user.googleId) {
       // If user exists but doesn't have googleId, update it
       user.googleId = googleUser.sub;

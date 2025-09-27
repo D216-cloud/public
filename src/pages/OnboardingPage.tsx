@@ -45,7 +45,7 @@ import {
   Clock,
   Shield
 } from 'lucide-react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 
 // Enhanced UI Constants for a more premium feel
 const steps = [
@@ -109,6 +109,7 @@ const frequencies = [
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
+  const location = useLocation(); // Add this to get query parameters
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -403,35 +404,19 @@ export default function OnboardingPage() {
       if (!token) {
         throw new Error('Not authenticated')
       }
-      // Connect to Twitter using our API
-      const response = await fetch(`${API_URL}/api/twitter/connect`, {
-        method: 'POST',
+      // Begin OAuth flow
+      const response = await fetch(`${API_URL}/api/twitter/auth`, {
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ username: formData.twitterHandle })
+        }
       })
       const result = await response.json()
-      if (result.success) {
-        const updatedFormData = {
-          ...formData,
-          twitterConnected: true,
-          twitterHandle: result.twitterUser.username
-        }
-        setFormData(updatedFormData)
-        setTwitterAuthStep('success')
-        await saveProgress(updatedFormData)
-        toast({
-          title: "connected",
-          description: `your ai is now linked to @${result.twitterUser.username}`,
-        })
-        // Complete onboarding automatically after successful Twitter connection
-        setTimeout(() => {
-          completeOnboarding()
-        }, 1500) // Give user time to see success message
+      if (result.success && result.authUrl) {
+        // Redirect to Twitter OAuth
+        window.location.href = result.authUrl;
       } else {
-        throw new Error(result.message || 'Connection failed')
+        throw new Error(result.message || 'Failed to initiate Twitter connection')
       }
     } catch (error) {
       setTwitterAuthStep('error')
@@ -444,6 +429,51 @@ export default function OnboardingPage() {
       setIsLoading(false)
     }
   }
+
+  // Handle Twitter OAuth callback parameters
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const twitterConnected = searchParams.get('twitterConnected');
+    const error = searchParams.get('error');
+    const screenName = searchParams.get('screenName');
+    
+    if (twitterConnected !== null) {
+      if (twitterConnected === 'true' && screenName) {
+        // Twitter connection successful
+        const updatedFormData = {
+          ...formData,
+          twitterConnected: true,
+          twitterHandle: screenName
+        };
+        setFormData(updatedFormData);
+        toast({
+          title: "Twitter Connected Successfully",
+          description: `Your Twitter account @${screenName} has been connected.`,
+        });
+        
+        // Save the updated form data
+        saveProgress(updatedFormData).then(() => {
+          // Move to next step or complete onboarding
+          if (currentStep < steps.length) {
+            setCurrentStep(currentStep + 1);
+          } else {
+            completeOnboarding();
+          }
+        });
+      } else if (twitterConnected === 'false' && error) {
+        // Twitter connection failed
+        setTwitterAuthStep('error');
+        toast({
+          title: "Twitter Connection Failed",
+          description: error,
+          variant: "destructive"
+        });
+      }
+      
+      // Remove query parameters from URL
+      navigate('/onboarding', { replace: true });
+    }
+  }, [location, navigate, toast, formData, currentStep]);
 
   // Fix the stepVariants to use proper types
   const stepVariants: Variants = {
@@ -1187,7 +1217,7 @@ export default function OnboardingPage() {
                   <span>Back to Home</span>
                   <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-200" />
                 </span>
-                <div className="absolute -inset-1 bg-gradient-to-r from-purple-700 to-blue-800 transform -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
+                <div className="absolute -inset-1 bg-gradient-to-r from-purple-700 to-blue-800 rounded-lg opacity-0 group-hover:opacity-10 transition-opacity duration-200 blur" />
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 opacity-75 blur" />
               </button>
             </div>

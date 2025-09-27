@@ -28,6 +28,10 @@ npm run dev:backend
 npm run dev:frontend
 ```
 
+## Twitter Integration
+
+For detailed information about the secure Twitter integration flow, including OAuth setup and verification methods, please see our [Twitter Integration Guide](TWITTER_INTEGRATION.md).
+
 ## Deployment
 
 For detailed deployment instructions, please see our [Deployment Guide](DEPLOYMENT.md).

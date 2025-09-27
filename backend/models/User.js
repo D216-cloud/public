@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
-  // Twitter connection fields
+  // Twitter connection fields (deprecated - kept for backward compatibility)
   twitterId: {
     type: String,
     sparse: true,
@@ -43,22 +43,29 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  // Temporary fields for verification process
-  tempTwitterUsername: {
-    type: String,
-    sparse: true,
+  // Temporary fields for OAuth flow
+  tempTwitterData: {
+    type: {
+      accessToken: String,
+      refreshToken: String,
+      expiresIn: Number,
+      userInfo: {
+        id: String,
+        username: String,
+        name: String
+      },
+      codeVerifier: String,
+      createdAt: Date
+    },
+    default: null
   },
-  tempTwitterId: {
+  tempAuthState: {
     type: String,
-    sparse: true,
+    default: null
   },
-  twitterVerificationCode: {
+  tempCodeVerifier: {
     type: String,
-    sparse: true,
-  },
-  verificationCodeExpiry: {
-    type: Date,
-    sparse: true,
+    default: null
   },
   createdAt: {
     type: Date,

@@ -22,7 +22,7 @@ const HomePage: React.FC = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden pt-16">
+    <div className="min-h-screen bg-background overflow-x-hidden pt-28">
       <Header />
       <main>
         <HeroSection />

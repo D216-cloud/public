@@ -121,7 +121,7 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 pt-16">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 pt-28">
       <DashboardHeader />
 
       <main className="container mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-8">
