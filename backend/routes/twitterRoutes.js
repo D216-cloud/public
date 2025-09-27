@@ -1,5 +1,24 @@
 const express = require('express');
 const { protect } = require('../middleware/auth');
+const multer = require('multer');
+
+// Configure multer for image uploads
+const storage = multer.memoryStorage();
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    // Accept only image files
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'), false);
+    }
+  }
+});
+
 const {
   beginTwitterAuth,
   beginTwitterAuthPublic,
@@ -15,7 +34,10 @@ const {
   verifyTwitterUsername,  // Add this new function
   connectTwitterDirect,    // Add this new function
   requestTwitterVerification, // Add this new function
-  verifyTwitterAccount       // Add this new function
+  verifyTwitterAccount,       // Add this new function
+  postTweet,        // Add this new function
+  scheduleTweet,    // Add this new function
+  getRecentTweets   // Add this new function
 } = require('../controllers/twitterController');
 
 const router = express.Router();
@@ -94,5 +116,20 @@ router.post('/confirm', protect, confirmTwitterConnection);
 // @desc    Disconnect Twitter account
 // @access  Private
 router.post('/disconnect', protect, disconnectTwitter);
+
+// @route   POST /api/twitter/post
+// @desc    Post a tweet
+// @access  Private
+router.post('/post', protect, upload.single('image'), postTweet);
+
+// @route   POST /api/twitter/schedule
+// @desc    Schedule a tweet
+// @access  Private
+router.post('/schedule', protect, upload.single('image'), scheduleTweet);
+
+// @route   GET /api/twitter/recent
+// @desc    Get recent tweets
+// @access  Private
+router.get('/recent', protect, getRecentTweets);
 
 module.exports = router;

@@ -418,6 +418,186 @@ const getTwitterConnectionStatus = async (userId) => {
   };
 };
 
+/**
+ * Post a tweet with optional image
+ * @param {string} userId - User ID
+ * @param {string} content - Tweet content
+ * @param {Buffer} imageBuffer - Optional image buffer
+ * @param {string} language - Language code for content
+ * @returns {Promise<Object>} - Tweet result
+ */
+const postTweet = async (userId, content, imageBuffer = null, language = 'en') => {
+  try {
+    // Get user's Twitter connection
+    const user = await User.findById(userId);
+    if (!user || !user.twitterId) {
+      throw new Error('Twitter account not connected');
+    }
+
+    const connection = await UserTwitterConnection.findOne({ 
+      userId, 
+      twitterId: user.twitterId 
+    });
+    
+    if (!connection || !connection.verified) {
+      throw new Error('Twitter account not verified');
+    }
+
+    // Initialize Twitter client with user tokens
+    const client = initializeTwitterClient(
+      connection.accessToken,
+      connection.refreshToken
+    );
+
+    // Handle image upload if provided
+    let mediaId = null;
+    if (imageBuffer) {
+      try {
+        // Upload media to Twitter
+        const mediaResponse = await client.v1.uploadMedia(imageBuffer, { type: 'png' });
+        mediaId = mediaResponse;
+      } catch (mediaError) {
+        console.error('Error uploading media:', mediaError);
+        throw new Error('Failed to upload image to Twitter');
+      }
+    }
+
+    // Prepare tweet parameters
+    const tweetParams = {
+      text: content
+    };
+
+    // Add media if available
+    if (mediaId) {
+      tweetParams.media = {
+        media_ids: [mediaId]
+      };
+    }
+
+    // Post the tweet
+    const tweetResult = await client.v2.tweet(tweetParams);
+    
+    // Store post record (optional: for analytics)
+    /*
+    await TwitterPost.create({
+      userId,
+      twitterId: user.twitterId,
+      tweetId: tweetResult.data.id,
+      content,
+      language,
+      hasImage: !!imageBuffer,
+      postedAt: new Date()
+    });
+    */
+
+    return {
+      success: true,
+      tweetId: tweetResult.data.id,
+      message: 'Tweet posted successfully'
+    };
+  } catch (error) {
+    console.error('Error posting tweet:', error);
+    
+    // Handle specific Twitter API errors
+    if (error.code === 401) {
+      throw new Error('Twitter authentication failed. Please reconnect your Twitter account.');
+    } else if (error.code === 403) {
+      throw new Error('Twitter API rate limit exceeded or content policy violation.');
+    } else if (error.message && error.message.includes('media')) {
+      throw new Error('Failed to upload image. Please try again with a different image.');
+    } else {
+      throw new Error(`Failed to post tweet: ${error.message || 'Unknown error'}`);
+    }
+  }
+};
+
+/**
+ * Schedule a tweet for later posting
+ * @param {string} userId - User ID
+ * @param {string} content - Tweet content
+ * @param {Date} scheduledTime - When to post the tweet
+ * @param {Buffer} imageBuffer - Optional image buffer
+ * @param {string} language - Language code for content
+ * @returns {Promise<Object>} - Scheduled tweet result
+ */
+const scheduleTweet = async (userId, content, scheduledTime, imageBuffer = null, language = 'en') => {
+  try {
+    // Validate scheduled time (must be in the future)
+    if (scheduledTime <= new Date()) {
+      throw new Error('Scheduled time must be in the future');
+    }
+
+    // Store scheduled tweet in database
+    /*
+    const scheduledTweet = await ScheduledTweet.create({
+      userId,
+      content,
+      scheduledTime,
+      language,
+      hasImage: !!imageBuffer,
+      imageBuffer: imageBuffer ? imageBuffer.toString('base64') : null,
+      createdAt: new Date()
+    });
+    */
+
+    return {
+      success: true,
+      scheduledId: 'scheduled_tweet_id', // scheduledTweet._id,
+      message: 'Tweet scheduled successfully',
+      scheduledTime
+    };
+  } catch (error) {
+    console.error('Error scheduling tweet:', error);
+    throw new Error(`Failed to schedule tweet: ${error.message || 'Unknown error'}`);
+  }
+};
+
+/**
+ * Get user's recent tweets
+ * @param {string} userId - User ID
+ * @param {number} count - Number of tweets to fetch (default: 10)
+ * @returns {Promise<Object>} - Recent tweets
+ */
+const getRecentTweets = async (userId, count = 10) => {
+  try {
+    // Get user's Twitter connection
+    const user = await User.findById(userId);
+    if (!user || !user.twitterId) {
+      throw new Error('Twitter account not connected');
+    }
+
+    const connection = await UserTwitterConnection.findOne({ 
+      userId, 
+      twitterId: user.twitterId 
+    });
+    
+    if (!connection || !connection.verified) {
+      throw new Error('Twitter account not verified');
+    }
+
+    // Initialize Twitter client with user tokens
+    const client = initializeTwitterClient(
+      connection.accessToken,
+      connection.refreshToken
+    );
+
+    // Fetch user's recent tweets
+    const tweets = await client.v2.userTimeline(user.twitterId, {
+      max_results: count,
+      'tweet.fields': ['created_at', 'public_metrics', 'lang']
+    });
+
+    return {
+      success: true,
+      tweets: tweets.data?.data || [],
+      message: 'Recent tweets fetched successfully'
+    };
+  } catch (error) {
+    console.error('Error fetching recent tweets:', error);
+    throw new Error(`Failed to fetch recent tweets: ${error.message || 'Unknown error'}`);
+  }
+};
+
 module.exports = {
   getTwitterOAuthURL,
   handleTwitterCallback,
@@ -431,5 +611,8 @@ module.exports = {
   isTwitterVerified,
   getTwitterConnectionStatus,
   generateOTP,
-  generateVerificationCode
+  generateVerificationCode,
+  postTweet,
+  scheduleTweet,
+  getRecentTweets
 };

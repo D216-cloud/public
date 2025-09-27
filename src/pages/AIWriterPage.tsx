@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { DashboardHeader } from "@/components/dashboard-header"
+import { toast, useToast } from "@/hooks/use-toast" // Add this import
 import {
   Sparkles,
   Send,
@@ -308,6 +309,7 @@ const generatedSamples = [
 
 export default function AIWriterPage() {
   const isMobile = useIsMobile()
+  const { toast } = useToast()
   const [activeTab, setActiveTab] = useState("generate")
   const [topic, setTopic] = useState("")
   const [selectedTemplate, setSelectedTemplate] = useState("")
@@ -317,6 +319,7 @@ export default function AIWriterPage() {
   const [selectedStyle, setSelectedStyle] = useState("")
   const [customPrompt, setCustomPrompt] = useState("")
   const [generatedContent, setGeneratedContent] = useState("")
+  const [showContent, setShowContent] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [savedDrafts, setSavedDrafts] = useState<any[]>([])
   const [uploadedMedia, setUploadedMedia] = useState<any[]>([])
@@ -328,16 +331,32 @@ export default function AIWriterPage() {
   const [showAnalyzer, setShowAnalyzer] = useState(false);
   const [contentAnalysis, setContentAnalysis] = useState<any>(null);
   const [isPosting, setIsPosting] = useState(false);
+  const [isScheduled, setIsScheduled] = useState(false);
+  const [scheduledTime, setScheduledTime] = useState("");
+  const [selectedLanguage, setSelectedLanguage] = useState("en");
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [postSuccess, setPostSuccess] = useState(false);
+  const [postError, setPostError] = useState("");
   const [editingDraftId, setEditingDraftId] = useState<number | null>(null);
   const [editingContent, setEditingContent] = useState("");
-  const [selectedLanguage, setSelectedLanguage] = useState("en"); // New state for language selection
-  const [contentPurpose, setContentPurpose] = useState(""); // New state for content purpose
-  const [brandVoice, setBrandVoice] = useState(""); // New state for brand voice
-  const [showContent, setShowContent] = useState(false); // New state for animation
+  const [contentPurpose, setContentPurpose] = useState("");
+  const [brandVoice, setBrandVoice] = useState("");
+
+  // Function to get current date and time for scheduling
+  const getCurrentDateTime = () => {
+    const now = new Date()
+    const date = now.toISOString().split("T")[0]
+    const time = now.toTimeString().slice(0, 5)
+    return { date, time }
+  }
+
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
+
+  // Get current date and time for scheduling
+  const { date: currentDate, time: currentTime } = getCurrentDateTime();
 
   // Improved: Load saved drafts from localStorage on mount
   useEffect(() => {
@@ -382,7 +401,8 @@ export default function AIWriterPage() {
           tone: selectedTone,
           length: selectedLength,
           audience: selectedAudience,
-          style: selectedStyle
+          style: selectedStyle,
+          language: selectedLanguage
         })
       });
       
@@ -551,13 +571,6 @@ export default function AIWriterPage() {
     }, 1500)
   }
 
-  const getCurrentDateTime = () => {
-    const now = new Date()
-    const date = now.toISOString().split("T")[0]
-    const time = now.toTimeString().slice(0, 5)
-    return { date, time }
-  }
-
   const analyzeGeneratedContent = () => {
     if (generatedContent) {
       const analysis = analyzeContent(generatedContent);
@@ -683,7 +696,177 @@ export default function AIWriterPage() {
     setEditingDraftId(null);
   };
 
-  const { date: currentDate, time: currentTime } = getCurrentDateTime()
+  // Add function to handle image selection
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Image too large",
+          description: "Please select an image smaller than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setSelectedImage(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Add function to remove selected image
+  const removeImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    const fileInput = document.getElementById("image-upload") as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = "";
+    }
+  };
+
+  // Add function to post tweet
+  const postTweet = async () => {
+    if (!generatedContent.trim()) {
+      toast({
+        title: "No content to post",
+        description: "Please generate content before posting",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsPosting(true);
+    setPostError("");
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Not authenticated");
+      }
+
+      const formData = new FormData();
+      formData.append("content", generatedContent);
+      formData.append("language", selectedLanguage);
+      
+      if (selectedImage) {
+        formData.append("image", selectedImage);
+      }
+
+      const response = await fetch(`${API_URL}/api/posts/post-to-twitter`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setPostSuccess(true);
+        toast({
+          title: "Success!",
+          description: "Your tweet has been posted successfully",
+        });
+        
+        // Reset form
+        setGeneratedContent("");
+        removeImage();
+      } else {
+        throw new Error(result.message || "Failed to post tweet");
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to post tweet";
+      setPostError(errorMessage);
+      toast({
+        title: "Posting failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsPosting(false);
+    }
+  };
+
+  // Add function to schedule tweet
+  const scheduleTweet = async () => {
+    if (!generatedContent.trim()) {
+      toast({
+        title: "No content to schedule",
+        description: "Please generate content before scheduling",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!scheduledTime) {
+      toast({
+        title: "No schedule time",
+        description: "Please select a time to schedule your tweet",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsScheduled(true);
+    setPostError("");
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Not authenticated");
+      }
+
+      const formData = new FormData();
+      formData.append("content", generatedContent);
+      formData.append("language", selectedLanguage);
+      formData.append("scheduledTime", scheduledTime);
+      
+      if (selectedImage) {
+        formData.append("image", selectedImage);
+      }
+
+      const response = await fetch(`${API_URL}/api/twitter/schedule`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        toast({
+          title: "Scheduled!",
+          description: "Your tweet has been scheduled successfully",
+        });
+        
+        // Reset form
+        setGeneratedContent("");
+        setScheduledTime("");
+        removeImage();
+      } else {
+        throw new Error(result.message || "Failed to schedule tweet");
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to schedule tweet";
+      setPostError(errorMessage);
+      toast({
+        title: "Scheduling failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsScheduled(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 pt-28">
@@ -705,27 +888,27 @@ export default function AIWriterPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-12 sm:h-14 bg-white/90 backdrop-blur-lg shadow-xl border border-gray-200 rounded-xl sm:rounded-2xl p-1">
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto sm:h-14 bg-white/90 backdrop-blur-lg shadow-xl border border-gray-200 rounded-xl sm:rounded-2xl p-1 gap-1 sm:gap-0">
             <TabsTrigger
               value="generate"
-              className="text-xs sm:text-sm h-10 sm:h-12 rounded-lg sm:rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
+              className="text-sm sm:text-sm h-12 sm:h-12 rounded-lg sm:rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 flex items-center justify-center sm:justify-start px-3 sm:px-4"
             >
-              <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" />
-              Generate Content
+              <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-2 flex-shrink-0" />
+              <span className="truncate">Generate Content</span>
             </TabsTrigger>
             <TabsTrigger
               value="templates"
-              className="text-xs sm:text-sm h-10 sm:h-12 rounded-lg sm:rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
+              className="text-sm sm:text-sm h-12 sm:h-12 rounded-lg sm:rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 flex items-center justify-center sm:justify-start px-3 sm:px-4"
             >
-              <Wand2 className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" />
-              Content Templates
+              <Wand2 className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-2 flex-shrink-0" />
+              <span className="truncate">Content Templates</span>
             </TabsTrigger>
             <TabsTrigger
               value="drafts"
-              className="text-xs sm:text-sm h-10 sm:h-12 rounded-lg sm:rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
+              className="text-sm sm:text-sm h-12 sm:h-12 rounded-lg sm:rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 flex items-center justify-center sm:justify-start px-3 sm:px-4"
             >
-              <SaveIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" />
-              Saved Drafts
+              <SaveIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-2 flex-shrink-0" />
+              <span className="truncate">Saved Drafts</span>
             </TabsTrigger>
           </TabsList>
 

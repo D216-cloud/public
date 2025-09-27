@@ -885,6 +885,153 @@ const verifyTwitterAccount = async (req, res) => {
   }
 };
 
+/**
+ * Post a tweet
+ * @route POST /api/twitter/post
+ * @access Private
+ */
+const postTweet = async (req, res) => {
+  try {
+    const { content, language = 'en' } = req.body;
+    const image = req.file; // Multer will handle image upload
+
+    if (!content) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tweet content is required'
+      });
+    }
+
+    // Validate content length (Twitter limit is 280 characters)
+    if (content.length > 280) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tweet content exceeds 280 character limit'
+      });
+    }
+
+    // Convert image buffer if provided
+    let imageBuffer = null;
+    if (image) {
+      imageBuffer = image.buffer;
+    }
+
+    // Post the tweet
+    const result = await twitterService.postTweet(req.user.id, content, imageBuffer, language);
+    
+    res.json({
+      success: true,
+      ...result
+    });
+  } catch (error) {
+    console.error('Post tweet error:', error);
+    
+    // Provide more specific error messages
+    let errorMessage = error.message || 'Failed to post tweet';
+    
+    if (errorMessage.includes('Twitter authentication failed')) {
+      errorMessage = 'Twitter authentication failed. Please reconnect your Twitter account.';
+    } else if (errorMessage.includes('rate limit')) {
+      errorMessage = 'Twitter API rate limit exceeded. Please try again later.';
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: errorMessage
+    });
+  }
+};
+
+/**
+ * Schedule a tweet
+ * @route POST /api/twitter/schedule
+ * @access Private
+ */
+const scheduleTweet = async (req, res) => {
+  try {
+    const { content, scheduledTime, language = 'en' } = req.body;
+    const image = req.file; // Multer will handle image upload
+
+    if (!content || !scheduledTime) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tweet content and scheduled time are required'
+      });
+    }
+
+    // Validate content length
+    if (content.length > 280) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tweet content exceeds 280 character limit'
+      });
+    }
+
+    // Validate scheduled time
+    const scheduledDate = new Date(scheduledTime);
+    if (isNaN(scheduledDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid scheduled time format'
+      });
+    }
+
+    // Convert image buffer if provided
+    let imageBuffer = null;
+    if (image) {
+      imageBuffer = image.buffer;
+    }
+
+    // Schedule the tweet
+    const result = await twitterService.scheduleTweet(req.user.id, content, scheduledDate, imageBuffer, language);
+    
+    res.json({
+      success: true,
+      ...result
+    });
+  } catch (error) {
+    console.error('Schedule tweet error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to schedule tweet'
+    });
+  }
+};
+
+/**
+ * Get recent tweets
+ * @route GET /api/twitter/recent
+ * @access Private
+ */
+const getRecentTweets = async (req, res) => {
+  try {
+    const { count = 10 } = req.query;
+    
+    // Validate count parameter
+    const tweetCount = parseInt(count);
+    if (isNaN(tweetCount) || tweetCount < 1 || tweetCount > 100) {
+      return res.status(400).json({
+        success: false,
+        message: 'Count must be a number between 1 and 100'
+      });
+    }
+
+    // Get recent tweets
+    const result = await twitterService.getRecentTweets(req.user.id, tweetCount);
+    
+    res.json({
+      success: true,
+      ...result
+    });
+  } catch (error) {
+    console.error('Get recent tweets error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch recent tweets'
+    });
+  }
+};
+
 module.exports = {
   beginTwitterAuth,
   beginTwitterAuthPublic,
@@ -900,5 +1047,8 @@ module.exports = {
   verifyTwitterUsername: verifyTwitterUsernameController,
   connectTwitterDirect,
   requestTwitterVerification,
-  verifyTwitterAccount
+  verifyTwitterAccount,
+  postTweet,
+  scheduleTweet,
+  getRecentTweets
 };

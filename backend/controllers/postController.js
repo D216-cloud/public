@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Post = require('../models/Post');
 const GeneratedContent = require('../models/GeneratedContent');
 const googleAIService = require('../services/googleAIService');
+const { TwitterApi } = require('twitter-api-v2');
 
 // Content templates for fallback generation
 const contentTemplates = {
@@ -37,9 +38,49 @@ const contentTemplates = {
   ]
 };
 
+// Function to post content to Twitter with optional image
+const postToTwitter = async (content, userId, imageBuffer = null) => {
+  try {
+    // Get user's Twitter connection
+    const user = await User.findById(userId);
+    if (!user || !user.twitterId) {
+      throw new Error('Twitter account not connected');
+    }
+
+    // For demo purposes, we'll simulate posting to Twitter
+    // In a real implementation, you would use the Twitter API:
+    /*
+    const client = new TwitterApi({
+      appKey: process.env.TWITTER_API_KEY,
+      appSecret: process.env.TWITTER_API_SECRET,
+      accessToken: user.twitterAccessToken,
+      accessSecret: user.twitterAccessSecret,
+    });
+
+    const tweetParams = { status: content };
+    
+    if (imageBuffer) {
+      // Upload image and attach to tweet
+      const mediaId = await client.v1.uploadMedia(imageBuffer);
+      tweetParams.media_ids = [mediaId];
+    }
+    
+    const tweet = await client.v1.tweet(content, tweetParams);
+    return tweet;
+    */
+
+    // Simulate successful posting
+    console.log(`Posted to Twitter: ${content}`);
+    return { id: 'simulated_tweet_id', text: content };
+  } catch (error) {
+    console.error('Error posting to Twitter:', error);
+    throw error;
+  }
+};
+
 const postToX = async (req, res) => {
   try {
-    const { content, template, tone, length, audience, style, topic } = req.body;
+    const { content, template, tone, length, audience, style, topic, language = 'en' } = req.body;
     const userId = req.user._id;
 
     // Validate content
@@ -59,6 +100,9 @@ const postToX = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Post to Twitter
+    const twitterResponse = await postToTwitter(content, userId);
+
     // Create a post record in the database
     const post = new Post({
       userId: user._id,
@@ -69,20 +113,14 @@ const postToX = async (req, res) => {
       audience: audience,
       style: style,
       topic: topic,
+      language: language,
       platform: 'X',
       status: 'posted',
-      postedAt: new Date()
+      postedAt: new Date(),
+      externalId: twitterResponse.id
     });
 
     await post.save();
-
-    // In a real implementation, you would:
-    // 1. Check if user has connected their Twitter account
-    // 2. Use Twitter API to post the content
-    // 3. Update the post status based on the API response
-    
-    // For simulation, we'll just log the post
-    console.log(`Posted to X: ${content}`);
 
     res.status(200).json({
       message: 'Successfully posted to X',
@@ -90,6 +128,63 @@ const postToX = async (req, res) => {
     });
   } catch (error) {
     console.error('Error posting to X:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Post content to Twitter with optional image
+const postToTwitterWithMedia = async (req, res) => {
+  try {
+    const { content, language = 'en' } = req.body;
+    const userId = req.user._id;
+    const image = req.file; // Multer will handle image upload
+
+    // Validate content
+    if (!content || content.trim().length === 0) {
+      return res.status(400).json({ message: 'Content is required' });
+    }
+
+    // Check if content exceeds Twitter's character limit
+    if (content.length > 280) {
+      return res.status(400).json({ message: 'Content exceeds Twitter\'s 280 character limit' });
+    }
+
+    // Get user to check if they have connected their Twitter account
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Convert image buffer if provided
+    let imageBuffer = null;
+    if (image) {
+      imageBuffer = image.buffer;
+    }
+
+    // Post to Twitter with image
+    const twitterResponse = await postToTwitter(content, userId, imageBuffer);
+
+    // Create a post record in the database
+    const post = new Post({
+      userId: user._id,
+      content: content,
+      language: language,
+      platform: 'X',
+      status: 'posted',
+      hasImage: !!imageBuffer,
+      postedAt: new Date(),
+      externalId: twitterResponse.id
+    });
+
+    await post.save();
+
+    res.status(200).json({
+      message: 'Successfully posted to Twitter',
+      post: post
+    });
+  } catch (error) {
+    console.error('Error posting to Twitter:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
@@ -113,16 +208,195 @@ const getPostedContent = async (req, res) => {
 // Generate content using Google AI API
 const generateContent = async (req, res) => {
   try {
-    const { topic, template, tone, length, audience, style } = req.body;
+    const { topic, template, tone, length, audience, style, language = 'en' } = req.body;
     const userId = req.user._id;
     
-    // Create a prompt based on user selections
-    const prompt = `Generate a Twitter post${template ? ` using the ${template} template` : ''}${tone ? ` with a ${tone} tone` : ''}${length ? ` in a ${length} format` : ''}${audience ? ` for ${audience} audience` : ''}${topic ? ` about "${topic}"` : ''}. Keep it under 280 characters for Twitter.`;
+    // Create a detailed prompt based on user selections for better Twitter content
+    let prompt = `Generate an engaging Twitter post`;
+    
+    if (template) {
+      const templateDescriptions = {
+        'motivational': 'inspirational and motivational content that encourages followers',
+        'tips': 'helpful tips and advice for productivity or personal development',
+        'question': 'engaging questions that spark conversation and interaction',
+        'announcement': 'exciting announcements about new features, products, or updates',
+        'behind-scenes': 'authentic behind-the-scenes content showing company culture or work',
+        'industry-news': 'insightful commentary on industry trends and news'
+      };
+      prompt += ` in the style of ${templateDescriptions[template] || template}`;
+    }
+    
+    if (tone) {
+      const toneDescriptions = {
+        'professional': 'professional and business-like',
+        'casual': 'casual and conversational',
+        'humorous': 'funny and light-hearted',
+        'inspirational': 'uplifting and motivational',
+        'educational': 'informative and teaching',
+        'sarcastic': 'witty with a touch of sarcasm',
+        'enthusiastic': 'excited and energetic'
+      };
+      prompt += ` with a ${toneDescriptions[tone] || tone} tone`;
+    }
+    
+    if (length) {
+      const lengthDescriptions = {
+        'short': 'brief and concise (1-2 sentences)',
+        'medium': 'moderately detailed (2-3 sentences)',
+        'long': 'more comprehensive (3+ sentences)'
+      };
+      prompt += `, ${lengthDescriptions[length] || length}`;
+    }
+    
+    if (audience) {
+      const audienceDescriptions = {
+        'general': 'general audience',
+        'developers': 'software developers and tech professionals',
+        'entrepreneurs': 'business owners and entrepreneurs',
+        'students': 'students and young learners',
+        'professionals': 'working professionals'
+      };
+      prompt += ` targeted at ${audienceDescriptions[audience] || audience}`;
+    }
+    
+    if (style) {
+      const styleDescriptions = {
+        'concise': 'straightforward and to the point',
+        'detailed': 'thorough and comprehensive',
+        'storytelling': 'narrative and story-driven',
+        'list-based': 'organized in a list format'
+      };
+      prompt += ` in a ${styleDescriptions[style] || style} style`;
+    }
+    
+    if (topic) {
+      prompt += ` about "${topic}"`;
+    }
+    
+    prompt += `. Make it engaging for Twitter with emojis, relevant hashtags, and under 280 characters. Focus on creating content that encourages likes, retweets, and replies.`;
+    
+    // Add Twitter-specific best practices
+    prompt += ` Include 1-3 relevant hashtags. Use emojis strategically. Make it conversational and engaging.`;
+    
+    if (template === 'question') {
+      prompt += ` End with a question to encourage replies.`;
+    } else if (template === 'announcement') {
+      prompt += ` Include a call-to-action.`;
+    } else if (template === 'tips') {
+      prompt += ` Start with a number or bullet point style.`;
+    }
     
     // Try to generate content with Google AI API
     let generatedContent;
     try {
-      generatedContent = await googleAIService.generateContent(prompt);
+      generatedContent = await googleAIService.generateContent(prompt, language);
+      console.log('Successfully generated content with Gemini API');
+    } catch (apiError) {
+      console.error('Gemini API failed, using fallback templates:', apiError.message);
+      
+      // Enhanced fallback logic based on template
+      const templateKey = template ? template.toLowerCase().replace(/\s+/g, '-') : 'motivational';
+      const contentOptions = contentTemplates[templateKey] || contentTemplates.motivational;
+      generatedContent = contentOptions[Math.floor(Math.random() * contentOptions.length)];
+      
+      console.log('Using fallback content for template:', templateKey);
+    }
+    
+    // Extract hashtags and mentions for storage
+    const hashtags = (generatedContent.match(/#\w+/g) || []).map(tag => tag.toLowerCase());
+    const mentions = (generatedContent.match(/@\w+/g) || []).map(mention => mention.toLowerCase());
+    
+    // Create a record in the database for the generated content
+    const generatedContentRecord = new GeneratedContent({
+      userId: userId,
+      content: generatedContent,
+      template: template,
+      tone: tone,
+      length: length,
+      audience: audience,
+      style: style,
+      topic: topic,
+      language: language,
+      prompt: prompt,
+      platform: 'X',
+      characterCount: generatedContent.length,
+      wordCount: generatedContent.trim().split(/\s+/).length,
+      hashtags: hashtags,
+      mentions: mentions,
+      engagementScore: Math.floor(Math.random() * 40) + 60 // Random score between 60-100 for demo
+    });
+    
+    await generatedContentRecord.save();
+    
+    res.status(200).json({
+      content: generatedContent,
+      id: generatedContentRecord._id
+    });
+  } catch (error) {
+    console.error('Error generating content:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Generate content using Google AI API based on keyword and options
+const generatePostByKeyword = async (req, res) => {
+  try {
+    const { 
+      keyword, 
+      language = 'en', 
+      tone, 
+      template, 
+      length, 
+      audience, 
+      style,
+      purpose,
+      brandVoice
+    } = req.body;
+    
+    const userId = req.user._id;
+    
+    // Validate keyword
+    if (!keyword || keyword.trim().length === 0) {
+      return res.status(400).json({ message: 'Keyword is required' });
+    }
+    
+    // Create a comprehensive prompt based on all options
+    let prompt = `Generate a Twitter post`;
+    
+    if (template) {
+      prompt += ` using the ${template} template`;
+    }
+    
+    if (tone) {
+      prompt += ` with a ${tone} tone`;
+    }
+    
+    if (length) {
+      prompt += ` in a ${length} format`;
+    }
+    
+    if (audience) {
+      prompt += ` for ${audience} audience`;
+    }
+    
+    if (style) {
+      prompt += ` using ${style} style`;
+    }
+    
+    if (purpose) {
+      prompt += ` for ${purpose} purpose`;
+    }
+    
+    if (brandVoice) {
+      prompt += ` with ${brandVoice} brand voice`;
+    }
+    
+    prompt += ` about "${keyword}". Keep it under 280 characters for Twitter.`;
+    
+    // Try to generate content with Google AI API
+    let generatedContent;
+    try {
+      generatedContent = await googleAIService.generateContent(prompt, language);
     } catch (apiError) {
       // Fallback to predefined templates if API fails
       console.error('Google AI API failed, using fallback:', apiError);
@@ -147,7 +421,10 @@ const generateContent = async (req, res) => {
       length: length,
       audience: audience,
       style: style,
-      topic: topic,
+      purpose: purpose,
+      brandVoice: brandVoice,
+      topic: keyword,
+      language: language,
       prompt: prompt,
       platform: 'X',
       characterCount: generatedContent.length,
@@ -164,7 +441,7 @@ const generateContent = async (req, res) => {
       id: generatedContentRecord._id
     });
   } catch (error) {
-    console.error('Error generating content:', error);
+    console.error('Error generating content by keyword:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
@@ -190,7 +467,9 @@ const getGeneratedContentHistory = async (req, res) => {
 
 module.exports = {
   postToX,
+  postToTwitterWithMedia,
   getPostedContent,
   generateContent,
+  generatePostByKeyword,
   getGeneratedContentHistory
 };
