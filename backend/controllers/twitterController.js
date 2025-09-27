@@ -2,7 +2,7 @@ const twitterService = require('../services/twitterService');
 const UserTwitterConnection = require('../models/UserTwitterConnections');
 const User = require('../models/User');
 const crypto = require('crypto');
-const { verifyTwitterUsername } = require('../utils/twitterAuth');
+const { verifyTwitterUsername } = require('../services/twitterVerificationService');
 
 /**
  * Twitter Controller
@@ -265,7 +265,7 @@ const sendOTP = async (req, res) => {
     let errorMessage = error.message || 'Failed to send OTP';
     
     if (errorMessage.includes('Email authentication failed')) {
-      errorMessage = 'Email configuration error. Please contact support.';
+      errorMessage = 'Email authentication failed. Please ensure you are using an App Password if you have 2-Factor Authentication enabled. Check your EMAIL_USER and EMAIL_PASS in your .env file.';
     } else if (errorMessage.includes('Failed to send verification email')) {
       errorMessage = 'Unable to send verification email. Please check your email address and try again.';
     }
@@ -545,39 +545,51 @@ const verifyTwitterUsernameController = async (req, res) => {
     }
 
     try {
-      // Check if user exists using our utility function
-      const user = await verifyTwitterUsername(username);
+      // Check if user exists using our new verification service
+      const result = await verifyTwitterUsername(username);
       
-      if (user.data) {
-        return res.json({
-          success: true,
-          message: 'Username verified successfully',
-          userId: user.data.id
-        });
+      if (result.success) {
+        if (result.rateLimited) {
+          return res.status(429).json({
+            success: false,
+            message: result.message
+          });
+        }
+        
+        if (result.data) {
+          return res.json({
+            success: true,
+            message: 'Username verified successfully',
+            userId: result.data.id,
+            cached: result.cached
+          });
+        } else {
+          return res.status(404).json({
+            success: false,
+            message: 'Twitter username not found'
+          });
+        }
       } else {
+        if (result.rateLimited) {
+          return res.status(429).json({
+            success: false,
+            message: result.message
+          });
+        }
+        
         return res.status(404).json({
           success: false,
-          message: 'Twitter username not found'
+          message: result.message || 'Twitter username not found'
         });
       }
     } catch (twitterError) {
       console.error('Twitter API error:', twitterError);
       
       // Handle specific Twitter API errors
-      if (twitterError.code === 401) {
+      if (twitterError.message && twitterError.message.includes('authentication failed')) {
         return res.status(401).json({
           success: false,
           message: 'Twitter API authentication failed. Please contact support.'
-        });
-      } else if (twitterError.code === 404) {
-        return res.status(404).json({
-          success: false,
-          message: 'Twitter username not found'
-        });
-      } else if (twitterError.code === 429) {
-        return res.status(429).json({
-          success: false,
-          message: 'Twitter API rate limit exceeded. Please try again later.'
         });
       }
       
@@ -654,6 +666,225 @@ const connectTwitterDirect = async (req, res) => {
   }
 };
 
+/**
+ * Request Twitter verification code
+ * This sends a verification code to the user's email for Twitter account verification
+ * @route POST /api/twitter/request-verification
+ * @access Private
+ */
+const requestTwitterVerification = async (req, res) => {
+  try {
+    const { username, email } = req.body;
+    
+    if (!username) {
+      return res.status(400).json({
+        success: false,
+        message: 'Twitter username is required'
+      });
+    }
+    
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email address is required'
+      });
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid email format'
+      });
+    }
+    
+    // First verify the Twitter username exists
+    const verificationResult = await verifyTwitterUsername(username);
+    
+    if (!verificationResult.success) {
+      if (verificationResult.rateLimited) {
+        return res.status(429).json({
+          success: false,
+          message: 'Too many verification requests. Please try again later.'
+        });
+      }
+      
+      return res.status(404).json({
+        success: false,
+        message: 'Twitter username not found. Please check the username and try again.'
+      });
+    }
+    
+    // Generate a verification code
+    const crypto = require('crypto');
+    const verificationCode = crypto.randomInt(100000, 999999).toString();
+    
+    // Store the verification code temporarily (in production, use Redis or database)
+    global.tempVerificationCodes = global.tempVerificationCodes || {};
+    global.tempVerificationCodes[email] = {
+      code: verificationCode,
+      username: username,
+      userId: req.user.id,
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 15 * 60 * 1000 // 15 minutes
+    };
+    
+    // Send verification email
+    const { sendVerificationCodeEmail } = require('../utils/sendMail');
+    
+    try {
+      const user = await User.findById(req.user.id);
+      const result = await sendVerificationCodeEmail(
+        email,
+        user.name || 'User',
+        verificationCode,
+        username
+      );
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to send email');
+      }
+      
+      res.json({
+        success: true,
+        message: 'Verification code sent to your email',
+        expiresAt: global.tempVerificationCodes[email].expiresAt
+      });
+    } catch (emailError) {
+      console.error('Error sending verification email:', emailError);
+      
+      // Clean up the verification code since email failed
+      delete global.tempVerificationCodes[email];
+      
+      // Handle specific email errors
+      if (emailError.message && emailError.message.includes('Invalid login')) {
+        return res.status(500).json({
+          success: false,
+          message: 'Email authentication failed. Please ensure you are using an App Password if you have 2-Factor Authentication enabled. Check your EMAIL_USER and EMAIL_PASS in your .env file.'
+        });
+      }
+      
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to send verification email. Please try again later.'
+      });
+    }
+  } catch (error) {
+    console.error('Request Twitter verification error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to request verification. Please try again later.'
+    });
+  }
+};
+
+/**
+ * Verify Twitter account with code
+ * This verifies the user owns the Twitter account by checking the code sent to their email
+ * @route POST /api/twitter/verify-account
+ * @access Private
+ */
+const verifyTwitterAccount = async (req, res) => {
+  try {
+    const { username, email, code } = req.body;
+    
+    if (!username || !email || !code) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username, email, and verification code are required'
+      });
+    }
+    
+    // Check if verification code exists and is valid
+    if (!global.tempVerificationCodes || !global.tempVerificationCodes[email]) {
+      return res.status(400).json({
+        success: false,
+        message: 'No verification code found for this email. Please request a new code.'
+      });
+    }
+    
+    const verificationData = global.tempVerificationCodes[email];
+    
+    // Check if code has expired
+    if (Date.now() > verificationData.expiresAt) {
+      delete global.tempVerificationCodes[email];
+      return res.status(400).json({
+        success: false,
+        message: 'Verification code has expired. Please request a new code.'
+      });
+    }
+    
+    // Check if code matches
+    if (verificationData.code !== code) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid verification code. Please check the code and try again.'
+      });
+    }
+    
+    // Check if username matches
+    if (verificationData.username !== username) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username does not match the one used for verification.'
+      });
+    }
+    
+    // Check if user ID matches
+    if (verificationData.userId !== req.user.id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Verification code was requested by a different user.'
+      });
+    }
+    
+    // Clean up the verification code
+    delete global.tempVerificationCodes[email];
+    
+    // Connect the Twitter account
+    const UserTwitterConnection = require('../models/UserTwitterConnections');
+    
+    // Update user document
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      {
+        twitterConnected: true,
+        twitterUsername: username,
+        twitterId: `verified_${Date.now()}` // Temporary ID for verified accounts
+      },
+      { new: true }
+    );
+
+    // Create connection record
+    await UserTwitterConnection.findOneAndUpdate(
+      { userId: req.user.id },
+      {
+        userId: req.user.id,
+        twitterId: `verified_${Date.now()}`,
+        screenName: username,
+        verified: true, // Verified through email
+        verifiedBy: 'email',
+        verifiedAt: new Date(),
+        connectedAt: new Date()
+      },
+      { upsert: true, new: true }
+    );
+
+    res.json({
+      success: true,
+      message: 'Twitter account verified and connected successfully',
+      username: username
+    });
+  } catch (error) {
+    console.error('Verify Twitter account error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to verify Twitter account. Please try again later.'
+    });
+  }
+};
+
 module.exports = {
   beginTwitterAuth,
   beginTwitterAuthPublic,
@@ -667,5 +898,7 @@ module.exports = {
   confirmTwitterConnection,
   disconnectTwitter,
   verifyTwitterUsername: verifyTwitterUsernameController,
-  connectTwitterDirect
+  connectTwitterDirect,
+  requestTwitterVerification,
+  verifyTwitterAccount
 };

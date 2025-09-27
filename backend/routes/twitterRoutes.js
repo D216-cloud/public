@@ -2,6 +2,7 @@ const express = require('express');
 const { protect } = require('../middleware/auth');
 const {
   beginTwitterAuth,
+  beginTwitterAuthPublic,
   handleTwitterCallback,
   sendOTP,
   verifyOTP,
@@ -13,7 +14,8 @@ const {
   disconnectTwitter,
   verifyTwitterUsername,  // Add this new function
   connectTwitterDirect,    // Add this new function
-  beginTwitterAuthPublic   // Add this new public function
+  requestTwitterVerification, // Add this new function
+  verifyTwitterAccount       // Add this new function
 } = require('../controllers/twitterController');
 
 const router = express.Router();
@@ -42,6 +44,16 @@ router.post('/verify-username', protect, verifyTwitterUsername);
 // @desc    Connect Twitter account directly (without OAuth)
 // @access  Private
 router.post('/connect-direct', protect, connectTwitterDirect);
+
+// @route   POST /api/twitter/request-verification
+// @desc    Request verification code for Twitter account
+// @access  Private
+router.post('/request-verification', protect, requestTwitterVerification);
+
+// @route   POST /api/twitter/verify-account
+// @desc    Verify Twitter account with code
+// @access  Private
+router.post('/verify-account', protect, verifyTwitterAccount);
 
 // @route   POST /api/twitter/send-otp
 // @desc    Send OTP to email for verification

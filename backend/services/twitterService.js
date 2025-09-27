@@ -218,7 +218,17 @@ const sendOTPViaEmail = async (email, otp, userId) => {
     return true;
   } catch (error) {
     console.error('Error sending OTP email:', error);
-    return false;
+    
+    // Provide more specific error messages for common issues
+    if (error.code === 'EAUTH' || (error.message && error.message.includes('Invalid login'))) {
+      throw new Error('Email authentication failed. Please ensure you are using an App Password if you have 2-Factor Authentication enabled.');
+    } else if (error.code === 'EENVELOPE') {
+      throw new Error('Invalid email address. Please check the recipient email address.');
+    } else if (error.code === 'ECONNECTION') {
+      throw new Error('Unable to connect to email server. Please check your internet connection.');
+    } else {
+      throw new Error(`Failed to send verification email: ${error.message}`);
+    }
   }
 };
 
@@ -247,7 +257,7 @@ const generateAndSendOTP = async (userId, twitterId, email) => {
   const emailSent = await sendOTPViaEmail(email, otp, userId);
   
   if (!emailSent) {
-    throw new Error('Failed to send OTP email');
+    throw new Error('Failed to send OTP email. Please check your email configuration.');
   }
   
   return { otp, otpExpiry };

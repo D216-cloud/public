@@ -77,6 +77,7 @@ export default function SettingsPage() {
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isVerifyingCode, setIsVerifyingCode] = useState(false);
   const [showEmailVerification, setShowEmailVerification] = useState(false);
+  const [isRequestingVerification, setIsRequestingVerification] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState({
@@ -343,15 +344,24 @@ export default function SettingsPage() {
     }
   };
 
-  // Send verification code to email
-  const handleSendVerificationCode = async () => {
+  // Request verification code for Twitter account
+  const handleRequestVerification = async () => {
+    if (!twitterUsername.trim()) {
+      toast({
+        title: "Username required",
+        description: "Please enter your Twitter username",
+        variant: "destructive"
+      })
+      return
+    }
+
     if (!verificationEmail.trim()) {
       toast({
         title: "Email required",
         description: "Please enter your email address",
-        variant: "destructive",
-      });
-      return;
+        variant: "destructive"
+      })
+      return
     }
 
     // Validate email format
@@ -360,83 +370,68 @@ export default function SettingsPage() {
       toast({
         title: "Invalid email",
         description: "Please enter a valid email address",
-        variant: "destructive",
-      });
-      return;
+        variant: "destructive"
+      })
+      return
     }
 
-    setIsSendingCode(true);
+    setIsRequestingVerification(true)
     try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
+      const token = localStorage.getItem('token')
+      if (!token) return
 
-      // Get Twitter ID from previous verification
-      const twitterResponse = await fetch(
-        `${API_URL}/api/twitter/verify-username`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ username: twitterUsername.trim() }),
-        },
-      );
-
-      const twitterResult = await twitterResponse.json();
-      if (!twitterResult.success) {
-        throw new Error("Failed to verify Twitter username");
-      }
-
-      // Send verification code to email
-      const response = await fetch(`${API_URL}/api/twitter/send-otp`, {
-        method: "POST",
+      // Request verification code
+      const response = await fetch(`${API_URL}/api/twitter/request-verification`, {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          twitterId: twitterResult.userId,
-          email: verificationEmail.trim(),
-        }),
-      });
+        body: JSON.stringify({ 
+          username: twitterUsername.trim(),
+          email: verificationEmail.trim()
+        })
+      })
 
-      const result = await response.json();
+      const result = await response.json()
 
       if (result.success) {
         toast({
           title: "Code sent",
-          description:
-            "Verification code sent to your email. Please check your inbox.",
-        });
+          description: "Verification code sent to your email. Please check your inbox."
+        })
+        // Show the verification code input
+        setIsSendingCode(true)
       } else {
         // Handle specific error cases
-        let errorMessage = result.message || "Failed to send verification code";
-
+        let errorMessage = result.message || "Failed to send verification code"
+        
         if (response.status === 400) {
-          errorMessage = "Invalid request. Please check your email address.";
+          errorMessage = "Invalid request. Please check your username and email."
+        } else if (response.status === 429) {
+          errorMessage = "Too many requests. Please try again later."
         } else if (response.status >= 500) {
-          errorMessage =
-            "Email service temporarily unavailable. Please try again later.";
+          errorMessage = "Service temporarily unavailable. Please try again later."
         }
-
-        throw new Error(errorMessage);
+        
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive"
+        })
       }
     } catch (error) {
-      console.error("Error sending verification code:", error);
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Please check your connection and try again";
+      console.error('Error requesting verification:', error)
+      const errorMessage = error instanceof Error ? error.message : "Please check your connection and try again"
       toast({
         title: "Error",
         description: errorMessage,
-        variant: "destructive",
-      });
+        variant: "destructive"
+      })
     } finally {
-      setIsSendingCode(false);
+      setIsRequestingVerification(false)
     }
-  };
+  }
 
   // Verify the code sent to email
   const handleVerifyCode = async () => {
@@ -444,97 +439,79 @@ export default function SettingsPage() {
       toast({
         title: "Code required",
         description: "Please enter the verification code",
-        variant: "destructive",
-      });
-      return;
+        variant: "destructive"
+      })
+      return
     }
 
-    setIsVerifyingCode(true);
+    if (!twitterUsername.trim() || !verificationEmail.trim()) {
+      toast({
+        title: "Missing information",
+        description: "Please provide username and email",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setIsVerifyingCode(true)
     try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-
-      // Get Twitter ID from previous verification
-      const twitterResponse = await fetch(
-        `${API_URL}/api/twitter/verify-username`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ username: twitterUsername.trim() }),
-        },
-      );
-
-      const twitterResult = await twitterResponse.json();
-      if (!twitterResult.success) {
-        throw new Error("Failed to verify Twitter username");
-      }
+      const token = localStorage.getItem('token')
+      if (!token) return
 
       // Verify the code
-      const response = await fetch(`${API_URL}/api/twitter/verify-otp`, {
-        method: "POST",
+      const response = await fetch(`${API_URL}/api/twitter/verify-account`, {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          twitterId: twitterResult.userId,
-          otp: verificationCode.trim(),
-        }),
-      });
+        body: JSON.stringify({ 
+          username: twitterUsername.trim(),
+          email: verificationEmail.trim(),
+          code: verificationCode.trim()
+        })
+      })
 
-      const result = await response.json();
+      const result = await response.json()
 
       if (result.success) {
-        // Connect Twitter account directly after successful verification
-        const connectResponse = await fetch(
-          `${API_URL}/api/twitter/connect-direct`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ username: twitterUsername.trim() }),
-          },
-        );
-
-        const connectResult = await connectResponse.json();
-
-        if (connectResult.success) {
-          await fetchTwitterStatus(); // Refresh status
-          setShowEmailVerification(false);
-          setVerificationEmail("");
-          setVerificationCode("");
-          toast({
-            title: "Connected Successfully",
-            description: `Connected to @${twitterUsername.trim()} and verified your email!`,
-          });
-        } else {
-          throw new Error(
-            connectResult.message || "Failed to connect Twitter account",
-          );
-        }
+        await fetchTwitterStatus() // Refresh status
+        setShowEmailVerification(false)
+        setVerificationEmail('')
+        setVerificationCode('')
+        setIsSendingCode(false)
+        toast({
+          title: "Verified Successfully",
+          description: `Connected to @${twitterUsername.trim()} and verified your email!`
+        })
       } else {
-        throw new Error(result.message || "Invalid verification code");
+        // Handle specific error cases
+        let errorMessage = result.message || "Invalid verification code"
+        
+        if (response.status === 400) {
+          errorMessage = result.message || "Invalid verification code"
+        } else if (response.status >= 500) {
+          errorMessage = "Service temporarily unavailable. Please try again later."
+        }
+        
+        toast({
+          title: "Verification failed",
+          description: errorMessage,
+          variant: "destructive"
+        })
       }
     } catch (error) {
-      console.error("Error verifying code:", error);
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Please check your connection and try again";
+      console.error('Error verifying code:', error)
+      const errorMessage = error instanceof Error ? error.message : "Please check your connection and try again"
       toast({
         title: "Error",
         description: errorMessage,
-        variant: "destructive",
-      });
+        variant: "destructive"
+      })
     } finally {
-      setIsVerifyingCode(false);
+      setIsVerifyingCode(false)
     }
-  };
+  }
 
   // Handle Twitter disconnection
   const handleDisconnectTwitter = async () => {
@@ -895,13 +872,8 @@ export default function SettingsPage() {
                       <div className="flex items-center space-x-4">
                         <div className="relative">
                           <Avatar className="h-20 w-20 sm:h-24 sm:w-24 ring-4 ring-white shadow-lg">
-                            <AvatarImage
-                              src={`https://unavatar.io/twitter/${twitterStatus.username}`}
-                              alt="Twitter"
-                            />
-                            <AvatarFallback className="bg-blue-500 text-white text-xl">
-                              @
-                            </AvatarFallback>
+                            <AvatarImage src={`https://unavatar.io/twitter/${twitterStatus.username}`} alt="Twitter" />
+                            <AvatarFallback className="bg-blue-500 text-white text-xl">@</AvatarFallback>
                           </Avatar>
                           <div className="absolute -bottom-1 -right-1 h-7 w-7 bg-green-500 rounded-full flex items-center justify-center border-2 border-white shadow-md">
                             <CheckCircle className="h-4 w-4 text-white" />
@@ -909,67 +881,45 @@ export default function SettingsPage() {
                         </div>
                         <div className="text-center sm:text-left">
                           <div className="flex items-center space-x-2 mb-1">
-                            <p className="font-bold text-xl text-gray-900">
-                              @{twitterStatus.username}
-                            </p>
+                            <p className="font-bold text-xl text-gray-900">@{twitterStatus.username}</p>
                             <Badge className="bg-green-100 text-green-800 border-green-200 px-2 py-1 rounded-full">
                               ✓ Verified
                             </Badge>
                           </div>
-                          <p className="text-base text-green-700 font-medium">
-                            Successfully connected & verified
-                          </p>
-                          <p className="text-sm text-gray-600 mt-1">
-                            Your AI can now create content for this account
-                          </p>
+                          <p className="text-base text-green-700 font-medium">Successfully connected & verified</p>
+                          <p className="text-sm text-gray-600 mt-1">Your AI can now create content for this account</p>
                         </div>
                       </div>
                       <div className="flex flex-col space-y-2">
-                        <Badge
-                          variant="default"
-                          className="text-xs px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md rounded-full"
-                        >
+                        <Badge variant="default" className="text-xs px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md rounded-full">
                           🚀 AI Ready
                         </Badge>
-                        <p className="text-xs text-center text-gray-500">
-                          Last verified today
-                        </p>
+                        <p className="text-xs text-center text-gray-500">Last verified today</p>
                       </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <Button
-                        variant="outline"
+                      <Button 
+                        variant="outline" 
                         className="h-12 bg-white border-blue-200 text-blue-600 hover:bg-blue-50 shadow-sm rounded-lg transition-all duration-300 font-medium"
                         onClick={() => {
                           // Re-verify functionality
-                          handleDisconnectTwitter();
+                          handleDisconnectTwitter()
                         }}
                       >
                         <Twitter className="h-4 w-4 mr-2" />
                         <span>Re-verify Account</span>
                       </Button>
-                      <Button
-                        variant="outline"
+                      <Button 
+                        variant="outline" 
                         className="h-12 bg-white border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm rounded-lg transition-all duration-300 font-medium"
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4 mr-2"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M10 12a2 2 0 100-4 2 2 0 000 4zm2-5a2 2 0 11-4 0 2 2 0 014 0zm4 6a2 2 0 11-4 0 2 2 0 014 0z"
-                          />
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 12a2 2 0 100-4 2 2 0 000 4zm2-5a2 2 0 11-4 0 2 2 0 014 0zm4 6a2 2 0 11-4 0 2 2 0 014 0z" />
                         </svg>
                         <span>Settings</span>
                       </Button>
-                      <Button
-                        variant="outline"
+                      <Button 
+                        variant="outline" 
                         className="h-12 bg-white border-red-200 text-red-600 hover:bg-red-50 shadow-sm rounded-lg transition-all duration-300 font-medium"
                         onClick={handleDisconnectTwitter}
                       >
@@ -983,132 +933,109 @@ export default function SettingsPage() {
                     <div className="flex flex-col sm:flex-row items-center justify-between p-5 border rounded-lg space-y-4 sm:space-y-0 bg-blue-50 border-blue-200 shadow-sm">
                       <div className="flex items-center space-x-4">
                         <Avatar className="h-12 w-12 sm:h-16 sm:w-16">
-                          <AvatarFallback className="bg-blue-500 text-white text-lg">
-                            @
-                          </AvatarFallback>
+                          <AvatarFallback className="bg-blue-500 text-white text-lg">@</AvatarFallback>
                         </Avatar>
                         <div className="text-center sm:text-left">
-                          <p className="font-medium text-base sm:text-lg text-blue-700">
-                            Verify your email for @{twitterUsername}
-                          </p>
-                          <p className="text-sm text-blue-600">
-                            Enter the email associated with your X account
-                          </p>
+                          <p className="font-medium text-base sm:text-lg text-blue-700">Verify your email for @{twitterUsername}</p>
+                          <p className="text-sm text-blue-600">Enter the email associated with your X account</p>
                         </div>
                       </div>
-                      <Badge
-                        variant="outline"
-                        className="text-sm px-3 py-1.5 text-blue-600 border-blue-300 rounded-full"
-                      >
+                      <Badge variant="outline" className="text-sm px-3 py-1.5 text-blue-600 border-blue-300 rounded-full">
                         Step 2 of 2
                       </Badge>
                     </div>
                     <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label
-                          htmlFor="verificationEmail"
-                          className="text-sm font-medium text-gray-700"
-                        >
-                          X Account Email
-                        </Label>
-                        <Input
-                          id="verificationEmail"
-                          type="email"
-                          placeholder="your.email@x.com"
-                          value={verificationEmail}
-                          onChange={(e) => setVerificationEmail(e.target.value)}
-                          className="h-12 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-lg transition-all duration-300"
-                        />
-                        <p className="text-xs text-gray-500">
-                          Enter the email address associated with your X account
-                          for verification
-                        </p>
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
-                        <Button
-                          onClick={handleSendVerificationCode}
-                          disabled={isSendingCode || !verificationEmail.trim()}
-                          className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-md hover:shadow-lg px-6 rounded-lg transition-all duration-300 font-medium"
-                        >
-                          {isSendingCode ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                              <span>Sending Code...</span>
-                            </>
-                          ) : (
-                            <span>Send Verification Code</span>
-                          )}
-                        </Button>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label
-                          htmlFor="verificationCode"
-                          className="text-sm font-medium text-gray-700"
-                        >
-                          Verification Code
-                        </Label>
-                        <Input
-                          id="verificationCode"
-                          placeholder="Enter 6-digit code"
-                          value={verificationCode}
-                          onChange={(e) => setVerificationCode(e.target.value)}
-                          className="h-12 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-lg transition-all duration-300"
-                        />
-                        <p className="text-xs text-gray-500">
-                          Check your email for the verification code we sent
-                        </p>
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
-                        <Button
-                          onClick={handleVerifyCode}
-                          disabled={isVerifyingCode || !verificationCode.trim()}
-                          className="flex-1 h-12 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-md hover:shadow-lg px-6 rounded-lg transition-all duration-300 font-medium"
-                        >
-                          {isVerifyingCode ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                              <span>Verifying...</span>
-                            </>
-                          ) : (
-                            <span>Verify & Connect</span>
-                          )}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setShowEmailVerification(false);
-                            setVerificationEmail("");
-                            setVerificationCode("");
-                          }}
-                          className="h-12 border-gray-300 hover:bg-gray-50 rounded-lg transition-all duration-300 font-medium"
-                        >
-                          <span>Back</span>
-                        </Button>
-                      </div>
-
+                      {!isSendingCode ? (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="verificationEmail" className="text-sm font-medium text-gray-700">
+                              X Account Email
+                            </Label>
+                            <Input
+                              id="verificationEmail"
+                              type="email"
+                              placeholder="your.email@x.com"
+                              value={verificationEmail}
+                              onChange={(e) => setVerificationEmail(e.target.value)}
+                              className="h-12 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-lg transition-all duration-300"
+                            />
+                            <p className="text-xs text-gray-500">
+                              Enter the email address associated with your X account for verification
+                            </p>
+                          </div>
+                          
+                          <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+                            <Button 
+                              onClick={handleRequestVerification}
+                              disabled={isRequestingVerification || !verificationEmail.trim() || !twitterUsername.trim()}
+                              className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-md hover:shadow-lg px-6 rounded-lg transition-all duration-300 font-medium"
+                            >
+                              {isRequestingVerification ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                                  <span>Sending Code...</span>
+                                </>
+                              ) : (
+                                <span>Send Verification Code</span>
+                              )}
+                            </Button>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="verificationCode" className="text-sm font-medium text-gray-700">
+                              Verification Code
+                            </Label>
+                            <Input
+                              id="verificationCode"
+                              placeholder="Enter 6-digit code"
+                              value={verificationCode}
+                              onChange={(e) => setVerificationCode(e.target.value)}
+                              className="h-12 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-lg transition-all duration-300"
+                            />
+                            <p className="text-xs text-gray-500">
+                              Check your email for the verification code we sent
+                            </p>
+                          </div>
+                          
+                          <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+                            <Button 
+                              onClick={handleVerifyCode}
+                              disabled={isVerifyingCode || !verificationCode.trim()}
+                              className="flex-1 h-12 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-md hover:shadow-lg px-6 rounded-lg transition-all duration-300 font-medium"
+                            >
+                              {isVerifyingCode ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                                  <span>Verifying...</span>
+                                </>
+                              ) : (
+                                <span>Verify & Connect</span>
+                              )}
+                            </Button>
+                            <Button 
+                              variant="outline"
+                              onClick={() => {
+                                setIsSendingCode(false)
+                                setVerificationCode('')
+                              }}
+                              className="h-12 border-gray-300 hover:bg-gray-50 rounded-lg transition-all duration-300 font-medium"
+                            >
+                              <span>Back</span>
+                            </Button>
+                          </div>
+                        </>
+                      )}
+                      
                       <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
                         <div className="flex items-start space-x-3">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                           <p className="text-sm text-blue-700">
-                            <span className="font-medium">Note:</span> We'll
-                            send a verification code to your email. This helps
-                            us confirm you own the X account.
+                            <span className="font-medium">Note:</span> We'll send a verification code to your email. 
+                            This helps us confirm you own the X account.
                           </p>
                         </div>
                       </div>
@@ -1120,23 +1047,14 @@ export default function SettingsPage() {
                     <div className="flex flex-col sm:flex-row items-center justify-between p-5 border rounded-lg space-y-4 sm:space-y-0 bg-gray-50 border-gray-200 shadow-sm">
                       <div className="flex items-center space-x-4">
                         <Avatar className="h-12 w-12 sm:h-16 sm:w-16">
-                          <AvatarFallback className="bg-gray-300 text-gray-600 text-lg">
-                            @
-                          </AvatarFallback>
+                          <AvatarFallback className="bg-gray-300 text-gray-600 text-lg">@</AvatarFallback>
                         </Avatar>
                         <div className="text-center sm:text-left">
-                          <p className="font-medium text-base sm:text-lg text-gray-700">
-                            No account connected
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            Connect your Twitter account to get started
-                          </p>
+                          <p className="font-medium text-base sm:text-lg text-gray-700">No account connected</p>
+                          <p className="text-sm text-gray-500">Connect your Twitter account to get started</p>
                         </div>
                       </div>
-                      <Badge
-                        variant="outline"
-                        className="text-sm px-3 py-1.5 text-gray-500 border-gray-300 rounded-full"
-                      >
+                      <Badge variant="outline" className="text-sm px-3 py-1.5 text-gray-500 border-gray-300 rounded-full">
                         Not Connected
                       </Badge>
                     </div>
@@ -1149,24 +1067,18 @@ export default function SettingsPage() {
                           <Input
                             placeholder="your_twitter_username"
                             value={twitterUsername}
-                            onChange={(e) =>
-                              setTwitterUsername(
-                                e.target.value.replace("@", ""),
-                              )
-                            }
+                            onChange={(e) => setTwitterUsername(e.target.value.replace('@', ''))}
                             className="pl-8 h-12 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-lg transition-all duration-300"
                             onKeyPress={(e) => {
-                              if (e.key === "Enter") {
-                                handleConnectTwitter();
+                              if (e.key === 'Enter') {
+                                handleConnectTwitter()
                               }
                             }}
                           />
                         </div>
-                        <Button
+                        <Button 
                           onClick={handleConnectTwitter}
-                          disabled={
-                            isConnectingTwitter || !twitterUsername.trim()
-                          }
+                          disabled={isConnectingTwitter || !twitterUsername.trim()}
                           className="h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-md hover:shadow-lg px-6 rounded-lg transition-all duration-300 font-medium"
                         >
                           {isConnectingTwitter ? (
@@ -1184,25 +1096,12 @@ export default function SettingsPage() {
                       </div>
                       <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
                         <div className="flex items-start space-x-3">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                           <p className="text-sm text-blue-700">
-                            <span className="font-medium">Note:</span> We'll
-                            verify your username exists on Twitter before
-                            connecting. Your account must be public for
-                            verification.
+                            <span className="font-medium">Note:</span> We'll verify your username exists on Twitter before connecting. 
+                            Your account must be public for verification.
                           </p>
                         </div>
                       </div>

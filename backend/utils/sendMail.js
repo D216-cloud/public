@@ -119,7 +119,18 @@ const sendWelcomeEmail = async (userEmail, userName) => {
     return { success: true, messageId: result.messageId };
   } catch (error) {
     console.error('Error sending welcome email:', error);
-    return { success: false, error: error.message };
+    
+    // Provide more specific error messages for common issues
+    let errorMessage = error.message;
+    if (error.code === 'EAUTH' || (error.message && error.message.includes('Invalid login'))) {
+      errorMessage = 'Email authentication failed. Please ensure you are using an App Password if you have 2-Factor Authentication enabled. Check your EMAIL_USER and EMAIL_PASS in your .env file.';
+    } else if (error.code === 'EENVELOPE') {
+      errorMessage = 'Invalid email address. Please check the recipient email address.';
+    } else if (error.code === 'ECONNECTION') {
+      errorMessage = 'Unable to connect to email server. Please check your internet connection.';
+    }
+    
+    return { success: false, error: errorMessage };
   }
 };
 
@@ -229,7 +240,18 @@ const sendVerificationCodeEmail = async (userEmail, userName, verificationCode, 
     return { success: true, messageId: result.messageId };
   } catch (error) {
     console.error('Error sending verification code email:', error);
-    return { success: false, error: error.message };
+    
+    // Provide more specific error messages for common issues
+    let errorMessage = error.message;
+    if (error.code === 'EAUTH' || (error.message && error.message.includes('Invalid login'))) {
+      errorMessage = 'Email authentication failed. Please ensure you are using an App Password if you have 2-Factor Authentication enabled. Check your EMAIL_USER and EMAIL_PASS in your .env file.';
+    } else if (error.code === 'EENVELOPE') {
+      errorMessage = 'Invalid email address. Please check the recipient email address.';
+    } else if (error.code === 'ECONNECTION') {
+      errorMessage = 'Unable to connect to email server. Please check your internet connection.';
+    }
+    
+    return { success: false, error: errorMessage };
   }
 };
 
