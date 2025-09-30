@@ -31,14 +31,17 @@ import {
   Crown,
   ArrowRight,
   Sparkles,
+  Clock,
 } from "lucide-react"
 import { API_URL } from "@/utils/config"
+import { Logo } from "@/components/logo"
 
 const navigationItems = [
   { href: "/dashboard", label: "Dashboard", icon: BarChart3 },
   { href: "/calendar", label: "Calendar", icon: Calendar },
-  { href: "/ai-writer", label: "AI Writer", icon: PenTool },
+  { href: "/post", label: "Create Post", icon: PenTool },
   { href: "/analytics", label: "Analytics", icon: TrendingUp },
+  { href: "/scheduler", label: "Scheduler", icon: Clock },
   { href: "/settings", label: "Settings", icon: Settings },
 ]
 
@@ -177,15 +180,12 @@ export function DashboardHeader() {
               className="flex items-center space-x-3 group" 
               onClick={closeAllMenus}
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 shadow-lg group-hover:shadow-xl transition-all duration-300">
-                <Twitter className="h-6 w-6 text-white" />
+              <div className="relative flex h-24 w-24 items-center justify-center rounded-xl bg-transparent transition-all duration-300 overflow-hidden">
+                <Logo className="text-white relative z-10" size="xl" />
               </div>
               <div className="flex flex-col">
-                <span className="text-xl font-bold bg-gradient-to-r from-gray-900 to-blue-600 bg-clip-text text-transparent">
-                  TwitterAI
-                </span>
+               
                 <span className="text-xs text-blue-600 font-medium hidden sm:block">
-                  Pro
                 </span>
               </div>
             </Link>
@@ -367,6 +367,18 @@ export function DashboardHeader() {
                   </DropdownMenuItem>
 
                   <DropdownMenuItem 
+                    className="px-4 py-3 cursor-pointer"
+                    onClick={closeAllMenus}
+                  >
+                    <Link to="/scheduler" className="flex items-center space-x-3 w-full">
+                      <div className="p-2 bg-purple-100 rounded-lg">
+                        <Clock className="h-4 w-4 text-purple-600" />
+                      </div>
+                      <span className="text-sm font-medium text-gray-900">Content Scheduler</span>
+                    </Link>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem 
                     className="text-red-600 focus:text-red-600 focus:bg-red-50 px-4 py-3 cursor-pointer" 
                     onClick={() => {
                       handleLogout()
@@ -432,11 +444,11 @@ export function DashboardHeader() {
           <div className="px-6 py-5 bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 via-blue-700 to-purple-600 shadow-lg">
-                  <Twitter className="h-6 w-6 text-white" />
+                <div className="relative flex h-16 w-16 items-center justify-center rounded-lg bg-transparent">
+                  <Logo className="text-white" size="xl" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">TwitterAI Pro</h3>
+                  <h3 className="text-lg font-bold text-gray-900">TwitterAI</h3>
                   <p className="text-xs text-blue-600 font-medium">Navigation</p>
                 </div>
               </div>
@@ -518,6 +530,22 @@ export function DashboardHeader() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <span className="block text-left">Profile</span>
+                </div>
+              </Link>
+
+              <Link
+                to="/scheduler"
+                className="group relative flex items-center space-x-4 px-4 py-4 text-base font-semibold text-gray-700 hover:text-gray-900 bg-white border border-gray-200 rounded-xl transition-all duration-300 w-full text-left"
+                onClick={() => {
+                  setIsMobileMenuOpen(false)
+                  setIsUserMenuOpen(false)
+                }}
+              >
+                <div className="flex-shrink-0 p-3 rounded-xl bg-purple-100">
+                  <Clock className="h-5 w-5 text-purple-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="block text-left">Content Scheduler</span>
                 </div>
               </Link>
 

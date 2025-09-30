@@ -6,7 +6,7 @@
   /* Updated color tokens to match professional Twitter automation tool design */
   --background: oklch(1 0 0);
   --foreground: oklch(0.205 0 0);
-  --card: oklch(0.985 0 0);
+  --card: oklch(0.985 0  0);
   --card-foreground: oklch(0.269 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.205 0 0);
@@ -95,6 +95,11 @@
   /* Prevent horizontal scroll on all elements */
   *:not(svg):not(path) {
     max-width: 100%;
+  }
+  
+  /* Add padding to account for fixed header - 4rem = 64px which matches h-16 */
+  body {
+    padding-top: 4rem;
   }
 }
 

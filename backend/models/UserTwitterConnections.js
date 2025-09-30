@@ -25,7 +25,10 @@ const userTwitterConnectionSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  
+  profileImageUrl: {
+    type: String,
+    default: null
+  },
   // OAuth tokens for Twitter API access
   accessToken: {
     type: String,

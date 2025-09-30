@@ -29,8 +29,19 @@ import {
   Share2,
   TrendingUp as TrendingUpIcon,
   BarChart3 as BarChart3Icon,
+  Target,
+  Lightbulb,
+  Rocket,
+  Star,
+  CheckCircle,
+  AlertCircle,
+  Activity,
+  Globe,
+  Smartphone,
+  Monitor,
+  PenTool
 } from "lucide-react"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from "recharts"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, PieChart, Pie, Cell } from "recharts"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
@@ -56,6 +67,15 @@ const analyticsData = [
   { name: "Sat", followers: 1380, engagement: 55, posts: 2 },
   { name: "Sun", followers: 1520, engagement: 82, posts: 3 },
 ]
+
+const performanceData = [
+  { name: "Engagement", value: 78 },
+  { name: "Reach", value: 65 },
+  { name: "Impressions", value: 82 },
+  { name: "Profile Visits", value: 45 },
+]
+
+const COLORS = ["#3b82f6", "#8b5cf6", "#ec4899", "#10b981"]
 
 const recentPosts: RecentPost[] = [
   {
@@ -98,6 +118,20 @@ const recentPosts: RecentPost[] = [
     status: "scheduled",
     image: null,
   },
+]
+
+const quickActions = [
+  { title: "Create Post", icon: <PenTool className="h-5 w-5" />, color: "from-blue-500 to-blue-600" },
+  { title: "Schedule Post", icon: <Calendar className="h-5 w-5" />, color: "from-purple-500 to-purple-600" },
+  { title: "Analyze Performance", icon: <BarChart3 className="h-5 w-5" />, color: "from-green-500 to-green-600" },
+  { title: "AI Suggestions", icon: <Sparkles className="h-5 w-5" />, color: "from-pink-500 to-pink-600" },
+]
+
+const metrics = [
+  { title: "Total Followers", value: "1,520", change: "+12.5%", icon: <Users className="h-5 w-5" />, color: "text-blue-600", bg: "bg-blue-50" },
+  { title: "Engagement Rate", value: "8.2%", change: "+3.2%", icon: <Activity className="h-5 w-5" />, color: "text-green-600", bg: "bg-green-50" },
+  { title: "Posts This Week", value: "17", change: "+5", icon: <MessageSquare className="h-5 w-5" />, color: "text-purple-600", bg: "bg-purple-50" },
+  { title: "Impressions", value: "42.5K", change: "+18.3%", icon: <Globe className="h-5 w-5" />, color: "text-pink-600", bg: "bg-pink-50" },
 ]
 
 export default function DashboardPage() {
@@ -149,10 +183,10 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white pt-20">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/50 pt-16">
       <DashboardHeader />
 
-      <main className="container mx-auto px-4 py-6 lg:py-8 relative">
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 max-w-7xl">
         {/* Mobile Menu Overlay */}
         {isMobileMenuOpen && (
           <div
@@ -285,22 +319,22 @@ export default function DashboardPage() {
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-blue-600 via-blue-500 to-purple-600 bg-clip-text text-transparent">
                 Dashboard
               </h1>
-              <p className="text-base sm:text-lg text-gray-600 font-medium">
+              <p className="text-base sm:text-lg text-slate-600 font-medium">
                 Welcome back! Here's your Twitter growth overview powered by AI
               </p>
             </div>
 
             {/* Desktop Controls */}
             <div className="hidden lg:flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-              <div className="flex items-center bg-white rounded-xl border border-gray-200 p-1 shadow-sm">
+              <div className="flex items-center bg-white/90 backdrop-blur-xl shadow-xl border border-white/20 rounded-2xl p-2">
                 <Button
                   variant={viewMode === "overview" ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setViewMode("overview")}
-                  className={`h-10 px-6 rounded-lg font-medium transition-all duration-200 ${
+                  className={`h-12 px-6 rounded-xl font-medium transition-all duration-300 ${
                     viewMode === "overview"
-                      ? "bg-blue-600 text-white shadow-md hover:bg-blue-700"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                      ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg hover:shadow-xl"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
                   }`}
                 >
                   <BarChart3 className="h-4 w-4 mr-2" />
@@ -310,10 +344,10 @@ export default function DashboardPage() {
                   variant={viewMode === "analytics" ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setViewMode("analytics")}
-                  className={`h-10 px-6 rounded-lg font-medium transition-all duration-200 ${
+                  className={`h-12 px-6 rounded-xl font-medium transition-all duration-300 ${
                     viewMode === "analytics"
-                      ? "bg-blue-600 text-white shadow-md hover:bg-blue-700"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                      ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg hover:shadow-xl"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
                   }`}
                 >
                   <TrendingUpIcon className="h-4 w-4 mr-2" />
@@ -323,18 +357,18 @@ export default function DashboardPage() {
                   variant={viewMode === "activity" ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setViewMode("activity")}
-                  className={`h-10 px-6 rounded-lg font-medium transition-all duration-200 ${
+                  className={`h-12 px-6 rounded-xl font-medium transition-all duration-300 ${
                     viewMode === "activity"
-                      ? "bg-blue-600 text-white shadow-md hover:bg-blue-700"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                      ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg hover:shadow-xl"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
                   }`}
                 >
                   <MessageSquare className="h-4 w-4 mr-2" />
                   Activity
                 </Button>
               </div>
-              <Button className="h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5">
-                <Plus className="h-4 w-4 mr-2" />
+              <Button className="h-14 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5">
+                <Plus className="h-5 w-5 mr-2" />
                 Generate Content
               </Button>
             </div>
@@ -346,8 +380,8 @@ export default function DashboardPage() {
                   variant={viewMode === "overview" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setViewMode("overview")}
-                  className={`h-10 px-4 rounded-lg transition-all ${
-                    viewMode === "overview" ? "bg-blue-600 text-white" : "text-gray-600"
+                  className={`h-12 px-4 rounded-xl transition-all duration-300 ${
+                    viewMode === "overview" ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg" : "text-slate-600 border-slate-300 hover:bg-slate-50"
                   }`}
                 >
                   <BarChart3 className="h-4 w-4" />
@@ -356,8 +390,8 @@ export default function DashboardPage() {
                   variant={viewMode === "analytics" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setViewMode("analytics")}
-                  className={`h-10 px-4 rounded-lg transition-all ${
-                    viewMode === "analytics" ? "bg-blue-600 text-white" : "text-gray-600"
+                  className={`h-12 px-4 rounded-xl transition-all duration-300 ${
+                    viewMode === "analytics" ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg" : "text-slate-600 border-slate-300 hover:bg-slate-50"
                   }`}
                 >
                   <TrendingUpIcon className="h-4 w-4" />
@@ -366,22 +400,22 @@ export default function DashboardPage() {
                   variant={viewMode === "activity" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setViewMode("activity")}
-                  className={`h-10 px-4 rounded-lg transition-all ${
-                    viewMode === "activity" ? "bg-blue-600 text-white" : "text-gray-600"
+                  className={`h-12 px-4 rounded-xl transition-all duration-300 ${
+                    viewMode === "activity" ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg" : "text-slate-600 border-slate-300 hover:bg-slate-50"
                   }`}
                 >
                   <MessageSquare className="h-4 w-4" />
                 </Button>
               </div>
               <div className="flex items-center space-x-2">
-                <Button className="h-10 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 rounded-lg font-medium">
+                <Button className="h-12 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 rounded-xl font-medium shadow-lg">
                   <Plus className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setIsMobileMenuOpen(true)}
-                  className="h-10 w-10 p-0 border-gray-200 hover:bg-gray-50"
+                  className="h-12 w-12 p-0 border-slate-300 hover:bg-slate-50 rounded-xl"
                 >
                   <SlidersHorizontal className="h-4 w-4" />
                 </Button>
@@ -391,24 +425,24 @@ export default function DashboardPage() {
         </div>
 
         {/* Desktop Search & Filters */}
-        <div className="hidden lg:flex flex-col lg:flex-row gap-6 mb-8 p-6 bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200 shadow-lg">
+        <div className="hidden lg:flex flex-col lg:flex-row gap-6 mb-8 p-6 bg-white/90 backdrop-blur-xl rounded-3xl border border-white/20 shadow-xl">
           <div className="flex-1">
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
               <Input
                 placeholder="Search dashboard..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 h-12 border-gray-200 rounded-xl text-base bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                className="pl-12 h-14 border-slate-200 rounded-xl text-base bg-white/80 backdrop-blur-sm focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 shadow-sm hover:shadow-md"
               />
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
             <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-full sm:w-40 h-12 border-gray-200 rounded-xl bg-white/80 backdrop-blur-sm">
+              <SelectTrigger className="w-full sm:w-40 h-14 border-slate-200 rounded-xl bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300">
                 <SelectValue placeholder="All Time" />
               </SelectTrigger>
-              <SelectContent className="rounded-xl border-gray-200">
+              <SelectContent className="rounded-xl border-slate-200 shadow-xl">
                 <SelectItem value="all">All Time</SelectItem>
                 <SelectItem value="week">This Week</SelectItem>
                 <SelectItem value="month">This Month</SelectItem>
@@ -416,10 +450,10 @@ export default function DashboardPage() {
               </SelectContent>
             </Select>
             <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-full sm:w-40 h-12 border-gray-200 rounded-xl bg-white/80 backdrop-blur-sm">
+              <SelectTrigger className="w-full sm:w-40 h-14 border-slate-200 rounded-xl bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300">
                 <SelectValue placeholder="All Metrics" />
               </SelectTrigger>
-              <SelectContent className="rounded-xl border-gray-200">
+              <SelectContent className="rounded-xl border-slate-200 shadow-xl">
                 <SelectItem value="all">All Metrics</SelectItem>
                 <SelectItem value="followers">Followers</SelectItem>
                 <SelectItem value="engagement">Engagement</SelectItem>
@@ -430,278 +464,509 @@ export default function DashboardPage() {
         </div>
 
         {viewMode === "overview" ? (
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-            <Card className="xl:col-span-1 bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
-              <CardHeader className="px-6 py-5 bg-gradient-to-r from-gray-50 to-blue-50/30">
-                <CardTitle className="text-lg flex items-center space-x-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <BarChart3 className="h-5 w-5 text-blue-600" />
+          <div className="space-y-8">
+            {/* Metrics Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              {metrics.map((metric, index) => (
+                <Card key={index} className="group hover:shadow-2xl transition-all duration-500 shadow-xl bg-white/95 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/20">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  <CardHeader className="pb-3 relative z-10 px-6 pt-6">
+                    <div className="flex items-center justify-between">
+                      <div className={`p-3 rounded-xl ${metric.bg} shadow-lg group-hover:shadow-xl transition-all duration-300`}>
+                        <div className="text-white">
+                          {metric.icon}
+                        </div>
+                      </div>
+                      <Badge variant="secondary" className="text-xs font-medium bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 border-green-200 rounded-full px-3 py-1">
+                        {metric.change}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="relative z-10 px-6 pb-6">
+                    <p className="text-sm text-slate-600 font-medium">{metric.title}</p>
+                    <h3 className={`text-2xl font-bold ${metric.color} mt-1`}>{metric.value}</h3>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Quick Actions */}
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              {quickActions.map((action, index) => (
+                <Card key={index} className="group hover:shadow-2xl transition-all duration-500 shadow-xl bg-white/95 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/20 cursor-pointer">
+                  <div className={`absolute inset-0 bg-gradient-to-br ${action.color} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
+                  <CardContent className="p-8 relative z-10">
+                    <div className="flex flex-col items-center text-center space-y-4">
+                      <div className={`p-4 rounded-2xl bg-gradient-to-br ${action.color} shadow-lg group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-110`}>
+                        <div className="text-white">
+                          {action.icon}
+                        </div>
+                      </div>
+                      <h3 className="font-semibold text-slate-800 text-lg">{action.title}</h3>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Charts Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <Card className="group relative overflow-hidden bg-white/90 backdrop-blur-sm shadow-lg border border-gray-200/50 rounded-2xl hover:shadow-2xl transition-all duration-500 animate-in slide-in-from-left-1">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <CardHeader className="px-6 py-5 bg-gradient-to-r from-blue-50 to-purple-50/30 relative z-10">
+                  <CardTitle className="text-lg font-semibold flex items-center space-x-3 text-gray-900 group-hover:text-blue-800 transition-colors duration-300">
+                    <div className="relative p-2.5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-110">
+                      <TrendingUp className="h-5 w-5 text-white relative z-10" />
+                      <div className="absolute inset-0 bg-white/20 rounded-xl animate-ping-slow" />
+                    </div>
+                    <span>Growth Analytics</span>
+                  </CardTitle>
+                  <CardDescription className="text-sm text-gray-600 mt-1">
+                    Your follower growth and engagement over the last week
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="px-6 pb-8 pt-4 relative z-10">
+                  <div className="p-6 bg-gradient-to-br from-blue-50/30 via-white/50 to-purple-50/20 rounded-2xl border border-blue-100/50 shadow-inner">
+                    <ResponsiveContainer width="100%" height={320}>
+                      <LineChart data={analyticsData} className="animate-chart-load">
+                        <defs>
+                          <linearGradient id="followersGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/>
+                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                          </linearGradient>
+                          <linearGradient id="engagementGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#a855f7" stopOpacity={0.4}/>
+                            <stop offset="95%" stopColor="#a855f7" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" strokeOpacity={0.5} />
+                        <XAxis dataKey="name" fontSize={12} stroke="#94a3b8" tickLine={false} />
+                        <YAxis fontSize={12} stroke="#94a3b8" tickLine={false} />
+                        <Tooltip 
+                          contentStyle={{
+                            backgroundColor: 'white',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '16px',
+                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                            padding: '12px 16px'
+                          }}
+                          labelStyle={{ fontWeight: '600', color: '#374151' }}
+                          itemStyle={{ fontSize: '14px', color: '#6b7280' }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="followers"
+                          stroke="#3b82f6"
+                          strokeWidth={3}
+                          strokeLinecap="round"
+                          dot={{ fill: "#3b82f6", strokeWidth: 2, r: 6, stroke: "#ffffff" }}
+                          activeDot={{ r: 8, stroke: "#3b82f6", strokeWidth: 2, fill: "#ffffff" }}
+                          fill="url(#followersGradient)"
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="engagement"
+                          stroke="#a855f7"
+                          strokeWidth={3}
+                          strokeLinecap="round"
+                          dot={{ fill: "#a855f7", strokeWidth: 2, r: 6, stroke: "#ffffff" }}
+                          activeDot={{ r: 8, stroke: "#a855f7", strokeWidth: 2, fill: "#ffffff" }}
+                          fill="url(#engagementGradient)"
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
                   </div>
-                  <span>Overview Stats</span>
-                </CardTitle>
-                <CardDescription className="text-sm text-gray-600 mt-1">Key metrics at a glance</CardDescription>
-              </CardHeader>
-              <CardContent className="px-6 pb-8 pt-4">
-                <div className="p-4 sm:p-6 bg-gradient-to-br from-blue-50/30 via-white to-blue-50/20 rounded-2xl border-2 border-blue-100 shadow-inner">
-                  <div className="space-y-5">
-                    <div className="group flex items-center justify-between p-5 bg-gradient-to-r from-blue-50 via-blue-50 to-blue-100/70 rounded-2xl border border-blue-200/70 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                      <div className="flex items-center space-x-4">
-                        <div className="relative">
-                          <div className="w-6 h-6 bg-blue-500 rounded-full shadow-lg flex items-center justify-center ring-4 ring-blue-100">
-                            <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
-                          </div>
-                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-400 rounded-full animate-pulse"></div>
-                        </div>
-                        <div>
-                          <span className="font-bold text-gray-900 text-lg">Total Followers</span>
-                          <p className="text-sm text-blue-700 font-medium mt-1">Growth overview</p>
-                        </div>
-                      </div>
-                      <Badge className="bg-blue-600 text-white px-4 py-2.5 rounded-full font-bold text-lg shadow-lg hover:bg-blue-700 transition-all duration-200 transform hover:scale-105">
-                        1,520
-                      </Badge>
+                </CardContent>
+              </Card>
+
+              <Card className="group relative overflow-hidden bg-white/90 backdrop-blur-sm shadow-lg border border-gray-200/50 rounded-2xl hover:shadow-2xl transition-all duration-500 animate-in slide-in-from-right-1">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-50/50 to-blue-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <CardHeader className="px-6 py-5 bg-gradient-to-r from-purple-50 to-blue-50/30 relative z-10">
+                  <CardTitle className="text-lg font-semibold flex items-center space-x-3 text-gray-900 group-hover:text-purple-800 transition-colors duration-300">
+                    <div className="relative p-2.5 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-110">
+                      <BarChart3 className="h-5 w-5 text-white relative z-10" />
+                      <div className="absolute inset-0 bg-white/20 rounded-xl animate-ping-slow" />
                     </div>
-                    <div className="group flex items-center justify-between p-5 bg-gradient-to-r from-green-50 via-green-50 to-green-100/70 rounded-2xl border border-green-200/70 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                      <div className="flex items-center space-x-4">
-                        <div className="relative">
-                          <div className="w-6 h-6 bg-green-500 rounded-full shadow-lg flex items-center justify-center ring-4 ring-green-100">
-                            <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
-                          </div>
-                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                        </div>
-                        <div>
-                          <span className="font-bold text-gray-900 text-lg">Engagement Rate</span>
-                          <p className="text-sm text-green-700 font-medium mt-1">Interaction metrics</p>
-                        </div>
-                      </div>
-                      <Badge className="bg-green-600 text-white px-4 py-2.5 rounded-full font-bold text-lg shadow-lg hover:bg-green-700 transition-all duration-200 transform hover:scale-105">
-                        8.2%
-                      </Badge>
-                    </div>
+                    <span>Performance Metrics</span>
+                  </CardTitle>
+                  <CardDescription className="text-sm text-gray-600 mt-1">
+                    Key performance indicators for your content
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="px-6 pb-8 pt-4 relative z-10">
+                  <div className="p-6 bg-gradient-to-br from-purple-50/30 via-white/50 to-blue-50/20 rounded-2xl border border-purple-100/50 shadow-inner">
+                    <ResponsiveContainer width="100%" height={320}>
+                      <PieChart>
+                        <Pie
+                          data={performanceData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {performanceData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          contentStyle={{
+                            backgroundColor: 'white',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '16px',
+                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                            padding: '12px 16px'
+                          }}
+                        />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Recent Activity */}
+            <Card className="group hover:shadow-2xl transition-all duration-500 shadow-xl bg-white/95 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/20">
+              <CardHeader className="px-6 sm:px-8 py-8 bg-gradient-to-r from-blue-50/90 via-purple-50/80 to-pink-50/70 backdrop-blur-xl border-b border-white/30">
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className="p-3 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-lg">
+                    <Clock className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                      Recent Activity
+                    </CardTitle>
+                    <CardDescription className="text-base text-slate-600 mt-1">
+                      Your latest posts and their performance metrics
+                    </CardDescription>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card className="xl:col-span-2 bg-white/90 backdrop-blur-sm border border-gray-200 shadow-xl rounded-2xl overflow-hidden hover:shadow-2xl transition-all duration-300">
-              <CardHeader className="px-6 py-6 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-100">
-                <CardTitle className="text-xl font-semibold text-gray-900">
-                  Quick Overview
-                </CardTitle>
-                <CardDescription className="text-sm text-gray-600 mt-2">
-                  Your current dashboard summary
-                </CardDescription>
+                <div className="flex justify-end">
+                  <Badge variant="secondary" className="bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 border-blue-200 rounded-full px-4 py-2 font-medium">
+                    {recentPosts.length} posts
+                  </Badge>
+                </div>
               </CardHeader>
-              <CardContent className="px-6 pb-6">
-                <div className="space-y-4">
-                  <div className="text-center py-20">
-                    <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm">
-                      <BarChart3 className="h-12 w-12 text-blue-600" />
+              <CardContent className="px-6 sm:px-8 py-8">
+                <div className="space-y-6">
+                  {recentPosts.map((post) => (
+                    <div
+                      key={post.id}
+                      className="group p-6 border border-slate-200/50 rounded-2xl hover:shadow-lg transition-all duration-300 bg-gradient-to-r from-white to-slate-50/30 hover:from-blue-50/50 hover:to-purple-50/30"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between space-y-4 sm:space-y-0">
+                        <div className="flex-1 space-y-4">
+                          <div className="flex flex-wrap items-center gap-3">
+                            <div className="flex items-center space-x-2 bg-white rounded-full px-4 py-2 shadow-sm border border-slate-200/50">
+                              <BarChart3 className="h-4 w-4 text-blue-600" />
+                              <Badge variant="secondary" className="text-xs font-medium bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700">
+                                Activity
+                              </Badge>
+                            </div>
+                            <div className={`flex items-center space-x-2 text-xs font-medium bg-white rounded-full px-4 py-2 shadow-sm border border-slate-200/50 ${getStatusColors(post.status)}`}>
+                              <Clock className="h-3 w-3" />
+                              <span>{post.time}</span>
+                            </div>
+                          </div>
+                          <p className="text-sm text-slate-700 leading-relaxed bg-white/80 p-4 rounded-xl border border-slate-200/30 shadow-sm">
+                            {post.content}
+                          </p>
+                          {post.status === "published" && (
+                            <div className="flex flex-wrap items-center gap-3">
+                              <div className="flex items-center space-x-2 bg-gradient-to-r from-red-50 to-pink-50 text-red-600 px-4 py-2 rounded-full border border-red-200/50 shadow-sm">
+                                <Heart className="h-4 w-4" />
+                                <span className="font-semibold">{post.likes}</span>
+                              </div>
+                              <div className="flex items-center space-x-2 bg-gradient-to-r from-green-50 to-emerald-50 text-green-600 px-4 py-2 rounded-full border border-green-200/50 shadow-sm">
+                                <Share2 className="h-4 w-4" />
+                                <span className="font-semibold">{post.retweets}</span>
+                              </div>
+                              <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-600 px-4 py-2 rounded-full border border-blue-200/50 shadow-sm">
+                                <MessageSquare className="h-4 w-4" />
+                                <span className="font-semibold">{post.comments}</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-end space-x-3 sm:ml-6">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-12 w-12 p-0 hover:bg-blue-100 hover:text-blue-600 transition-all duration-300 rounded-xl border border-slate-200/50"
+                          >
+                            <Eye className="h-5 w-5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-12 w-12 p-0 hover:bg-green-100 hover:text-green-600 transition-all duration-300 rounded-xl border border-slate-200/50"
+                          >
+                            <Edit className="h-5 w-5" />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                    <h3 className="text-2xl font-semibold text-gray-900 mb-3">Welcome to your dashboard</h3>
-                    <p className="text-gray-600 mb-8 max-w-lg mx-auto leading-relaxed">
-                      Explore your Twitter growth metrics, recent activity, and AI-powered content generation tools.
-                    </p>
-                    <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5">
-                      <Plus className="h-5 w-5 mr-2" />
-                      Get Started
-                    </Button>
-                  </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
           </div>
         ) : viewMode === "analytics" ? (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-10">
-            <Card className="group relative overflow-hidden bg-white/90 backdrop-blur-sm shadow-lg border border-gray-200/50 rounded-2xl hover:shadow-2xl transition-all duration-500 animate-in slide-in-from-left-1">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <CardHeader className="px-6 py-5 bg-gradient-to-r from-blue-50 to-purple-50/30 relative z-10">
-                <CardTitle className="text-lg font-semibold flex items-center space-x-3 text-gray-900 group-hover:text-blue-800 transition-colors duration-300">
-                  <div className="relative p-2.5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-110">
-                    <TrendingUp className="h-5 w-5 text-white relative z-10" />
-                    <div className="absolute inset-0 bg-white/20 rounded-xl animate-ping-slow" />
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+              <Card className="group hover:shadow-2xl transition-all duration-500 shadow-xl bg-white/95 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/20">
+                <CardHeader className="px-6 sm:px-8 py-8 bg-gradient-to-r from-blue-50/90 via-purple-50/80 to-pink-50/70 backdrop-blur-xl border-b border-white/30">
+                  <div className="flex items-center space-x-4 mb-4">
+                    <div className="p-3 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-lg">
+                      <TrendingUp className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                        Growth Analytics
+                      </CardTitle>
+                      <CardDescription className="text-base text-slate-600 mt-1">
+                        Your follower growth and engagement over the last week
+                      </CardDescription>
+                    </div>
                   </div>
-                  <span>Growth Analytics</span>
-                </CardTitle>
-                <CardDescription className="text-sm text-gray-600 mt-1">
-                  Your follower growth and engagement over the last week
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="px-6 pb-8 pt-4 relative z-10">
-                <div className="p-6 bg-gradient-to-br from-blue-50/30 via-white/50 to-purple-50/20 rounded-2xl border border-blue-100/50 shadow-inner">
-                  <ResponsiveContainer width="100%" height={320}>
-                    <LineChart data={analyticsData} className="animate-chart-load">
-                      <defs>
-                        <linearGradient id="followersGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/>
-                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                        </linearGradient>
-                        <linearGradient id="engagementGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#a855f7" stopOpacity={0.4}/>
-                          <stop offset="95%" stopColor="#a855f7" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" strokeOpacity={0.5} />
-                      <XAxis dataKey="name" fontSize={12} stroke="#94a3b8" tickLine={false} />
-                      <YAxis fontSize={12} stroke="#94a3b8" tickLine={false} />
-                      <Tooltip 
-                        contentStyle={{
-                          backgroundColor: 'white',
-                          border: '1px solid #e2e8f0',
-                          borderRadius: '16px',
-                          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                          padding: '12px 16px'
-                        }}
-                        labelStyle={{ fontWeight: '600', color: '#374151' }}
-                        itemStyle={{ fontSize: '14px', color: '#6b7280' }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="followers"
-                        stroke="#3b82f6"
-                        strokeWidth={3}
-                        strokeLinecap="round"
-                        dot={{ fill: "#3b82f6", strokeWidth: 2, r: 6, stroke: "#ffffff" }}
-                        activeDot={{ r: 8, stroke: "#3b82f6", strokeWidth: 2, fill: "#ffffff" }}
-                        fill="url(#followersGradient)"
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="engagement"
-                        stroke="#a855f7"
-                        strokeWidth={3}
-                        strokeLinecap="round"
-                        dot={{ fill: "#a855f7", strokeWidth: 2, r: 6, stroke: "#ffffff" }}
-                        activeDot={{ r: 8, stroke: "#a855f7", strokeWidth: 2, fill: "#ffffff" }}
-                        fill="url(#engagementGradient)"
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
+                </CardHeader>
+                <CardContent className="px-6 sm:px-8 pb-8 pt-4">
+                  <div className="p-6 bg-gradient-to-br from-blue-50/30 via-white/50 to-purple-50/20 rounded-2xl border border-blue-100/50 shadow-inner">
+                    <ResponsiveContainer width="100%" height={320}>
+                      <LineChart data={analyticsData} className="animate-chart-load">
+                        <defs>
+                          <linearGradient id="followersGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/>
+                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                          </linearGradient>
+                          <linearGradient id="engagementGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#a855f7" stopOpacity={0.4}/>
+                            <stop offset="95%" stopColor="#a855f7" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" strokeOpacity={0.5} />
+                        <XAxis dataKey="name" fontSize={12} stroke="#94a3b8" tickLine={false} />
+                        <YAxis fontSize={12} stroke="#94a3b8" tickLine={false} />
+                        <Tooltip 
+                          contentStyle={{
+                            backgroundColor: 'white',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '16px',
+                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                            padding: '12px 16px'
+                          }}
+                          labelStyle={{ fontWeight: '600', color: '#374151' }}
+                          itemStyle={{ fontSize: '14px', color: '#6b7280' }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="followers"
+                          stroke="#3b82f6"
+                          strokeWidth={3}
+                          strokeLinecap="round"
+                          dot={{ fill: "#3b82f6", strokeWidth: 2, r: 6, stroke: "#ffffff" }}
+                          activeDot={{ r: 8, stroke: "#3b82f6", strokeWidth: 2, fill: "#ffffff" }}
+                          fill="url(#followersGradient)"
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="engagement"
+                          stroke="#a855f7"
+                          strokeWidth={3}
+                          strokeLinecap="round"
+                          dot={{ fill: "#a855f7", strokeWidth: 2, r: 6, stroke: "#ffffff" }}
+                          activeDot={{ r: 8, stroke: "#a855f7", strokeWidth: 2, fill: "#ffffff" }}
+                          fill="url(#engagementGradient)"
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
 
-            <Card className="group relative overflow-hidden bg-white/90 backdrop-blur-sm shadow-lg border border-gray-200/50 rounded-2xl hover:shadow-2xl transition-all duration-500 animate-in slide-in-from-right-1">
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-50/50 to-blue-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <CardHeader className="px-6 py-5 bg-gradient-to-r from-purple-50 to-blue-50/30 relative z-10">
-                <CardTitle className="text-lg font-semibold flex items-center space-x-3 text-gray-900 group-hover:text-purple-800 transition-colors duration-300">
-                  <div className="relative p-2.5 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-110">
-                    <BarChart3 className="h-5 w-5 text-white relative z-10" />
-                    <div className="absolute inset-0 bg-white/20 rounded-xl animate-ping-slow" />
+              <Card className="group hover:shadow-2xl transition-all duration-500 shadow-xl bg-white/95 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/20">
+                <CardHeader className="px-6 sm:px-8 py-8 bg-gradient-to-r from-purple-50/90 via-pink-50/80 to-orange-50/70 backdrop-blur-xl border-b border-white/30">
+                  <div className="flex items-center space-x-4 mb-4">
+                    <div className="p-3 bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl shadow-lg">
+                      <BarChart3 className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 bg-clip-text text-transparent">
+                        Post Performance
+                      </CardTitle>
+                      <CardDescription className="text-base text-slate-600 mt-1">
+                        Daily post count and engagement metrics
+                      </CardDescription>
+                    </div>
                   </div>
-                  <span>Post Performance</span>
-                </CardTitle>
-                <CardDescription className="text-sm text-gray-600 mt-1">
-                  Daily post count and engagement metrics
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="px-6 pb-8 pt-4 relative z-10">
-                <div className="p-6 bg-gradient-to-br from-purple-50/30 via-white/50 to-blue-50/20 rounded-2xl border border-purple-100/50 shadow-inner">
-                  <ResponsiveContainer width="100%" height={320}>
-                    <BarChart data={analyticsData} className="animate-chart-load">
-                      <defs>
-                        <linearGradient id="postsGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#a855f7" stopOpacity={1}/>
-                          <stop offset="100%" stopColor="#a855f7" stopOpacity={0.3}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" strokeOpacity={0.5} />
-                      <XAxis dataKey="name" fontSize={12} stroke="#94a3b8" tickLine={false} />
-                      <YAxis fontSize={12} stroke="#94a3b8" tickLine={false} />
-                      <Tooltip 
-                        contentStyle={{
-                          backgroundColor: 'white',
-                          border: '1px solid #e2e8f0',
-                          borderRadius: '16px',
-                          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                          padding: '12px 16px'
-                        }}
-                        labelStyle={{ fontWeight: '600', color: '#374151' }}
-                        itemStyle={{ fontSize: '14px', color: '#6b7280' }}
-                      />
-                      <Bar 
-                        dataKey="posts" 
-                        fill="url(#postsGradient)"
-                        radius={[8, 8, 0, 0]}
-                        className="group/bar hover:opacity-90 transition-opacity duration-300"
-                        barSize={24}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
+                </CardHeader>
+                <CardContent className="px-6 sm:px-8 pb-8 pt-4">
+                  <div className="p-6 bg-gradient-to-br from-purple-50/30 via-white/50 to-pink-50/20 rounded-2xl border border-purple-100/50 shadow-inner">
+                    <ResponsiveContainer width="100%" height={320}>
+                      <BarChart data={analyticsData} className="animate-chart-load">
+                        <defs>
+                          <linearGradient id="postsGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#a855f7" stopOpacity={1}/>
+                            <stop offset="100%" stopColor="#a855f7" stopOpacity={0.3}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" strokeOpacity={0.5} />
+                        <XAxis dataKey="name" fontSize={12} stroke="#94a3b8" tickLine={false} />
+                        <YAxis fontSize={12} stroke="#94a3b8" tickLine={false} />
+                        <Tooltip 
+                          contentStyle={{
+                            backgroundColor: 'white',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '16px',
+                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                            padding: '12px 16px'
+                          }}
+                          labelStyle={{ fontWeight: '600', color: '#374151' }}
+                          itemStyle={{ fontSize: '14px', color: '#6b7280' }}
+                        />
+                        <Bar 
+                          dataKey="posts" 
+                          fill="url(#postsGradient)"
+                          radius={[8, 8, 0, 0]}
+                          className="group/bar hover:opacity-90 transition-opacity duration-300"
+                          barSize={24}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Additional Analytics Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="group hover:shadow-2xl transition-all duration-500 shadow-xl bg-white/95 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/20">
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl shadow-lg">
+                      <Target className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-slate-800">Engagement Rate</h3>
+                      <p className="text-2xl font-bold text-green-600 mt-1">8.2%</p>
+                      <p className="text-sm text-slate-600">+3.2% from last week</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="group hover:shadow-2xl transition-all duration-500 shadow-xl bg-white/95 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/20">
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl shadow-lg">
+                      <Globe className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-slate-800">Reach</h3>
+                      <p className="text-2xl font-bold text-blue-600 mt-1">42.5K</p>
+                      <p className="text-sm text-slate-600">+18.3% from last week</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="group hover:shadow-2xl transition-all duration-500 shadow-xl bg-white/95 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/20">
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="p-3 bg-gradient-to-br from-purple-500 to-violet-500 rounded-xl shadow-lg">
+                      <TrendingUp className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-slate-800">Growth</h3>
+                      <p className="text-2xl font-bold text-purple-600 mt-1">+245</p>
+                      <p className="text-sm text-slate-600">New followers this week</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         ) : (
-          <div className="space-y-6">
-            <Card className="hover:shadow-xl transition-all duration-300 border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-              <CardHeader className="px-4 sm:px-6 bg-gradient-to-r from-blue-50 to-purple-50">
-                <CardTitle className="text-lg sm:text-xl flex items-center justify-between">
-                  <span className="flex items-center space-x-2">
-                    <Clock className="h-5 w-5 text-blue-600" />
-                    <span>Recent Activity</span>
-                  </span>
-                  <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                    {recentPosts.length} posts
+          <div className="space-y-8">
+            <Card className="group hover:shadow-2xl transition-all duration-500 shadow-xl bg-white/95 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/20">
+              <CardHeader className="px-6 sm:px-8 py-8 bg-gradient-to-r from-green-50/90 via-blue-50/80 to-purple-50/70 backdrop-blur-xl border-b border-white/30">
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className="p-3 bg-gradient-to-br from-green-600 to-blue-600 rounded-2xl shadow-lg">
+                    <Activity className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-green-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
+                      Activity Feed
+                    </CardTitle>
+                    <CardDescription className="text-base text-slate-600 mt-1">
+                      Real-time updates on your content performance and audience interactions
+                    </CardDescription>
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <Badge variant="secondary" className="bg-gradient-to-r from-green-100 to-blue-100 text-green-700 border-green-200 rounded-full px-4 py-2 font-medium">
+                    {recentPosts.length} recent activities
                   </Badge>
-                </CardTitle>
-                <CardDescription className="text-sm">Your latest posts and their performance metrics</CardDescription>
+                </div>
               </CardHeader>
-              <CardContent className="px-4 sm:px-6">
-                <div className="space-y-4">
+              <CardContent className="px-6 sm:px-8 py-8">
+                <div className="space-y-6">
                   {recentPosts.map((post) => (
                     <div
                       key={post.id}
-                      className="group p-4 border rounded-xl hover:shadow-md transition-all duration-200 bg-gradient-to-r from-white to-gray-50/50 hover:from-blue-50/30 hover:to-purple-50/30"
+                      className="group p-6 border border-slate-200/50 rounded-2xl hover:shadow-lg transition-all duration-300 bg-gradient-to-r from-white to-slate-50/30 hover:from-green-50/50 hover:to-blue-50/30"
                     >
-                      <div className="flex flex-col sm:flex-row sm:items-start justify-between space-y-3 sm:space-y-0">
-                        <div className="flex-1 space-y-3">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <div className="flex items-center space-x-2 bg-white rounded-full px-3 py-1 shadow-sm">
-                              <BarChart3 className="h-4 w-4" />
-                              <Badge variant="secondary" className="text-xs font-medium">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between space-y-4 sm:space-y-0">
+                        <div className="flex-1 space-y-4">
+                          <div className="flex flex-wrap items-center gap-3">
+                            <div className="flex items-center space-x-2 bg-white rounded-full px-4 py-2 shadow-sm border border-slate-200/50">
+                              <Activity className="h-4 w-4 text-green-600" />
+                              <Badge variant="secondary" className="text-xs font-medium bg-gradient-to-r from-green-100 to-blue-100 text-green-700">
                                 Activity
                               </Badge>
                             </div>
-                            <div className="flex items-center space-x-1 text-xs text-muted-foreground bg-white rounded-full px-3 py-1 shadow-sm">
+                            <div className={`flex items-center space-x-2 text-xs font-medium bg-white rounded-full px-4 py-2 shadow-sm border border-slate-200/50 ${getStatusColors(post.status)}`}>
                               <Clock className="h-3 w-3" />
-                              <span className="font-medium">{post.time}</span>
+                              <span>{post.time}</span>
                             </div>
                           </div>
-                          <p className="text-sm text-foreground leading-relaxed bg-white/60 p-3 rounded-lg">
+                          <p className="text-sm text-slate-700 leading-relaxed bg-white/80 p-4 rounded-xl border border-slate-200/30 shadow-sm">
                             {post.content}
                           </p>
                           {post.status === "published" && (
-                            <div className="flex flex-wrap items-center gap-3 text-xs">
-                              <div className="flex items-center space-x-1 bg-red-50 text-red-600 px-3 py-1 rounded-full">
-                                <Heart className="h-3 w-3" />
-                                <span className="font-medium">{post.likes}</span>
+                            <div className="flex flex-wrap items-center gap-3">
+                              <div className="flex items-center space-x-2 bg-gradient-to-r from-red-50 to-pink-50 text-red-600 px-4 py-2 rounded-full border border-red-200/50 shadow-sm">
+                                <Heart className="h-4 w-4" />
+                                <span className="font-semibold">{post.likes}</span>
                               </div>
-                              <div className="flex items-center space-x-1 bg-green-50 text-green-600 px-3 py-1 rounded-full">
-                                <Share2 className="h-3 w-3" />
-                                <span className="font-medium">{post.retweets}</span>
+                              <div className="flex items-center space-x-2 bg-gradient-to-r from-green-50 to-emerald-50 text-green-600 px-4 py-2 rounded-full border border-green-200/50 shadow-sm">
+                                <Share2 className="h-4 w-4" />
+                                <span className="font-semibold">{post.retweets}</span>
                               </div>
-                              <div className="flex items-center space-x-1 bg-blue-50 text-blue-600 px-3 py-1 rounded-full">
-                                <MessageSquare className="h-3 w-3" />
-                                <span className="font-medium">{post.comments}</span>
+                              <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-600 px-4 py-2 rounded-full border border-blue-200/50 shadow-sm">
+                                <MessageSquare className="h-4 w-4" />
+                                <span className="font-semibold">{post.comments}</span>
                               </div>
                             </div>
                           )}
                         </div>
-                        <div className="flex items-center justify-end space-x-2 sm:ml-4">
+                        <div className="flex items-center justify-end space-x-3 sm:ml-6">
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-9 w-9 p-0 hover:bg-blue-100 hover:text-blue-600 transition-colors"
+                            className="h-12 w-12 p-0 hover:bg-blue-100 hover:text-blue-600 transition-all duration-300 rounded-xl border border-slate-200/50"
                           >
-                            <Eye className="h-4 w-4" />
+                            <Eye className="h-5 w-5" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-9 w-9 p-0 hover:bg-green-100 hover:text-green-600 transition-colors"
+                            className="h-12 w-12 p-0 hover:bg-green-100 hover:text-green-600 transition-all duration-300 rounded-xl border border-slate-200/50"
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="h-5 w-5" />
                           </Button>
                         </div>
                       </div>
@@ -711,60 +976,42 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            {/* AI Writing Assistant */}
-            <Card className="hover:shadow-xl transition-all duration-300 border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-              <CardHeader className="px-4 sm:px-6 bg-gradient-to-r from-indigo-50 to-purple-50">
-                <CardTitle className="text-lg sm:text-xl flex items-center justify-between">
-                  <span className="flex items-center space-x-2">
-                    <Sparkles className="h-5 w-5 text-indigo-600" />
-                    <span>AI Writing Assistant</span>
-                  </span>
-                  <Badge variant="default" className="bg-indigo-100 text-indigo-700">
-                    Generate
-                  </Badge>
-                </CardTitle>
-                <CardDescription className="text-sm">
-                  Generate engaging content for your next tweet with AI-powered suggestions
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="px-4 sm:px-6">
-                <div className="space-y-4">
-                  <div className="relative group">
-                    <textarea
-                      placeholder="What would you like to write about today?"
-                      className="w-full min-h-[120px] p-4 border border-gray-200 rounded-2xl bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 resize-none"
-                    />
-                    <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-focus-within:border-indigo-500 transition-all duration-300 pointer-events-none" />
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {["Tech Tips", "Motivation", "Industry News", "Personal Story"].map((topic) => (
-                      <Button
-                        key={topic}
-                        variant="outline"
-                        size="sm"
-                        className="border-gray-200 text-gray-700 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700 transition-all duration-200 rounded-full"
-                      >
-                        {topic}
+            {/* Additional Activity Insights */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="group hover:shadow-2xl transition-all duration-500 shadow-xl bg-white/95 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/20">
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="p-3 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl shadow-lg">
+                      <Lightbulb className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-slate-800">Content Insights</h3>
+                      <p className="text-sm text-slate-600 mt-1">AI-powered recommendations for better engagement</p>
+                      <Button variant="outline" size="sm" className="mt-3 h-9 px-4 rounded-lg border-slate-300 hover:bg-slate-50 transition-all duration-300">
+                        View Insights
                       </Button>
-                    ))}
+                    </div>
                   </div>
-                  <div className="flex flex-col space-y-4">
-                    <Button className="group relative overflow-hidden bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold h-12 shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl">
-                      <span className="relative z-10 flex items-center space-x-2">
-                        <Sparkles className="h-4 w-4" />
-                        <span>Generate with AI</span>
-                        <Zap className="h-4 w-4 group-hover:rotate-12 transition-transform duration-300" />
-                      </span>
-                      <div className="absolute inset-0 bg-gradient-to-r from-purple-700 to-indigo-700 transform -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
-                    </Button>
-                    <Button variant="outline" className="border-gray-200 text-gray-700 hover:bg-gray-50 h-12 rounded-xl transition-all duration-200">
-                      <Edit className="h-4 w-4 mr-2" />
-                      Write Manually
-                    </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="group hover:shadow-2xl transition-all duration-500 shadow-xl bg-white/95 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/20">
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl shadow-lg">
+                      <Rocket className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-slate-800">Performance Boost</h3>
+                      <p className="text-sm text-slate-600 mt-1">Optimize your posting schedule for maximum reach</p>
+                      <Button variant="outline" size="sm" className="mt-3 h-9 px-4 rounded-lg border-slate-300 hover:bg-slate-50 transition-all duration-300">
+                        Optimize Now
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         )}
       </main>

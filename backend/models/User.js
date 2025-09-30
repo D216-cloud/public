@@ -31,6 +31,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     sparse: true,
   },
+  twitterProfileImageUrl: {
+    type: String,
+    sparse: true,
+  },
   twitterAccessToken: {
     type: String,
     sparse: true,

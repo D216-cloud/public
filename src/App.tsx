@@ -14,8 +14,10 @@ import AnalyticsPage from './pages/AnalyticsPage'
 import SettingsPage from './pages/SettingsPage'
 import OnboardingPage from './pages/OnboardingPage'
 import DemoPage from './pages/DemoPage'
-import AIWriterPage from './pages/AIWriterPage'
-import TwitterSignupPage from './pages/TwitterSignupPage' // Add this import
+import TwitterPostPage from './pages/TwitterPostPage'
+import TwitterSignupPage from './pages/TwitterSignupPage'
+import XProfilePage from './pages/XProfilePage'
+import ContentSchedulerPage from './pages/ContentSchedulerPage'
 
 function App() {
   return (
@@ -27,7 +29,7 @@ function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
-              <Route path="/twitter-signup" element={<TwitterSignupPage />} /> {/* Add this route */}
+              <Route path="/twitter-signup" element={<TwitterSignupPage />} />
               <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <DashboardPage />
@@ -48,6 +50,16 @@ function App() {
                   <SettingsPage />
                 </ProtectedRoute>
               } />
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <XProfilePage />
+                </ProtectedRoute>
+              } />
+              <Route path="/scheduler" element={
+                <ProtectedRoute>
+                  <ContentSchedulerPage />
+                </ProtectedRoute>
+              } />
               <Route path="/onboarding" element={
                 <ProtectedRoute requireOnboarding={true}>
                   <OnboardingPage />
@@ -58,9 +70,9 @@ function App() {
                   <DemoPage />
                 </ProtectedRoute>
               } />
-              <Route path="/ai-writer" element={
+              <Route path="/post" element={
                 <ProtectedRoute>
-                  <AIWriterPage />
+                  <TwitterPostPage />
                 </ProtectedRoute>
               } />
             </Routes>

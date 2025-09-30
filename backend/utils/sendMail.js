@@ -119,18 +119,7 @@ const sendWelcomeEmail = async (userEmail, userName) => {
     return { success: true, messageId: result.messageId };
   } catch (error) {
     console.error('Error sending welcome email:', error);
-    
-    // Provide more specific error messages for common issues
-    let errorMessage = error.message;
-    if (error.code === 'EAUTH' || (error.message && error.message.includes('Invalid login'))) {
-      errorMessage = 'Email authentication failed. Please ensure you are using a valid Gmail App Password. Check the GMAIL_SETUP_GUIDE.md file for detailed instructions.';
-    } else if (error.code === 'EENVELOPE') {
-      errorMessage = 'Invalid email address. Please check the recipient email address.';
-    } else if (error.code === 'ECONNECTION') {
-      errorMessage = 'Unable to connect to email server. Please check your internet connection.';
-    }
-    
-    return { success: false, error: errorMessage };
+    return { success: false, error: error.message };
   }
 };
 
@@ -139,10 +128,10 @@ const sendWelcomeEmail = async (userEmail, userName) => {
  * @param {string} userEmail - The email address of the user
  * @param {string} userName - The name of the user
  * @param {string} verificationCode - The verification code to send
- * @param {string} twitterUsername - The Twitter username being verified
+ * @param {string} accountType - The type of account being verified
  * @returns {Promise<Object>} - Result of the email sending operation
  */
-const sendVerificationCodeEmail = async (userEmail, userName, verificationCode, twitterUsername) => {
+const sendVerificationCodeEmail = async (userEmail, userName, verificationCode, accountType) => {
   try {
     // Validate required environment variables
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
@@ -156,14 +145,14 @@ const sendVerificationCodeEmail = async (userEmail, userName, verificationCode, 
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: userEmail,
-      subject: 'Twitter Account Verification Code',
+      subject: `Verify your ${accountType} for TwitterAI Pro`,
       html: `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Twitter Verification Code</title>
+          <title>Verify your account</title>
         </head>
         <body style="margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f5f7fa;">
           <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f7fa; padding: 20px 0;">
@@ -174,41 +163,35 @@ const sendVerificationCodeEmail = async (userEmail, userName, verificationCode, 
                   <tr>
                     <td style="background: linear-gradient(135deg, #1DA1F2 0%, #0d8bd9 100%); padding: 30px 20px; text-align: center;">
                       <h1 style="color: white; margin: 0; font-size: 28px; font-weight: bold;">TwitterAI Pro</h1>
-                      <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 16px;">Twitter Account Verification</p>
+                      <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 16px;">AI-Powered Twitter Growth</p>
                     </td>
                   </tr>
                   
                   <!-- Content -->
                   <tr>
                     <td style="padding: 40px 30px;">
-                      <h2 style="color: #333; margin-top: 0; font-size: 24px;">Hello, ${userName}!</h2>
+                      <h2 style="color: #333; margin-top: 0; font-size: 24px;">Verify your ${accountType}, ${userName}!</h2>
                       
                       <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 20px 0;">
-                        You've requested to verify your Twitter account <strong>@${twitterUsername}</strong> with TwitterAI Pro.
+                        To complete the connection of your ${accountType} to TwitterAI Pro, please use the verification code below:
                       </p>
                       
-                      <div style="background-color: #f8f9fa; border-radius: 8px; padding: 25px; margin: 30px 0; border: 1px solid #eaeaea; text-align: center;">
+                      <div style="background-color: #f8f9fa; border-radius: 8px; padding: 30px; margin: 30px 0; border: 1px solid #eaeaea; text-align: center;">
                         <h3 style="color: #1DA1F2; margin-top: 0; font-size: 18px;">Your Verification Code</h3>
-                        <div style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #333; margin: 20px 0; background: white; padding: 15px; border-radius: 8px; border: 2px dashed #1DA1F2;">
+                        <div style="font-size: 32px; font-weight: bold; color: #333; letter-spacing: 5px; margin: 20px 0;">
                           ${verificationCode}
                         </div>
-                        <p style="color: #666; font-size: 14px; margin: 0;">
+                        <p style="color: #777; font-size: 14px; margin: 0;">
                           This code will expire in 5 minutes
                         </p>
                       </div>
                       
                       <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 20px 0;">
-                        Please enter this code in the verification field on our website to complete the verification process.
+                        Enter this code in the verification field on the TwitterAI Pro platform to complete the connection process.
                       </p>
                       
-                      <div style="background-color: #fff8e6; border-left: 4px solid #ffc107; padding: 15px; margin: 25px 0; border-radius: 0 8px 8px 0;">
-                        <p style="color: #333; font-size: 14px; margin: 0;">
-                          <strong>Security Notice:</strong> If you didn't request this verification, please ignore this email or contact our support team.
-                        </p>
-                      </div>
-                      
                       <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 20px 0;">
-                        If you have any questions, our support team is always ready to help at 
+                        If you didn't request this verification, please ignore this email or contact our support team at 
                         <a href="mailto:support@twitteraipro.com" style="color: #1DA1F2; text-decoration: none;">support@twitteraipro.com</a>.
                       </p>
                     </td>
@@ -240,18 +223,7 @@ const sendVerificationCodeEmail = async (userEmail, userName, verificationCode, 
     return { success: true, messageId: result.messageId };
   } catch (error) {
     console.error('Error sending verification code email:', error);
-    
-    // Provide more specific error messages for common issues
-    let errorMessage = error.message;
-    if (error.code === 'EAUTH' || (error.message && error.message.includes('Invalid login'))) {
-      errorMessage = 'Email authentication failed. Please ensure you are using a valid Gmail App Password. Check the GMAIL_SETUP_GUIDE.md file for detailed instructions.';
-    } else if (error.code === 'EENVELOPE') {
-      errorMessage = 'Invalid email address. Please check the recipient email address.';
-    } else if (error.code === 'ECONNECTION') {
-      errorMessage = 'Unable to connect to email server. Please check your internet connection.';
-    }
-    
-    return { success: false, error: errorMessage };
+    return { success: false, error: error.message };
   }
 };
 

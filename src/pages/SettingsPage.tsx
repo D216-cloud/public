@@ -1,46 +1,60 @@
-"use client";
+"use client"
 
-import type React from "react";
+import type React from "react"
 
-import { useState, useRef, useEffect } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { DashboardHeader } from "@/components/dashboard-header";
-import {
-  Twitter,
-  Trash2,
-  Download,
-  Upload,
-  Camera,
-  User,
-  LogOut,
-  CheckCircle,
-  Crown,
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { API_URL } from "@/utils/config";
-import { toast } from "@/hooks/use-toast";
-import { Toaster } from "@/components/ui/toaster";
+import { useState, useRef, useEffect } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { DashboardHeader } from "@/components/dashboard-header"
+import { 
+  Twitter, 
+  Trash2, 
+  Download, 
+  Upload, 
+  Camera, 
+  User, 
+  LogOut, 
+  CheckCircle, 
+  Crown, 
+  Bell, 
+  Shield, 
+  CreditCard, 
+  Bot, 
+  Globe, 
+  Lock, 
+  Mail, 
+  Smartphone, 
+  Heart, 
+  MessageCircle, 
+  AtSign, 
+  Clock, 
+  Calendar,
+  Key,
+  FileText,
+  Save,
+  RotateCcw,
+  Eye,
+  EyeOff,
+  Users,
+  Zap,
+  Sparkles,
+  Palette,
+  Languages,
+  Monitor,
+  Settings
+} from "lucide-react"
+import { useNavigate } from "react-router-dom"
+import { API_URL } from "@/utils/config"
+import { toast } from "@/hooks/use-toast"
+import { Toaster } from "@/components/ui/toaster"
 
 interface UserData {
   _id: string;
@@ -57,29 +71,25 @@ interface TwitterStatus {
   connected: boolean;
   username: string | null;
   twitterId: string | null;
+  profileImageUrl: string | null;
 }
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState("profile");
-  const [profileImage, setProfileImage] = useState("/diverse-user-avatars.png");
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [userData, setUserData] = useState<UserData | null>(null);
-  const [twitterStatus, setTwitterStatus] = useState<TwitterStatus>({
-    connected: false,
-    username: null,
-    twitterId: null,
-  });
-  const [isConnectingTwitter, setIsConnectingTwitter] = useState(false);
-  const [twitterUsername, setTwitterUsername] = useState("");
-  const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
-  const [verificationEmail, setVerificationEmail] = useState("");
-  const [verificationCode, setVerificationCode] = useState("");
-  const [isSendingCode, setIsSendingCode] = useState(false);
-  const [isVerifyingCode, setIsVerifyingCode] = useState(false);
-  const [showEmailVerification, setShowEmailVerification] = useState(false);
-  const [isRequestingVerification, setIsRequestingVerification] = useState(false);
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("profile")
+  const [profileImage, setProfileImage] = useState("/diverse-user-avatars.png")
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const [userData, setUserData] = useState<UserData | null>(null)
+  const [twitterStatus, setTwitterStatus] = useState<TwitterStatus>({ connected: false, username: null, twitterId: null, profileImageUrl: null })
+  const [isConnectingTwitter, setIsConnectingTwitter] = useState(false)
+  const [twitterUsername, setTwitterUsername] = useState('')
+  const [isVerifyingEmail, setIsVerifyingEmail] = useState(false)
+  const [verificationEmail, setVerificationEmail] = useState('')
+  const [verificationCode, setVerificationCode] = useState('')
+  const [isSendingCode, setIsSendingCode] = useState(false)
+  const [isVerifyingCode, setIsVerifyingCode] = useState(false)
+  const [showEmailVerification, setShowEmailVerification] = useState(false)
+  const imageInputRef = useRef<HTMLInputElement>(null)
+  const navigate = useNavigate()
   const [notifications, setNotifications] = useState({
     email: true,
     push: true,
@@ -87,265 +97,174 @@ export default function SettingsPage() {
     followers: false,
     mentions: true,
     directMessages: true,
-  });
+  })
 
   const [autoPosting, setAutoPosting] = useState({
     enabled: true,
     timezone: "America/New_York",
     optimalTimes: true,
     weekendsOnly: false,
-  });
+  })
 
   // Get user data from localStorage and fetch Twitter status
   useEffect(() => {
-    const userString = localStorage.getItem("user");
+    const userString = localStorage.getItem('user')
     if (userString) {
       try {
-        const user = JSON.parse(userString);
-        setUserData(user);
-        setProfileImage(
-          user.profileImage ||
-            user.profilePicture ||
-            "/diverse-user-avatars.png",
-        );
+        const user = JSON.parse(userString)
+        setUserData(user)
+        setProfileImage(user.profileImage || user.profilePicture || "/diverse-user-avatars.png")
       } catch (e) {
-        console.error("Error parsing user data:", e);
+        console.error('Error parsing user data:', e)
       }
     }
-
+    
     // Fetch Twitter connection status
-    fetchTwitterStatus();
-  }, []);
+    fetchTwitterStatus()
+  }, [])
+
+  // Add a function to refresh Twitter status
+  const refreshTwitterStatus = async () => {
+    await fetchTwitterStatus()
+  }
 
   const fetchTwitterStatus = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
+      const token = localStorage.getItem('token')
+      if (!token) return
 
       const response = await fetch(`${API_URL}/api/twitter/status`, {
         headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+          'Authorization': `Bearer ${token}`
+        }
+      })
 
       if (response.ok) {
-        const result = await response.json();
+        const result = await response.json()
         if (result.success) {
           setTwitterStatus({
-            connected: result.connected,
-            username: result.username,
-            twitterId: result.twitterId,
-          });
+            connected: result.connected || false,
+            username: result.screenName || result.username || null,
+            twitterId: result.twitterId || null,
+            profileImageUrl: result.profileImageUrl || null
+          })
         }
+      } else {
+        // Handle HTTP errors
+        console.error('Failed to fetch Twitter status:', response.status, response.statusText)
+        // Set default state on error
+        setTwitterStatus({ connected: false, username: null, twitterId: null, profileImageUrl: null })
       }
     } catch (error) {
-      console.error("Error fetching Twitter status:", error);
+      console.error('Error fetching Twitter status:', error)
+      // Set default state on error
+      setTwitterStatus({ connected: false, username: null, twitterId: null, profileImageUrl: null })
     }
-  };
+  }
 
   // Handle logout
   const handleLogout = () => {
     // Show success message first
     toast({
       title: "✅ Logged Out Successfully!",
-      description:
-        "You have been logged out successfully. Redirecting to login page...",
+      description: "You have been logged out successfully. Redirecting to login page...",
       duration: 2000,
-    });
-
+    })
+    
     // Clear user data and token
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    
     // Redirect after showing the toast
     setTimeout(() => {
-      navigate("/login");
-    }, 2000);
-  };
+      navigate('/login')
+    }, 2000)
+  }
 
-  const handleImageUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const file = event.target.files?.[0];
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
     if (file) {
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert("File size must be less than 5MB");
-        return;
+        alert('File size must be less than 5MB')
+        return
       }
 
       // Validate file type
-      if (!file.type.startsWith("image/")) {
-        alert("Please select an image file");
-        return;
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file')
+        return
       }
 
-      setIsUploadingImage(true);
-
+      setIsUploadingImage(true)
+      
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem('token')
         if (!token) {
-          alert("Please log in to upload image");
-          return;
+          alert('Please log in to upload image')
+          return
         }
 
-        const formData = new FormData();
-        formData.append("image", file);
-
+        const formData = new FormData()
+        formData.append('image', file)
+        
         const response = await fetch(`${API_URL}/api/auth/upload-image`, {
-          method: "POST",
+          method: 'POST',
           headers: {
-            Authorization: `Bearer ${token}`,
+            'Authorization': `Bearer ${token}`
           },
-          body: formData,
-        });
-
+          body: formData
+        })
+        
         if (response.ok) {
-          const updatedUser = await response.json();
+          const updatedUser = await response.json()
           // Update localStorage with new user data
-          localStorage.setItem("user", JSON.stringify(updatedUser));
-          setUserData(updatedUser);
-          setProfileImage(
-            updatedUser.profileImage || updatedUser.profilePicture,
-          );
-
+          localStorage.setItem('user', JSON.stringify(updatedUser))
+          setUserData(updatedUser)
+          setProfileImage(updatedUser.profileImage || updatedUser.profilePicture)
+          
           // Show success message
-          alert("Profile image updated successfully!");
+          alert('Profile image updated successfully!')
         } else {
-          const errorData = await response.json();
-          console.error("Failed to upload image:", errorData);
-          alert("Failed to upload image. Please try again.");
+          const errorData = await response.json()
+          console.error('Failed to upload image:', errorData)
+          alert('Failed to upload image. Please try again.')
         }
       } catch (error) {
-        console.error("Error uploading image:", error);
-        alert(
-          "Error uploading image. Please check your connection and try again.",
-        );
+        console.error('Error uploading image:', error)
+        alert('Error uploading image. Please check your connection and try again.')
       } finally {
-        setIsUploadingImage(false);
+        setIsUploadingImage(false)
         // Clear the input value so the same file can be selected again
         if (event.target) {
-          event.target.value = "";
+          event.target.value = ''
         }
       }
     }
-  };
+  }
 
   // Handle image removal
   const handleRemoveImage = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
+      const token = localStorage.getItem('token')
+      if (!token) return
 
       // For now, we'll just remove the image locally
       // You could also create an API endpoint to delete the image from Cloudinary
-      const updatedUserData = { ...userData, profileImage: null };
-      localStorage.setItem("user", JSON.stringify(updatedUserData));
-      setUserData(updatedUserData as UserData);
-      setProfileImage("/diverse-user-avatars.png");
-
-      alert("Profile image removed successfully!");
+      const updatedUserData = { ...userData, profileImage: null }
+      localStorage.setItem('user', JSON.stringify(updatedUserData))
+      setUserData(updatedUserData as UserData)
+      setProfileImage("/diverse-user-avatars.png")
+      
+      alert('Profile image removed successfully!')
     } catch (error) {
-      console.error("Error removing image:", error);
-      alert("Error removing image. Please try again.");
+      console.error('Error removing image:', error)
+      alert('Error removing image. Please try again.')
     }
-  };
+  }
 
   // Handle Twitter connection
   const handleConnectTwitter = async () => {
-    if (!twitterUsername.trim()) {
-      toast({
-        title: "Username required",
-        description: "Please enter your Twitter username",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsConnectingTwitter(true);
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast({
-          title: "Authentication required",
-          description: "Please log in to connect your Twitter account",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Verify Twitter username exists without OAuth redirect
-      const response = await fetch(`${API_URL}/api/twitter/verify-username`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ username: twitterUsername.trim() }),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        // Username exists, show email verification form
-        setShowEmailVerification(true);
-        toast({
-          title: "Username verified",
-          description: `@${twitterUsername.trim()} found on X. Please enter your email for verification.`,
-        });
-      } else {
-        // Handle specific error cases
-        let errorMessage =
-          result.message || "Please check your Twitter username";
-
-        if (response.status === 401) {
-          errorMessage =
-            "Twitter API authentication failed. Please contact support.";
-        } else if (response.status === 404) {
-          errorMessage =
-            "Twitter username not found. Please check the username and try again.";
-        } else if (response.status === 429) {
-          errorMessage =
-            "Twitter API rate limit exceeded. Please try again in a few minutes.";
-        } else if (response.status >= 500) {
-          errorMessage =
-            "Twitter verification service temporarily unavailable. Please try again later.";
-        }
-
-        toast({
-          title: "Verification failed",
-          description: errorMessage,
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error connecting Twitter:", error);
-      // Handle network errors specifically
-      if (error instanceof TypeError && error.message.includes("fetch")) {
-        toast({
-          title: "Network error",
-          description:
-            "Unable to connect to Twitter verification service. Please check your internet connection and try again.",
-          variant: "destructive",
-        });
-      } else {
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : "Please check your connection and try again";
-        toast({
-          title: "Connection error",
-          description: errorMessage,
-          variant: "destructive",
-        });
-      }
-    } finally {
-      setIsConnectingTwitter(false);
-    }
-  };
-
-  // Request verification code for Twitter account
-  const handleRequestVerification = async () => {
     if (!twitterUsername.trim()) {
       toast({
         title: "Username required",
@@ -355,6 +274,73 @@ export default function SettingsPage() {
       return
     }
 
+    setIsConnectingTwitter(true)
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) return
+
+      // Verify Twitter username exists without OAuth redirect
+      const response = await fetch(`${API_URL}/api/twitter/verify-username`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ username: twitterUsername.trim() })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        // Update twitterStatus with profile image if available
+        if (result.profileImageUrl) {
+          setTwitterStatus(prev => ({
+            ...prev,
+            profileImageUrl: result.profileImageUrl
+          }))
+        }
+        
+        // Username exists, show email verification form
+        setShowEmailVerification(true)
+        toast({
+          title: "Username verified",
+          description: `@${twitterUsername.trim()} found on X. Please enter your email for verification.`
+        })
+      } else {
+        // Handle specific error cases
+        let errorMessage = result.message || "Please check your Twitter username"
+        
+        if (response.status === 401) {
+          errorMessage = "Twitter API authentication failed. Please contact support."
+        } else if (response.status === 404) {
+          errorMessage = "Twitter username not found. Please check the username and try again."
+        } else if (response.status === 429) {
+          errorMessage = "Twitter API rate limit exceeded. Please try again later."
+        } else if (response.status >= 500) {
+          errorMessage = "Twitter verification service temporarily unavailable. Please try again later."
+        }
+        
+        toast({
+          title: "Verification failed",
+          description: errorMessage,
+          variant: "destructive"
+        })
+      }
+    } catch (error) {
+      console.error('Error connecting Twitter:', error)
+      const errorMessage = error instanceof Error ? error.message : "Please check your connection and try again"
+      toast({
+        title: "Connection error",
+        description: errorMessage,
+        variant: "destructive"
+      })
+    } finally {
+      setIsConnectingTwitter(false)
+    }
+  }
+
+  // Send verification code to email
+  const handleSendVerificationCode = async () => {
     if (!verificationEmail.trim()) {
       toast({
         title: "Email required",
@@ -364,31 +350,35 @@ export default function SettingsPage() {
       return
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(verificationEmail)) {
-      toast({
-        title: "Invalid email",
-        description: "Please enter a valid email address",
-        variant: "destructive"
-      })
-      return
-    }
-
-    setIsRequestingVerification(true)
+    setIsSendingCode(true)
     try {
       const token = localStorage.getItem('token')
       if (!token) return
 
-      // Request verification code
-      const response = await fetch(`${API_URL}/api/twitter/request-verification`, {
+      // Get Twitter ID from previous verification
+      const twitterResponse = await fetch(`${API_URL}/api/twitter/verify-username`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ username: twitterUsername.trim() })
+      })
+
+      const twitterResult = await twitterResponse.json()
+      if (!twitterResult.success) {
+        throw new Error("Failed to verify Twitter username")
+      }
+
+      // Send verification code to email
+      const response = await fetch(`${API_URL}/api/twitter/send-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ 
-          username: twitterUsername.trim(),
+          twitterId: twitterResult.userId,
           email: verificationEmail.trim()
         })
       })
@@ -400,36 +390,19 @@ export default function SettingsPage() {
           title: "Code sent",
           description: "Verification code sent to your email. Please check your inbox."
         })
-        // Show the verification code input
-        setIsSendingCode(true)
       } else {
-        // Handle specific error cases
-        let errorMessage = result.message || "Failed to send verification code"
-        
-        if (response.status === 400) {
-          errorMessage = "Invalid request. Please check your username and email."
-        } else if (response.status === 429) {
-          errorMessage = "Too many requests. Please try again later."
-        } else if (response.status >= 500) {
-          errorMessage = "Service temporarily unavailable. Please try again later."
-        }
-        
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive"
-        })
+        throw new Error(result.message || "Failed to send verification code")
       }
     } catch (error) {
-      console.error('Error requesting verification:', error)
-      const errorMessage = error instanceof Error ? error.message : "Please check your connection and try again"
+      console.error('Error sending verification code:', error)
+      const errorMessage = error instanceof Error ? error.message : "Please check your connection and try again";
       toast({
         title: "Error",
         description: errorMessage,
         variant: "destructive"
       })
     } finally {
-      setIsRequestingVerification(false)
+      setIsSendingCode(false)
     }
   }
 
@@ -444,67 +417,84 @@ export default function SettingsPage() {
       return
     }
 
-    if (!twitterUsername.trim() || !verificationEmail.trim()) {
-      toast({
-        title: "Missing information",
-        description: "Please provide username and email",
-        variant: "destructive"
-      })
-      return
-    }
-
     setIsVerifyingCode(true)
     try {
       const token = localStorage.getItem('token')
       if (!token) return
 
+      // Get Twitter ID from previous verification
+      const twitterResponse = await fetch(`${API_URL}/api/twitter/verify-username`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ username: twitterUsername.trim() })
+      })
+
+      const twitterResult = await twitterResponse.json()
+      if (!twitterResult.success) {
+        throw new Error("Failed to verify Twitter username")
+      }
+
       // Verify the code
-      const response = await fetch(`${API_URL}/api/twitter/verify-account`, {
+      const response = await fetch(`${API_URL}/api/twitter/verify-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ 
-          username: twitterUsername.trim(),
-          email: verificationEmail.trim(),
-          code: verificationCode.trim()
+          twitterId: twitterResult.userId,
+          otp: verificationCode.trim()
         })
       })
 
       const result = await response.json()
 
       if (result.success) {
-        await fetchTwitterStatus() // Refresh status
-        setShowEmailVerification(false)
-        setVerificationEmail('')
-        setVerificationCode('')
-        setIsSendingCode(false)
-        toast({
-          title: "Verified Successfully",
-          description: `Connected to @${twitterUsername.trim()} and verified your email!`
+        // Connect Twitter account directly after successful verification
+        const connectResponse = await fetch(`${API_URL}/api/twitter/connect-direct`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ username: twitterUsername.trim() })
         })
-      } else {
-        // Handle specific error cases
-        let errorMessage = result.message || "Invalid verification code"
+
+        const connectResult = await connectResponse.json()
         
-        if (response.status === 400) {
-          errorMessage = result.message || "Invalid verification code"
-        } else if (response.status >= 500) {
-          errorMessage = "Service temporarily unavailable. Please try again later."
+        if (connectResult.success) {
+          // Update the twitterStatus with the profile image if available
+          if (connectResult.profileImageUrl) {
+            setTwitterStatus(prev => ({
+              ...prev,
+              connected: true,
+              username: twitterUsername.trim(),
+              profileImageUrl: connectResult.profileImageUrl
+            }))
+          }
+          
+          await fetchTwitterStatus() // Refresh status
+          setShowEmailVerification(false)
+          setVerificationEmail('')
+          setVerificationCode('')
+          toast({
+            title: "Connected Successfully",
+            description: `Connected to @${twitterUsername.trim()} and verified your email!`
+          })
+        } else {
+          throw new Error(connectResult.message || "Failed to connect Twitter account")
         }
-        
-        toast({
-          title: "Verification failed",
-          description: errorMessage,
-          variant: "destructive"
-        })
+      } else {
+        throw new Error(result.message || "Invalid verification code")
       }
     } catch (error) {
       console.error('Error verifying code:', error)
-      const errorMessage = error instanceof Error ? error.message : "Please check your connection and try again"
+      const errorMessage = error instanceof Error ? error.message : "Please check your connection and try again";
       toast({
-        title: "Error",
+        title: "Verification failed",
         description: errorMessage,
         variant: "destructive"
       })
@@ -516,134 +506,145 @@ export default function SettingsPage() {
   // Handle Twitter disconnection
   const handleDisconnectTwitter = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
+      const token = localStorage.getItem('token')
+      if (!token) return
 
       const response = await fetch(`${API_URL}/api/twitter/disconnect`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+          'Authorization': `Bearer ${token}`
+        }
+      })
 
-      const result = await response.json();
+      const result = await response.json()
 
       if (result.success) {
-        await fetchTwitterStatus(); // Refresh status
+        await fetchTwitterStatus() // Refresh status
         toast({
           title: "Disconnected",
           description: "Twitter account disconnected successfully",
-        });
+        })
       } else {
         toast({
           title: "Error",
           description: result.message || "Failed to disconnect Twitter account",
-          variant: "destructive",
-        });
+          variant: "destructive"
+        })
       }
     } catch (error) {
-      console.error("Error disconnecting Twitter:", error);
+      console.error('Error disconnecting Twitter:', error)
       toast({
         title: "Error",
         description: "Please try again",
-        variant: "destructive",
-      });
+        variant: "destructive"
+      })
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 pt-16">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/50 pt-16">
       <DashboardHeader />
 
-      <main className="container mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-8">
-        {/* Header */}
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 max-w-7xl">
+        {/* Enhanced Header */}
+        <div className="mb-8 sm:mb-12 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-2xl sm:rounded-3xl shadow-2xl mb-6 transform hover:scale-105 transition-all duration-300">
+            <Settings className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+          </div>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-4 tracking-tight">
             Settings
           </h1>
-          <p className="text-sm sm:text-base text-muted-foreground">
-            Manage your account and application preferences
+          <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
+            Customize your experience and manage your account preferences with our comprehensive settings panel
           </p>
+          <div className="flex items-center justify-center mt-6 space-x-2">
+            <div className="h-1 w-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full"></div>
+            <div className="h-2 w-2 bg-purple-600 rounded-full animate-pulse"></div>
+            <div className="h-1 w-12 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full"></div>
+          </div>
         </div>
 
-        <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="space-y-4 sm:space-y-6"
-        >
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6 sm:space-y-8">
           <div className="w-full overflow-x-auto">
-            <TabsList className="grid grid-cols-6 min-w-[600px] sm:min-w-0 h-14 bg-white/80 backdrop-blur-sm shadow-lg border-0 rounded-xl p-1">
+            <TabsList className="grid grid-cols-6 min-w-[600px] sm:min-w-0 h-16 bg-white/90 backdrop-blur-xl shadow-xl border border-white/20 rounded-2xl p-2">
               <TabsTrigger
                 value="profile"
-                className="text-xs sm:text-sm px-2 sm:px-4 h-10 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all"
+                className="text-xs sm:text-sm px-3 sm:px-6 h-12 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:via-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:scale-105 transition-all duration-300 hover:bg-white/50"
               >
-                <User className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">Profile</span>
+                <User className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                <span className="hidden sm:inline font-medium">Profile</span>
               </TabsTrigger>
               <TabsTrigger
                 value="account"
-                className="text-xs sm:text-sm px-2 sm:px-4 h-10 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all"
+                className="text-xs sm:text-sm px-3 sm:px-6 h-12 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:via-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:scale-105 transition-all duration-300 hover:bg-white/50"
               >
-                Account
+                <Shield className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                <span className="hidden sm:inline font-medium">Account</span>
               </TabsTrigger>
               <TabsTrigger
                 value="notifications"
-                className="text-xs sm:text-sm px-2 sm:px-4 h-10 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all"
+                className="text-xs sm:text-sm px-3 sm:px-6 h-12 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:via-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:scale-105 transition-all duration-300 hover:bg-white/50"
               >
-                Notifications
+                <Bell className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                <span className="hidden sm:inline font-medium">Notifications</span>
               </TabsTrigger>
               <TabsTrigger
                 value="automation"
-                className="text-xs sm:text-sm px-2 sm:px-4 h-10 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all"
+                className="text-xs sm:text-sm px-3 sm:px-6 h-12 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:via-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:scale-105 transition-all duration-300 hover:bg-white/50"
               >
-                Automation
+                <Bot className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                <span className="hidden sm:inline font-medium">Automation</span>
               </TabsTrigger>
               <TabsTrigger
                 value="billing"
-                className="text-xs sm:text-sm px-2 sm:px-4 h-10 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all"
+                className="text-xs sm:text-sm px-3 sm:px-6 h-12 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:via-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:scale-105 transition-all duration-300 hover:bg-white/50"
               >
-                Billing
+                <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                <span className="hidden sm:inline font-medium">Billing</span>
               </TabsTrigger>
               <TabsTrigger
                 value="security"
-                className="text-xs sm:text-sm px-2 sm:px-4 h-10 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all"
+                className="text-xs sm:text-sm px-3 sm:px-6 h-12 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:via-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:scale-105 transition-all duration-300 hover:bg-white/50"
               >
-                Security
+                <Lock className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                <span className="hidden sm:inline font-medium">Security</span>
               </TabsTrigger>
             </TabsList>
           </div>
 
-          <TabsContent value="profile" className="space-y-4 sm:space-y-6">
-            <Card className="hover:shadow-xl transition-all duration-300 border-0 shadow-lg bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden">
-              <CardHeader className="px-4 sm:px-6 bg-gradient-to-r from-blue-50/80 to-purple-50/80 backdrop-blur-sm border-b border-gray-100/50">
-                <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Profile Information
-                </CardTitle>
-                <CardDescription className="text-sm text-gray-600">
-                  Update your personal information and Twitter connection
-                </CardDescription>
+          <TabsContent value="profile" className="space-y-6 sm:space-y-8">
+            <Card className="group hover:shadow-2xl transition-all duration-500 shadow-xl bg-white/95 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/20">
+              <CardHeader className="px-6 sm:px-8 py-8 bg-gradient-to-r from-blue-50/90 via-purple-50/80 to-pink-50/70 backdrop-blur-xl border-b border-white/30">
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className="p-3 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-lg">
+                    <User className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                      Profile Information
+                    </CardTitle>
+                    <CardDescription className="text-base text-slate-600 mt-1">
+                      Update your personal information and manage your account details
+                    </CardDescription>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-6 px-4 sm:px-6 py-6">
-                <div className="flex flex-col sm:flex-row items-center space-y-6 sm:space-y-0 sm:space-x-8">
+              <CardContent className="space-y-8 px-6 sm:px-8 py-8">
+                <div className="flex flex-col lg:flex-row items-center lg:items-start space-y-8 lg:space-y-0 lg:space-x-12">
                   <div className="relative group">
                     <div className="relative">
-                      <Avatar className="h-24 w-24 sm:h-28 sm:w-28 ring-4 ring-white shadow-xl">
-                        <AvatarImage
-                          src={profileImage || "/placeholder.svg"}
-                          alt="Profile"
-                          className="object-cover"
-                        />
-                        <AvatarFallback className="text-xl font-bold bg-gradient-to-br from-blue-600 to-purple-600 text-white">
-                          {userData?.name
-                            ? userData.name.charAt(0).toUpperCase()
-                            : "U"}
+                      <Avatar className="h-32 w-32 sm:h-36 sm:w-36 ring-8 ring-white/50 shadow-2xl border-4 border-white">
+                        <AvatarImage src={profileImage || "/placeholder.svg"} alt="Profile" className="object-cover" />
+                        <AvatarFallback className="text-3xl font-bold bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 text-white">
+                          {userData?.name ? userData.name.charAt(0).toUpperCase() : 'U'}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-400/20 to-purple-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-400/30 via-purple-400/30 to-pink-400/30 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-600/20 to-purple-600/20 opacity-0 group-hover:opacity-100 transition-all duration-500 animate-pulse"></div>
                     </div>
                     {isUploadingImage && (
-                      <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                      <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center backdrop-blur-sm">
+                        <div className="animate-spin rounded-full h-10 w-10 border-4 border-white border-t-transparent shadow-lg"></div>
                       </div>
                     )}
                     <Button
@@ -651,46 +652,39 @@ export default function SettingsPage() {
                       size="sm"
                       onClick={() => imageInputRef.current?.click()}
                       disabled={isUploadingImage}
-                      className="absolute -bottom-2 -right-2 h-10 w-10 p-0 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-white hover:from-blue-700 hover:to-purple-700 transform hover:scale-110"
+                      className="absolute -bottom-3 -right-3 h-12 w-12 p-0 rounded-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 shadow-xl hover:shadow-2xl transition-all duration-300 border-4 border-white hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 transform hover:scale-110"
                     >
-                      <Camera className="h-4 w-4 text-white" />
+                      <Camera className="h-5 w-5 text-white" />
                     </Button>
                   </div>
-                  <div className="flex flex-col items-center sm:items-start space-y-3">
-                    <div className="text-center sm:text-left">
-                      <h3 className="text-2xl font-bold text-gray-900">
-                        {userData?.name || "User"}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        {userData?.email || "user@example.com"}
-                      </p>
-                      <Badge
-                        variant="secondary"
-                        className="mt-2 bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 border-0 px-3 py-1"
-                      >
-                        <Crown className="h-3 w-3 mr-1" />
-                        <span className="font-medium">Pro Member</span>
+                  <div className="flex flex-col items-center lg:items-start space-y-4 text-center lg:text-left">
+                    <div>
+                      <h3 className="text-3xl font-bold text-gray-900 mb-1">{userData?.name || "User"}</h3>
+                      <p className="text-lg text-slate-600 mb-3">{userData?.email || "user@example.com"}</p>
+                      <Badge variant="secondary" className="bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100 text-blue-800 border-0 px-4 py-2 rounded-full shadow-sm">
+                        <Crown className="h-4 w-4 mr-2" />
+                        <span className="font-semibold">Pro Member</span>
                       </Badge>
                     </div>
-                    <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="flex flex-col sm:flex-row gap-3">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => imageInputRef.current?.click()}
                         disabled={isUploadingImage}
-                        className="h-9 px-4 border-gray-300 hover:bg-gray-50 rounded-lg transition-all duration-300"
+                        className="h-11 px-6 border-2 border-slate-300 hover:border-blue-400 hover:bg-blue-50 rounded-xl transition-all duration-300 font-medium shadow-sm hover:shadow-md"
                       >
                         <Upload className="h-4 w-4 mr-2" />
-                        <span className="text-sm">Change Photo</span>
+                        <span>Change Photo</span>
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-red-600 h-9 px-4 hover:bg-red-50 rounded-lg transition-all duration-300"
+                        className="text-red-600 h-11 px-6 hover:bg-red-50 rounded-xl transition-all duration-300 font-medium border-2 border-red-200 hover:border-red-300"
                         onClick={handleRemoveImage}
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
-                        <span className="text-sm">Remove</span>
+                        <span>Remove</span>
                       </Button>
                     </div>
                     <input
@@ -703,152 +697,107 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="firstName"
-                      className="text-sm font-medium text-gray-700"
-                    >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <Label htmlFor="firstName" className="text-sm font-semibold text-slate-700 flex items-center">
+                      <User className="h-4 w-4 mr-2 text-blue-600" />
                       Full Name
                     </Label>
-                    <div className="relative">
+                    <div className="relative group">
                       <Input
                         id="firstName"
                         value={userData?.name || ""}
                         readOnly
-                        className="h-12 pl-10 bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-lg transition-all duration-300"
+                        className="h-14 pl-12 bg-slate-50/80 border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 rounded-xl transition-all duration-300 text-base font-medium shadow-sm hover:shadow-md"
                       />
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <div className="absolute left-4 top-1/2 transform -translate-y-1/2 p-2 bg-white rounded-lg shadow-sm">
+                        <User className="h-5 w-5 text-slate-500" />
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="email"
-                      className="text-sm font-medium text-gray-700"
-                    >
+                  <div className="space-y-3">
+                    <Label htmlFor="email" className="text-sm font-semibold text-slate-700 flex items-center">
+                      <Mail className="h-4 w-4 mr-2 text-blue-600" />
                       Email Address
                     </Label>
-                    <div className="relative">
+                    <div className="relative group">
                       <Input
                         id="email"
                         type="email"
                         value={userData?.email || ""}
                         readOnly
-                        className="h-12 pl-10 bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-lg transition-all duration-300"
+                        className="h-14 pl-12 bg-slate-50/80 border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 rounded-xl transition-all duration-300 text-base font-medium shadow-sm hover:shadow-md"
                       />
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                        />
-                      </svg>
+                      <div className="absolute left-4 top-1/2 transform -translate-y-1/2 p-2 bg-white rounded-lg shadow-sm">
+                        <Mail className="h-5 w-5 text-slate-500" />
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="userId"
-                      className="text-sm font-medium text-gray-700"
-                    >
+                  <div className="space-y-3">
+                    <Label htmlFor="userId" className="text-sm font-semibold text-slate-700 flex items-center">
+                      <Key className="h-4 w-4 mr-2 text-blue-600" />
                       User ID
                     </Label>
-                    <div className="relative">
+                    <div className="relative group">
                       <Input
                         id="userId"
                         value={userData?._id || ""}
                         readOnly
-                        className="h-12 pl-10 bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-lg transition-all duration-300"
+                        className="h-14 pl-12 bg-slate-50/80 border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 rounded-xl transition-all duration-300 text-base font-medium shadow-sm hover:shadow-md"
                       />
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 15v2m-6 4h12a2 2 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
+                      <div className="absolute left-4 top-1/2 transform -translate-y-1/2 p-2 bg-white rounded-lg shadow-sm">
+                        <Key className="h-5 w-5 text-slate-500" />
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="timezone"
-                      className="text-sm font-medium text-gray-700"
-                    >
+                  <div className="space-y-3">
+                    <Label htmlFor="timezone" className="text-sm font-semibold text-slate-700 flex items-center">
+                      <Globe className="h-4 w-4 mr-2 text-blue-600" />
                       Timezone
                     </Label>
-                    <div className="relative">
+                    <div className="relative group">
                       <Select defaultValue="america-new-york">
-                        <SelectTrigger className="h-12 pl-10 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-lg transition-all duration-300">
+                        <SelectTrigger className="h-14 pl-12 bg-slate-50/80 border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 rounded-xl transition-all duration-300 text-base font-medium shadow-sm hover:shadow-md">
                           <SelectValue placeholder="Select timezone" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="america-new-york">
-                            America/New York
-                          </SelectItem>
-                          <SelectItem value="america-los-angeles">
-                            America/Los Angeles
-                          </SelectItem>
-                          <SelectItem value="europe-london">
-                            Europe/London
-                          </SelectItem>
+                          <SelectItem value="america-new-york">America/New York</SelectItem>
+                          <SelectItem value="america-los-angeles">America/Los Angeles</SelectItem>
+                          <SelectItem value="europe-london">Europe/London</SelectItem>
                           <SelectItem value="asia-tokyo">Asia/Tokyo</SelectItem>
                         </SelectContent>
                       </Select>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
+                      <div className="absolute left-4 top-1/2 transform -translate-y-1/2 p-2 bg-white rounded-lg shadow-sm z-10">
+                        <Globe className="h-5 w-5 text-slate-500" />
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="bio"
-                    className="text-sm font-medium text-gray-700"
-                  >
+                <div className="space-y-3">
+                  <Label htmlFor="bio" className="text-sm font-semibold text-slate-700 flex items-center">
+                    <FileText className="h-4 w-4 mr-2 text-blue-600" />
                     Bio
                   </Label>
                   <Textarea
                     id="bio"
                     placeholder="Tell us about yourself..."
                     defaultValue="Digital marketer passionate about AI and automation. Building the future of content creation."
-                    className="min-h-[120px] resize-none border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-lg transition-all duration-300"
+                    className="min-h-[120px] resize-none bg-slate-50/80 border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 rounded-xl transition-all duration-300 text-base shadow-sm hover:shadow-md"
                   />
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                  <Button className="w-full sm:w-auto h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 rounded-lg font-medium px-6">
-                    <span>Save Changes</span>
+                <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                  <Button className="w-full sm:w-auto h-14 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl font-semibold px-8 text-white">
+                    <Save className="h-5 w-5 mr-2" />
+                    Save Changes
                   </Button>
                   <Button
                     variant="outline"
-                    className="w-full sm:w-auto h-12 border-gray-300 hover:bg-gray-50 rounded-lg transition-all duration-300 font-medium px-6"
+                    className="w-full sm:w-auto h-14 border-2 border-slate-300 hover:bg-slate-50 rounded-xl transition-all duration-300 font-semibold px-8"
                   >
-                    <span>Reset</span>
+                    <RotateCcw className="h-5 w-5 mr-2" />
+                    Reset
                   </Button>
                 </div>
               </CardContent>
@@ -872,7 +821,20 @@ export default function SettingsPage() {
                       <div className="flex items-center space-x-4">
                         <div className="relative">
                           <Avatar className="h-20 w-20 sm:h-24 sm:w-24 ring-4 ring-white shadow-lg">
-                            <AvatarImage src={`https://unavatar.io/twitter/${twitterStatus.username}`} alt="Twitter" />
+                            <AvatarImage 
+                              src={twitterStatus.profileImageUrl || (twitterStatus.username ? `https://unavatar.io/twitter/${twitterStatus.username}` : "/placeholder.svg")} 
+                              alt={`@${twitterStatus.username || 'Twitter'} profile`} 
+                              className="object-cover"
+                              onError={(e) => {
+                                // Fallback to unavatar.io if the image fails to load
+                                const target = e.target as HTMLImageElement;
+                                if (twitterStatus.username && !target.src.includes('unavatar.io')) {
+                                  target.src = `https://unavatar.io/twitter/${twitterStatus.username}`;
+                                } else {
+                                  target.src = "/placeholder.svg";
+                                }
+                              }}
+                            />
                             <AvatarFallback className="bg-blue-500 text-white text-xl">@</AvatarFallback>
                           </Avatar>
                           <div className="absolute -bottom-1 -right-1 h-7 w-7 bg-green-500 rounded-full flex items-center justify-center border-2 border-white shadow-md">
@@ -881,7 +843,9 @@ export default function SettingsPage() {
                         </div>
                         <div className="text-center sm:text-left">
                           <div className="flex items-center space-x-2 mb-1">
-                            <p className="font-bold text-xl text-gray-900">@{twitterStatus.username}</p>
+                            <p className="font-bold text-xl text-gray-900">
+                              @{twitterStatus.username || "twitter_user"}
+                            </p>
                             <Badge className="bg-green-100 text-green-800 border-green-200 px-2 py-1 rounded-full">
                               ✓ Verified
                             </Badge>
@@ -901,13 +865,12 @@ export default function SettingsPage() {
                       <Button 
                         variant="outline" 
                         className="h-12 bg-white border-blue-200 text-blue-600 hover:bg-blue-50 shadow-sm rounded-lg transition-all duration-300 font-medium"
-                        onClick={() => {
-                          // Re-verify functionality
-                          handleDisconnectTwitter()
-                        }}
+                        onClick={refreshTwitterStatus}
                       >
-                        <Twitter className="h-4 w-4 mr-2" />
-                        <span>Re-verify Account</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        <span>Refresh Status</span>
                       </Button>
                       <Button 
                         variant="outline" 
@@ -945,88 +908,83 @@ export default function SettingsPage() {
                       </Badge>
                     </div>
                     <div className="space-y-4">
-                      {!isSendingCode ? (
-                        <>
-                          <div className="space-y-2">
-                            <Label htmlFor="verificationEmail" className="text-sm font-medium text-gray-700">
-                              X Account Email
-                            </Label>
-                            <Input
-                              id="verificationEmail"
-                              type="email"
-                              placeholder="your.email@x.com"
-                              value={verificationEmail}
-                              onChange={(e) => setVerificationEmail(e.target.value)}
-                              className="h-12 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-lg transition-all duration-300"
-                            />
-                            <p className="text-xs text-gray-500">
-                              Enter the email address associated with your X account for verification
-                            </p>
-                          </div>
-                          
-                          <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
-                            <Button 
-                              onClick={handleRequestVerification}
-                              disabled={isRequestingVerification || !verificationEmail.trim() || !twitterUsername.trim()}
-                              className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-md hover:shadow-lg px-6 rounded-lg transition-all duration-300 font-medium"
-                            >
-                              {isRequestingVerification ? (
-                                <>
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                                  <span>Sending Code...</span>
-                                </>
-                              ) : (
-                                <span>Send Verification Code</span>
-                              )}
-                            </Button>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="space-y-2">
-                            <Label htmlFor="verificationCode" className="text-sm font-medium text-gray-700">
-                              Verification Code
-                            </Label>
-                            <Input
-                              id="verificationCode"
-                              placeholder="Enter 6-digit code"
-                              value={verificationCode}
-                              onChange={(e) => setVerificationCode(e.target.value)}
-                              className="h-12 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-lg transition-all duration-300"
-                            />
-                            <p className="text-xs text-gray-500">
-                              Check your email for the verification code we sent
-                            </p>
-                          </div>
-                          
-                          <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
-                            <Button 
-                              onClick={handleVerifyCode}
-                              disabled={isVerifyingCode || !verificationCode.trim()}
-                              className="flex-1 h-12 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-md hover:shadow-lg px-6 rounded-lg transition-all duration-300 font-medium"
-                            >
-                              {isVerifyingCode ? (
-                                <>
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                                  <span>Verifying...</span>
-                                </>
-                              ) : (
-                                <span>Verify & Connect</span>
-                              )}
-                            </Button>
-                            <Button 
-                              variant="outline"
-                              onClick={() => {
-                                setIsSendingCode(false)
-                                setVerificationCode('')
-                              }}
-                              className="h-12 border-gray-300 hover:bg-gray-50 rounded-lg transition-all duration-300 font-medium"
-                            >
-                              <span>Back</span>
-                            </Button>
-                          </div>
-                        </>
-                      )}
+                      <div className="space-y-2">
+                        <Label htmlFor="verificationEmail" className="text-sm font-medium text-gray-700">
+                          X Account Email
+                        </Label>
+                        <Input
+                          id="verificationEmail"
+                          type="email"
+                          placeholder="your.email@x.com"
+                          value={verificationEmail}
+                          onChange={(e) => setVerificationEmail(e.target.value)}
+                          className="h-12 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-lg transition-all duration-300"
+                        />
+                        <p className="text-xs text-gray-500">
+                          Enter the email address associated with your X account for verification
+                        </p>
+                      </div>
+                      
+                      <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+                        <Button 
+                          onClick={handleSendVerificationCode}
+                          disabled={isSendingCode || !verificationEmail.trim()}
+                          className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-md hover:shadow-lg px-6 rounded-lg transition-all duration-300 font-medium"
+                        >
+                          {isSendingCode ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                              <span>Sending Code...</span>
+                            </>
+                          ) : (
+                            <span>Send Verification Code</span>
+                          )}
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="verificationCode" className="text-sm font-medium text-gray-700">
+                          Verification Code
+                        </Label>
+                        <Input
+                          id="verificationCode"
+                          placeholder="Enter 6-digit code"
+                          value={verificationCode}
+                          onChange={(e) => setVerificationCode(e.target.value)}
+                          className="h-12 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-lg transition-all duration-300"
+                        />
+                        <p className="text-xs text-gray-500">
+                          Check your email for the verification code we sent
+                        </p>
+                      </div>
+                      
+                      <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+                        <Button 
+                          onClick={handleVerifyCode}
+                          disabled={isVerifyingCode || !verificationCode.trim()}
+                          className="flex-1 h-12 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-md hover:shadow-lg px-6 rounded-lg transition-all duration-300 font-medium"
+                        >
+                          {isVerifyingCode ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                              <span>Verifying...</span>
+                            </>
+                          ) : (
+                            <span>Verify & Connect</span>
+                          )}
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          onClick={() => {
+                            setShowEmailVerification(false)
+                            setVerificationEmail('')
+                            setVerificationCode('')
+                          }}
+                          className="h-12 border-gray-300 hover:bg-gray-50 rounded-lg transition-all duration-300 font-medium"
+                        >
+                          <span>Back</span>
+                        </Button>
+                      </div>
                       
                       <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
                         <div className="flex items-start space-x-3">
@@ -1114,19 +1072,8 @@ export default function SettingsPage() {
             <Card className="hover:shadow-xl transition-all duration-300 border-0 shadow-lg bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden">
               <CardHeader className="px-4 sm:px-6 bg-gradient-to-r from-blue-50/80 to-purple-50/80 backdrop-blur-sm border-b border-gray-100/50">
                 <CardTitle className="flex items-center space-x-2 text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 text-purple-500"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <span>Account Security</span>
                 </CardTitle>
@@ -1139,106 +1086,49 @@ export default function SettingsPage() {
                   <div className="border border-gray-200 rounded-xl p-5 hover:border-blue-300 transition-all duration-300 bg-white/50 hover:bg-white shadow-sm hover:shadow-md">
                     <div className="flex items-center space-x-3 mb-4">
                       <div className="p-3 bg-blue-100 rounded-xl">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-6 w-6 text-blue-600"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 15v2m-6 4h12a2 2 0 11-18 0 9 9 0 0118 0z"
-                          />
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
-                      <h4 className="font-semibold text-gray-900">
-                        Two-Factor Authentication
-                      </h4>
+                      <h4 className="font-semibold text-gray-900">Two-Factor Authentication</h4>
                     </div>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Add an extra layer of security to your account
-                    </p>
-                    <Badge
-                      variant="secondary"
-                      className="text-xs bg-green-100 text-green-800 rounded-full px-3 py-1"
-                    >
-                      Enabled
-                    </Badge>
+                    <p className="text-sm text-gray-600 mb-4">Add an extra layer of security to your account</p>
+                    <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 rounded-full px-3 py-1">Enabled</Badge>
                   </div>
-
+                  
                   <div className="border border-gray-200 rounded-xl p-5 hover:border-blue-300 transition-all duration-300 bg-white/50 hover:bg-white shadow-sm hover:shadow-md">
                     <div className="flex items-center space-x-3 mb-4">
                       <div className="p-3 bg-green-100 rounded-xl">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-6 w-6 text-green-600"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
-                      <h4 className="font-semibold text-gray-900">
-                        Active Sessions
-                      </h4>
+                      <h4 className="font-semibold text-gray-900">Active Sessions</h4>
                     </div>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Manage devices connected to your account
-                    </p>
-                    <Badge
-                      variant="secondary"
-                      className="text-xs bg-green-100 text-green-800 rounded-full px-3 py-1"
-                    >
-                      2 Active
-                    </Badge>
+                    <p className="text-sm text-gray-600 mb-4">Manage devices connected to your account</p>
+                    <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 rounded-full px-3 py-1">2 Active</Badge>
                   </div>
-
+                  
                   <div className="border border-gray-200 rounded-xl p-5 hover:border-blue-300 transition-all duration-300 bg-white/50 hover:bg-white shadow-sm hover:shadow-md">
                     <div className="flex items-center space-x-3 mb-4">
                       <div className="p-3 bg-purple-100 rounded-xl">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-6 w-6 text-purple-600"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                          />
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                         </svg>
                       </div>
                       <h4 className="font-semibold text-gray-900">Password</h4>
                     </div>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Last changed 3 months ago
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-9 text-xs rounded-lg px-3"
-                    >
+                    <p className="text-sm text-gray-600 mb-4">Last changed 3 months ago</p>
+                    <Button variant="outline" size="sm" className="h-9 text-xs rounded-lg px-3">
                       Update
                     </Button>
                   </div>
                 </div>
-
+                
                 <div className="pt-4">
-                  <Button
-                    variant="destructive"
-                    className="w-full sm:w-auto h-12 bg-red-600 hover:bg-red-700 shadow-lg hover:shadow-xl transition-all duration-200 rounded-lg font-medium px-6"
+                  <Button 
+                    variant="destructive" 
+                    className="w-full sm:w-auto h-12 bg-red-600 hover:bg-red-700 shadow-lg hover:shadow-xl transition-all duration-200 rounded-lg font-medium px-6" 
                     onClick={handleLogout}
                   >
                     <LogOut className="h-4 w-4 mr-2" />
@@ -1249,920 +1139,687 @@ export default function SettingsPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="account" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Account Settings</CardTitle>
-                <CardDescription>
-                  Manage your account preferences
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Email Notifications</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Receive email updates about your account
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
+          <TabsContent value="account" className="space-y-6 sm:space-y-8">
+            <Card className="group hover:shadow-2xl transition-all duration-500 shadow-xl bg-white/95 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/20">
+              <CardHeader className="px-6 sm:px-8 py-8 bg-gradient-to-r from-blue-50/90 via-purple-50/80 to-pink-50/70 backdrop-blur-xl border-b border-white/30">
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className="p-3 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-lg">
+                    <Shield className="h-6 w-6 text-white" />
                   </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Marketing Emails</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Receive emails about new features and tips
-                      </p>
-                    </div>
-                    <Switch />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="notifications" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Notification Settings</CardTitle>
-                <CardDescription>
-                  Manage your notification preferences
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Email Notifications</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Receive email updates about your account
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Push Notifications</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Receive push notifications on your device
-                      </p>
-                    </div>
-                    <Switch />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Engagement Notifications</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Receive notifications for likes, comments, and shares
-                      </p>
-                    </div>
-                    <Switch />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Followers Notifications</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Receive notifications when someone follows you
-                      </p>
-                    </div>
-                    <Switch />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Mentions Notifications</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Receive notifications when someone mentions you
-                      </p>
-                    </div>
-                    <Switch />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Direct Messages Notifications</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Receive notifications for direct messages
-                      </p>
-                    </div>
-                    <Switch />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="automation" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Automation Settings</CardTitle>
-                <CardDescription>
-                  Manage your automation preferences
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Auto Posting</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Automatically post content to your Twitter account
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Timezone</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Select your timezone for optimal posting times
-                      </p>
-                    </div>
-                    <Select defaultValue="america-new-york">
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Select timezone" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="america-new-york">
-                          America/New York
-                        </SelectItem>
-                        <SelectItem value="america-los-angeles">
-                          America/Los Angeles
-                        </SelectItem>
-                        <SelectItem value="europe-london">
-                          Europe/London
-                        </SelectItem>
-                        <SelectItem value="asia-tokyo">Asia/Tokyo</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Optimal Times</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Post content at optimal times for engagement
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Weekends Only</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Post content only on weekends
-                      </p>
-                    </div>
-                    <Switch />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="billing" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Billing Settings</CardTitle>
-                <CardDescription>
-                  Manage your billing preferences
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Subscription Plan</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Choose your subscription plan
-                      </p>
-                    </div>
-                    <Select defaultValue="pro">
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Select plan" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="free">Free</SelectItem>
-                        <SelectItem value="pro">Pro</SelectItem>
-                        <SelectItem value="enterprise">Enterprise</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Payment Method</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Choose your payment method
-                      </p>
-                    </div>
-                    <Select defaultValue="credit-card">
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Select method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="credit-card">Credit Card</SelectItem>
-                        <SelectItem value="paypal">PayPal</SelectItem>
-                        <SelectItem value="bank-transfer">
-                          Bank Transfer
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Invoice Frequency</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Choose how often you receive invoices
-                      </p>
-                    </div>
-                    <Select defaultValue="monthly">
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Select frequency" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                        <SelectItem value="quarterly">Quarterly</SelectItem>
-                        <SelectItem value="annually">Annually</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="security" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Security Settings</CardTitle>
-                <CardDescription>
-                  Manage your security preferences
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Two-Factor Authentication</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Add an extra layer of security to your account
-                      </p>
-                    </div>
-                    <Switch />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Password</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Change your account password
-                      </p>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      Update
-                    </Button>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Active Sessions</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Manage devices connected to your account
-                      </p>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      Manage
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Language</Label>
-                  <Select defaultValue="en">
-                    <SelectTrigger className="w-48">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="en">English</SelectItem>
-                      <SelectItem value="es">Español</SelectItem>
-                      <SelectItem value="fr">Français</SelectItem>
-                      <SelectItem value="de">Deutsch</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Button>Save Preferences</Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="notifications" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Notification Preferences</CardTitle>
-                <CardDescription>
-                  Customize how you receive notifications
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Email Notifications</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Receive email updates about your account activity
-                      </p>
-                    </div>
-                    <Switch
-                      checked={notifications.email}
-                      onCheckedChange={(checked) =>
-                        setNotifications({ ...notifications, email: checked })
-                      }
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Push Notifications</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Receive push notifications on your devices
-                      </p>
-                    </div>
-                    <Switch
-                      checked={notifications.push}
-                      onCheckedChange={(checked) =>
-                        setNotifications({ ...notifications, push: checked })
-                      }
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Engagement Alerts</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Get notified about likes, comments, and shares
-                      </p>
-                    </div>
-                    <Switch
-                      checked={notifications.engagement}
-                      onCheckedChange={(checked) =>
-                        setNotifications({
-                          ...notifications,
-                          engagement: checked,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Follower Notifications</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Receive alerts when someone follows you
-                      </p>
-                    </div>
-                    <Switch
-                      checked={notifications.followers}
-                      onCheckedChange={(checked) =>
-                        setNotifications({
-                          ...notifications,
-                          followers: checked,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Mentions</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Get notified when you're mentioned in posts
-                      </p>
-                    </div>
-                    <Switch
-                      checked={notifications.mentions}
-                      onCheckedChange={(checked) =>
-                        setNotifications({
-                          ...notifications,
-                          mentions: checked,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Direct Messages</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Receive alerts for new direct messages
-                      </p>
-                    </div>
-                    <Switch
-                      checked={notifications.directMessages}
-                      onCheckedChange={(checked) =>
-                        setNotifications({
-                          ...notifications,
-                          directMessages: checked,
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-4">
-                  <Button>Save Notification Settings</Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Notification Schedule</CardTitle>
-                <CardDescription>
-                  Control when you receive notifications
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Quiet Hours</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Mute notifications during specific hours
-                      </p>
-                    </div>
-                    <Switch />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Start Time</Label>
-                      <Select defaultValue="22:00">
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="20:00">8:00 PM</SelectItem>
-                          <SelectItem value="21:00">9:00 PM</SelectItem>
-                          <SelectItem value="22:00">10:00 PM</SelectItem>
-                          <SelectItem value="23:00">11:00 PM</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>End Time</Label>
-                      <Select defaultValue="08:00">
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="06:00">6:00 AM</SelectItem>
-                          <SelectItem value="07:00">7:00 AM</SelectItem>
-                          <SelectItem value="08:00">8:00 AM</SelectItem>
-                          <SelectItem value="09:00">9:00 AM</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4 pt-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Weekend Notifications</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Receive notifications during weekends
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="automation" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Auto-posting Settings</CardTitle>
-                <CardDescription>
-                  Configure your content automation preferences
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Enable Auto-posting</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Automatically post content to your social accounts
-                      </p>
-                    </div>
-                    <Switch
-                      checked={autoPosting.enabled}
-                      onCheckedChange={(checked) =>
-                        setAutoPosting({ ...autoPosting, enabled: checked })
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Posting Timezone</Label>
-                    <Select
-                      value={autoPosting.timezone}
-                      onValueChange={(value) =>
-                        setAutoPosting({ ...autoPosting, timezone: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="America/New_York">
-                          America/New York
-                        </SelectItem>
-                        <SelectItem value="America/Los_Angeles">
-                          America/Los Angeles
-                        </SelectItem>
-                        <SelectItem value="Europe/London">
-                          Europe/London
-                        </SelectItem>
-                        <SelectItem value="Asia/Tokyo">Asia/Tokyo</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Optimal Timing</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Post when your audience is most active
-                      </p>
-                    </div>
-                    <Switch
-                      checked={autoPosting.optimalTimes}
-                      onCheckedChange={(checked) =>
-                        setAutoPosting({
-                          ...autoPosting,
-                          optimalTimes: checked,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Weekend Posting</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Post content during weekends
-                      </p>
-                    </div>
-                    <Switch
-                      checked={autoPosting.weekendsOnly}
-                      onCheckedChange={(checked) =>
-                        setAutoPosting({
-                          ...autoPosting,
-                          weekendsOnly: checked,
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-4">
-                  <Button>Save Automation Settings</Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Content Optimization</CardTitle>
-                <CardDescription>
-                  Enhance your content before posting
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Auto-hashtag Generation</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Automatically add relevant hashtags to posts
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Content Enhancement</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Improve post quality with AI suggestions
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Grammar Check</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Automatically correct grammar and spelling
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                </div>
-
-                <div className="pt-4">
-                  <Button>Save Optimization Settings</Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="billing" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Subscription Plan</CardTitle>
-                <CardDescription>
-                  Manage your current plan and billing information
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="p-6 border rounded-lg bg-gradient-to-r from-blue-50 to-purple-50">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div>
-                      <h3 className="text-xl font-bold">Pro Plan</h3>
-                      <p className="text-muted-foreground">Billed monthly</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold">
-                        $29<span className="text-lg">/month</span>
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Next billing: June 15, 2023
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="flex items-center">
-                      <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                      <span className="text-sm">Unlimited posts</span>
-                    </div>
-                    <div className="flex items-center">
-                      <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                      <span className="text-sm">5 social accounts</span>
-                    </div>
-                    <div className="flex items-center">
-                      <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                      <span className="text-sm">Advanced analytics</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-4">
-                  <Button>Change Plan</Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Payment Methods</CardTitle>
-                <CardDescription>Manage your payment methods</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center space-x-4">
-                    <div className="bg-blue-100 p-2 rounded-lg">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-6 w-6 text-blue-600"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-                        />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="font-medium">Visa ending in 4242</p>
-                      <p className="text-sm text-muted-foreground">
-                        Expires 12/2025
-                      </p>
-                    </div>
-                  </div>
-                  <Button variant="outline">Edit</Button>
-                </div>
-
-                <Button variant="outline" className="w-full">
-                  + Add Payment Method
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Billing History</CardTitle>
-                <CardDescription>Your recent billing activity</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center p-4 border rounded-lg">
-                    <div>
-                      <p className="font-medium">Pro Plan</p>
-                      <p className="text-sm text-muted-foreground">
-                        May 15, 2023
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium">$29.00</p>
-                      <Badge variant="secondary">Paid</Badge>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center p-4 border rounded-lg">
-                    <div>
-                      <p className="font-medium">Pro Plan</p>
-                      <p className="text-sm text-muted-foreground">
-                        April 15, 2023
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium">$29.00</p>
-                      <Badge variant="secondary">Paid</Badge>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Upgrade Your Plan</CardTitle>
-                <CardDescription>
-                  Get more features with a higher tier plan
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 border rounded-lg">
-                    <h4 className="font-bold text-lg">Business Plan</h4>
-                    <p className="text-2xl font-bold my-2">
-                      $79<span className="text-base">/month</span>
-                    </p>
-                    <ul className="space-y-2 mb-4">
-                      <li className="flex items-center">
-                        <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                        <span className="text-sm">Everything in Pro</span>
-                      </li>
-                      <li className="flex items-center">
-                        <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                        <span className="text-sm">10 social accounts</span>
-                      </li>
-                      <li className="flex items-center">
-                        <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                        <span className="text-sm">Team collaboration</span>
-                      </li>
-                    </ul>
-                    <Button variant="outline" className="w-full">
-                      Upgrade
-                    </Button>
-                  </div>
-                  <div className="p-4 border-2 border-blue-500 rounded-lg relative">
-                    <Badge className="absolute top-2 right-2">Popular</Badge>
-                    <h4 className="font-bold text-lg">Enterprise Plan</h4>
-                    <p className="text-2xl font-bold my-2">
-                      $199<span className="text-base">/month</span>
-                    </p>
-                    <ul className="space-y-2 mb-4">
-                      <li className="flex items-center">
-                        <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                        <span className="text-sm">Everything in Business</span>
-                      </li>
-                      <li className="flex items-center">
-                        <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                        <span className="text-sm">
-                          Unlimited social accounts
-                        </span>
-                      </li>
-                      <li className="flex items-center">
-                        <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                        <span className="text-sm">Custom AI models</span>
-                      </li>
-                    </ul>
-                    <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600">
-                      Upgrade
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="security" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Security Settings</CardTitle>
-                <CardDescription>
-                  Manage your account security preferences
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Two-Factor Authentication</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Add an extra layer of security to your account
-                      </p>
-                    </div>
-                    <Switch />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Login Alerts</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Receive email notifications for new logins
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Session Management</Label>
-                      <p className="text-sm text-muted-foreground">
-                        View and manage active sessions
-                      </p>
-                    </div>
-                    <Button variant="outline">View Sessions</Button>
-                  </div>
-                </div>
-
-                <div className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label>Change Password</Label>
-                    <Input type="password" placeholder="Current password" />
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Input type="password" placeholder="New password" />
-                    </div>
-                    <div className="space-y-2">
-                      <Input
-                        type="password"
-                        placeholder="Confirm new password"
-                      />
-                    </div>
-                  </div>
-                  <Button>Update Password</Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-red-600">Danger Zone</CardTitle>
-                <CardDescription>
-                  Irreversible and destructive actions
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 border border-red-200 rounded-lg">
                   <div>
-                    <p className="font-medium">Delete Account</p>
-                    <p className="text-sm text-muted-foreground">
-                      Permanently delete your account and all data
-                    </p>
+                    <CardTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                      Account Settings
+                    </CardTitle>
+                    <CardDescription className="text-base text-slate-600 mt-1">
+                      Manage your account preferences and general settings
+                    </CardDescription>
                   </div>
-                  <Button variant="destructive">
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Account
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-8 px-6 sm:px-8 py-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-blue-50/50 rounded-2xl border border-slate-200/50 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md">
+                          <Mail className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <Label className="text-lg font-semibold text-slate-800">Email Notifications</Label>
+                          <p className="text-sm text-slate-600 mt-1">Receive email updates about your account</p>
+                        </div>
+                      </div>
+                      <Switch defaultChecked className="scale-125" />
+                    </div>
+
+                    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-purple-50/50 rounded-2xl border border-slate-200/50 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-md">
+                          <Heart className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <Label className="text-lg font-semibold text-slate-800">Marketing Emails</Label>
+                          <p className="text-sm text-slate-600 mt-1">Receive emails about new features and tips</p>
+                        </div>
+                      </div>
+                      <Switch className="scale-125" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-green-50/50 rounded-2xl border border-slate-200/50 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-md">
+                          <Globe className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <Label className="text-lg font-semibold text-slate-800">Public Profile</Label>
+                          <p className="text-sm text-slate-600 mt-1">Make your profile visible to others</p>
+                        </div>
+                      </div>
+                      <Switch defaultChecked className="scale-125" />
+                    </div>
+
+                    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-orange-50/50 rounded-2xl border border-slate-200/50 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-md">
+                          <Bot className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <Label className="text-lg font-semibold text-slate-800">AI Features</Label>
+                          <p className="text-sm text-slate-600 mt-1">Enable AI-powered content suggestions</p>
+                        </div>
+                      </div>
+                      <Switch defaultChecked className="scale-125" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-slate-200/50">
+                  <Button className="w-full sm:w-auto h-14 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl font-semibold px-8 text-white">
+                    <Save className="h-5 w-5 mr-2" />
+                    Save Account Settings
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full sm:w-auto h-14 border-2 border-slate-300 hover:bg-slate-50 rounded-xl transition-all duration-300 font-semibold px-8"
+                  >
+                    <RotateCcw className="h-5 w-5 mr-2" />
+                    Reset to Defaults
                   </Button>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="notifications" className="space-y-6 sm:space-y-8">
+            <Card className="group hover:shadow-2xl transition-all duration-500 shadow-xl bg-white/95 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/20">
+              <CardHeader className="px-6 sm:px-8 py-8 bg-gradient-to-r from-blue-50/90 via-purple-50/80 to-pink-50/70 backdrop-blur-xl border-b border-white/30">
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className="p-3 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-lg">
+                    <Bell className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                      Notification Preferences
+                    </CardTitle>
+                    <CardDescription className="text-base text-slate-600 mt-1">
+                      Customize how you receive notifications and alerts
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-8 px-6 sm:px-8 py-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-blue-50/50 rounded-2xl border border-slate-200/50 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md">
+                          <Mail className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <Label className="text-lg font-semibold text-slate-800">Email Notifications</Label>
+                          <p className="text-sm text-slate-600 mt-1">Receive email updates about your account activity</p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={notifications.email}
+                        onCheckedChange={(checked) => setNotifications({...notifications, email: checked})}
+                        className="scale-125"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-green-50/50 rounded-2xl border border-slate-200/50 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-md">
+                          <Smartphone className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <Label className="text-lg font-semibold text-slate-800">Push Notifications</Label>
+                          <p className="text-sm text-slate-600 mt-1">Receive push notifications on your devices</p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={notifications.push}
+                        onCheckedChange={(checked) => setNotifications({...notifications, push: checked})}
+                        className="scale-125"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-purple-50/50 rounded-2xl border border-slate-200/50 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-md">
+                          <Heart className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <Label className="text-lg font-semibold text-slate-800">Engagement Alerts</Label>
+                          <p className="text-sm text-slate-600 mt-1">Get notified about likes, comments, and shares</p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={notifications.engagement}
+                        onCheckedChange={(checked) => setNotifications({...notifications, engagement: checked})}
+                        className="scale-125"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-orange-50/50 rounded-2xl border border-slate-200/50 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-md">
+                          <Users className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <Label className="text-lg font-semibold text-slate-800">Follower Notifications</Label>
+                          <p className="text-sm text-slate-600 mt-1">Receive alerts when someone follows you</p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={notifications.followers}
+                        onCheckedChange={(checked) => setNotifications({...notifications, followers: checked})}
+                        className="scale-125"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-pink-50/50 rounded-2xl border border-slate-200/50 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl shadow-md">
+                          <AtSign className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <Label className="text-lg font-semibold text-slate-800">Mentions</Label>
+                          <p className="text-sm text-slate-600 mt-1">Get notified when you're mentioned in posts</p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={notifications.mentions}
+                        onCheckedChange={(checked) => setNotifications({...notifications, mentions: checked})}
+                        className="scale-125"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-indigo-50/50 rounded-2xl border border-slate-200/50 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl shadow-md">
+                          <MessageCircle className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <Label className="text-lg font-semibold text-slate-800">Direct Messages</Label>
+                          <p className="text-sm text-slate-600 mt-1">Receive alerts for new direct messages</p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={notifications.directMessages}
+                        onCheckedChange={(checked) => setNotifications({...notifications, directMessages: checked})}
+                        className="scale-125"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-slate-200/50">
+                  <Button className="w-full sm:w-auto h-14 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl font-semibold px-8 text-white">
+                    <Save className="h-5 w-5 mr-2" />
+                    Save Notification Settings
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full sm:w-auto h-14 border-2 border-slate-300 hover:bg-slate-50 rounded-xl transition-all duration-300 font-semibold px-8"
+                  >
+                    <RotateCcw className="h-5 w-5 mr-2" />
+                    Reset to Defaults
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="group hover:shadow-2xl transition-all duration-500 shadow-xl bg-white/95 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/20">
+              <CardHeader className="px-6 sm:px-8 py-8 bg-gradient-to-r from-blue-50/90 via-purple-50/80 to-pink-50/70 backdrop-blur-xl border-b border-white/30">
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className="p-3 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-lg">
+                    <Clock className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                      Notification Schedule
+                    </CardTitle>
+                    <CardDescription className="text-base text-slate-600 mt-1">
+                      Control when you receive notifications
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-8 px-6 sm:px-8 py-8">
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-blue-50/50 rounded-2xl border border-slate-200/50 hover:shadow-lg transition-all duration-300">
+                    <div className="flex items-center space-x-4">
+                      <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md">
+                        <Clock className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <Label className="text-lg font-semibold text-slate-800">Quiet Hours</Label>
+                        <p className="text-sm text-slate-600 mt-1">Pause notifications during specified hours</p>
+                      </div>
+                    </div>
+                    <Switch className="scale-125" />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 ml-16">
+                    <div className="space-y-3">
+                      <Label className="text-sm font-semibold text-slate-700 flex items-center">
+                        <Clock className="h-4 w-4 mr-2 text-blue-600" />
+                        Start Time
+                      </Label>
+                      <div className="relative group">
+                        <Input
+                          type="time"
+                          defaultValue="22:00"
+                          className="h-14 pl-12 bg-slate-50/80 border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 rounded-xl transition-all duration-300 text-base font-medium shadow-sm hover:shadow-md"
+                        />
+                        <div className="absolute left-4 top-1/2 transform -translate-y-1/2 p-2 bg-white rounded-lg shadow-sm">
+                          <Clock className="h-5 w-5 text-slate-500" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <Label className="text-sm font-semibold text-slate-700 flex items-center">
+                        <Clock className="h-4 w-4 mr-2 text-blue-600" />
+                        End Time
+                      </Label>
+                      <div className="relative group">
+                        <Input
+                          type="time"
+                          defaultValue="08:00"
+                          className="h-14 pl-12 bg-slate-50/80 border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 rounded-xl transition-all duration-300 text-base font-medium shadow-sm hover:shadow-md"
+                        />
+                        <div className="absolute left-4 top-1/2 transform -translate-y-1/2 p-2 bg-white rounded-lg shadow-sm">
+                          <Clock className="h-5 w-5 text-slate-500" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-green-50/50 rounded-2xl border border-slate-200/50 hover:shadow-lg transition-all duration-300">
+                    <div className="flex items-center space-x-4">
+                      <div className="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-md">
+                        <Calendar className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <Label className="text-lg font-semibold text-slate-800">Weekend Notifications</Label>
+                        <p className="text-sm text-slate-600 mt-1">Receive notifications during weekends</p>
+                      </div>
+                    </div>
+                    <Switch defaultChecked className="scale-125" />
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-slate-200/50">
+                  <Button className="w-full sm:w-auto h-14 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl font-semibold px-8 text-white">
+                    <Save className="h-5 w-5 mr-2" />
+                    Save Schedule Settings
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="automation" className="space-y-6 sm:space-y-8">
+            <Card className="group hover:shadow-2xl transition-all duration-500 shadow-xl bg-white/95 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/20">
+              <CardHeader className="px-6 sm:px-8 py-8 bg-gradient-to-r from-blue-50/90 via-purple-50/80 to-pink-50/70 backdrop-blur-xl border-b border-white/30">
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className="p-3 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-lg">
+                    <Bot className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                      Automation Settings
+                    </CardTitle>
+                    <CardDescription className="text-base text-slate-600 mt-1">
+                      Configure your automated posting and content scheduling preferences
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-8 px-6 sm:px-8 py-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-blue-50/50 rounded-2xl border border-slate-200/50 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md">
+                          <Zap className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <Label className="text-lg font-semibold text-slate-800">Auto Posting</Label>
+                          <p className="text-sm text-slate-600 mt-1">Automatically post content to your Twitter account</p>
+                        </div>
+                      </div>
+                      <Switch defaultChecked className="scale-125" />
+                    </div>
+
+                    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-green-50/50 rounded-2xl border border-slate-200/50 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-md">
+                          <Clock className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <Label className="text-lg font-semibold text-slate-800">Optimal Times</Label>
+                          <p className="text-sm text-slate-600 mt-1">Post content at optimal times for engagement</p>
+                        </div>
+                      </div>
+                      <Switch defaultChecked className="scale-125" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-purple-50/50 rounded-2xl border border-slate-200/50 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-md">
+                          <Globe className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <Label className="text-lg font-semibold text-slate-800">Timezone</Label>
+                          <p className="text-sm text-slate-600 mt-1">Select your timezone for optimal posting times</p>
+                        </div>
+                      </div>
+                      <Select defaultValue="america-new-york">
+                        <SelectTrigger className="w-full h-12 bg-white/80 border-2 border-slate-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 rounded-xl transition-all duration-300 text-base font-medium shadow-sm hover:shadow-md">
+                          <SelectValue placeholder="Select timezone" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="america-new-york">America/New York</SelectItem>
+                          <SelectItem value="america-los-angeles">America/Los Angeles</SelectItem>
+                          <SelectItem value="europe-london">Europe/London</SelectItem>
+                          <SelectItem value="asia-tokyo">Asia/Tokyo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-orange-50/50 rounded-2xl border border-slate-200/50 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-md">
+                          <Calendar className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <Label className="text-lg font-semibold text-slate-800">Weekends Only</Label>
+                          <p className="text-sm text-slate-600 mt-1">Post content only on weekends</p>
+                        </div>
+                      </div>
+                      <Switch className="scale-125" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-slate-200/50">
+                  <Button className="w-full sm:w-auto h-14 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl font-semibold px-8 text-white">
+                    <Save className="h-5 w-5 mr-2" />
+                    Save Automation Settings
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full sm:w-auto h-14 border-2 border-slate-300 hover:bg-slate-50 rounded-xl transition-all duration-300 font-semibold px-8"
+                  >
+                    <RotateCcw className="h-5 w-5 mr-2" />
+                    Reset to Defaults
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="billing" className="space-y-6 sm:space-y-8">
+            <Card className="group hover:shadow-2xl transition-all duration-500 shadow-xl bg-white/95 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/20">
+              <CardHeader className="px-6 sm:px-8 py-8 bg-gradient-to-r from-blue-50/90 via-purple-50/80 to-pink-50/70 backdrop-blur-xl border-b border-white/30">
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className="p-3 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-lg">
+                    <CreditCard className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                      Billing & Subscription
+                    </CardTitle>
+                    <CardDescription className="text-base text-slate-600 mt-1">
+                      Manage your subscription plan, payment methods, and billing preferences
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-8 px-6 sm:px-8 py-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-blue-50/50 rounded-2xl border border-slate-200/50 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md">
+                          <Crown className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <Label className="text-lg font-semibold text-slate-800">Subscription Plan</Label>
+                          <p className="text-sm text-slate-600 mt-1">Choose your subscription plan</p>
+                        </div>
+                      </div>
+                      <Select defaultValue="pro">
+                        <SelectTrigger className="w-full h-12 bg-white/80 border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 rounded-xl transition-all duration-300 text-base font-medium shadow-sm hover:shadow-md">
+                          <SelectValue placeholder="Select plan" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="free">Free</SelectItem>
+                          <SelectItem value="pro">Pro</SelectItem>
+                          <SelectItem value="enterprise">Enterprise</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-green-50/50 rounded-2xl border border-slate-200/50 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-md">
+                          <CreditCard className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <Label className="text-lg font-semibold text-slate-800">Payment Method</Label>
+                          <p className="text-sm text-slate-600 mt-1">Choose your payment method</p>
+                        </div>
+                      </div>
+                      <Select defaultValue="credit-card">
+                        <SelectTrigger className="w-full h-12 bg-white/80 border-2 border-slate-200 focus:border-green-500 focus:ring-4 focus:ring-green-500/20 rounded-xl transition-all duration-300 text-base font-medium shadow-sm hover:shadow-md">
+                          <SelectValue placeholder="Select method" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="credit-card">Credit Card</SelectItem>
+                          <SelectItem value="paypal">PayPal</SelectItem>
+                          <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-purple-50/50 rounded-2xl border border-slate-200/50 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-md">
+                          <Calendar className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <Label className="text-lg font-semibold text-slate-800">Invoice Frequency</Label>
+                          <p className="text-sm text-slate-600 mt-1">Choose how often you receive invoices</p>
+                        </div>
+                      </div>
+                      <Select defaultValue="monthly">
+                        <SelectTrigger className="w-full h-12 bg-white/80 border-2 border-slate-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 rounded-xl transition-all duration-300 text-base font-medium shadow-sm hover:shadow-md">
+                          <SelectValue placeholder="Select frequency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="monthly">Monthly</SelectItem>
+                          <SelectItem value="quarterly">Quarterly</SelectItem>
+                          <SelectItem value="annually">Annually</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-orange-50/50 rounded-2xl border border-slate-200/50 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-md">
+                          <Download className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <Label className="text-lg font-semibold text-slate-800">Billing History</Label>
+                          <p className="text-sm text-slate-600 mt-1">Download your billing history and invoices</p>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm" className="h-12 px-6 rounded-lg border-slate-300 hover:bg-slate-50 transition-all duration-300">
+                        Download
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-slate-200/50">
+                  <Button className="w-full sm:w-auto h-14 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl font-semibold px-8 text-white">
+                    <Save className="h-5 w-5 mr-2" />
+                    Save Billing Settings
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full sm:w-auto h-14 border-2 border-slate-300 hover:bg-slate-50 rounded-xl transition-all duration-300 font-semibold px-8"
+                  >
+                    <RotateCcw className="h-5 w-5 mr-2" />
+                    Reset to Defaults
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="security" className="space-y-6 sm:space-y-8">
+            <Card className="group hover:shadow-2xl transition-all duration-500 shadow-xl bg-white/95 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/20">
+              <CardHeader className="px-6 sm:px-8 py-8 bg-gradient-to-r from-blue-50/90 via-purple-50/80 to-pink-50/70 backdrop-blur-xl border-b border-white/30">
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className="p-3 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-lg">
+                    <Lock className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                      Security Settings
+                    </CardTitle>
+                    <CardDescription className="text-base text-slate-600 mt-1">
+                      Manage your account security and privacy preferences
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-8 px-6 sm:px-8 py-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-blue-50/50 rounded-2xl border border-slate-200/50 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md">
+                          <Shield className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <Label className="text-lg font-semibold text-slate-800">Two-Factor Authentication</Label>
+                          <p className="text-sm text-slate-600 mt-1">Add an extra layer of security to your account</p>
+                        </div>
+                      </div>
+                      <Switch defaultChecked className="scale-125" />
+                    </div>
+
+                    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-green-50/50 rounded-2xl border border-slate-200/50 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-md">
+                          <Monitor className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <Label className="text-lg font-semibold text-slate-800">Active Sessions</Label>
+                          <p className="text-sm text-slate-600 mt-1">Manage devices connected to your account</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 rounded-full px-3 py-1">2 Active</Badge>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-purple-50/50 rounded-2xl border border-slate-200/50 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-md">
+                          <Mail className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <Label className="text-lg font-semibold text-slate-800">Login Notifications</Label>
+                          <p className="text-sm text-slate-600 mt-1">Get notified of new login attempts</p>
+                        </div>
+                      </div>
+                      <Switch defaultChecked className="scale-125" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-orange-50/50 rounded-2xl border border-slate-200/50 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-md">
+                          <Key className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <Label className="text-lg font-semibold text-slate-800">Password</Label>
+                          <p className="text-sm text-slate-600 mt-1">Last changed 3 months ago</p>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm" className="h-10 px-4 rounded-lg border-slate-300 hover:bg-slate-50 transition-all duration-300">
+                        Update
+                      </Button>
+                    </div>
+
+                    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-pink-50/50 rounded-2xl border border-slate-200/50 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl shadow-md">
+                          <Eye className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <Label className="text-lg font-semibold text-slate-800">Privacy Mode</Label>
+                          <p className="text-sm text-slate-600 mt-1">Hide your activity from other users</p>
+                        </div>
+                      </div>
+                      <Switch className="scale-125" />
+                    </div>
+
+                    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-indigo-50/50 rounded-2xl border border-slate-200/50 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl shadow-md">
+                          <Trash2 className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <Label className="text-lg font-semibold text-slate-800">Data Export</Label>
+                          <p className="text-sm text-slate-600 mt-1">Download your account data</p>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm" className="h-10 px-4 rounded-lg border-slate-300 hover:bg-slate-50 transition-all duration-300">
+                        Export
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-slate-200/50">
+                  <Button className="w-full sm:w-auto h-14 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl font-semibold px-8 text-white">
+                    <Save className="h-5 w-5 mr-2" />
+                    Save Security Settings
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    className="w-full sm:w-auto h-14 border-2 border-red-300 hover:bg-red-50 rounded-xl transition-all duration-300 font-semibold px-8"
+                  >
+                    <LogOut className="h-5 w-5 mr-2" />
+                    Logout All Devices
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
         </Tabs>
       </main>
       <Toaster />
     </div>
-  );
+  )
 }
+

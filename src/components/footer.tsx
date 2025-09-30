@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom"
 import { Twitter, Github, Linkedin, Mail, Sparkles } from "lucide-react"
+import { Logo } from "@/components/logo"
 
 export function Footer() {
   return (
@@ -9,10 +10,10 @@ export function Footer() {
           <div className="space-y-6 md:col-span-2">
             <div className="flex items-center space-x-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
-                <Twitter className="h-6 w-6 text-white" />
+                <Logo className="text-white" size="md" />
               </div>
               <div>
-                <span className="text-2xl font-bold">TwitterAI Pro</span>
+                
                 <div className="flex items-center gap-1 mt-1">
                   <Sparkles className="h-3 w-3 text-blue-400" />
                   <span className="text-xs text-blue-300">AI-Powered Growth</span>
@@ -149,7 +150,7 @@ export function Footer() {
         </div>
 
         <div className="mt-16 pt-8 border-t border-gray-800">
-          <p className="text-center text-gray-400">© 2024 TwitterAI Pro. All rights reserved. Built with ❤️ for Twitter growth.</p>
+          <p className="text-center text-gray-400">© 2024 TwitterAI. All rights reserved. Built with ❤️ for Twitter growth.</p>
         </div>
       </div>
     </footer>

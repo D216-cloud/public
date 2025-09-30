@@ -1,26 +1,12 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useState, useRef, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { DashboardHeader } from "@/components/dashboard-header"
-import { toast, useToast } from "@/hooks/use-toast" // Add this import
+import React, { useState, useEffect, useRef } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DashboardHeader } from "@/components/dashboard-header";
+import { toast } from "@/hooks/use-toast";
 import {
   Sparkles,
   Send,
@@ -29,1939 +15,1552 @@ import {
   Wand2,
   TrendingUp,
   Hash,
-  Calendar,
   Save,
   ImageIcon,
-  VideoIcon,
-  XIcon,
-  FileTextIcon,
-  SaveIcon,
-  Clock,
-  CalendarDays,
-  CheckCircle,
-  Zap,
-  Target,
-  Users,
-  Lightbulb,
   MessageSquare,
-  Megaphone,
-  Eye,
-  Star,
-  BarChart3,
+  Heart,
+  Upload,
+  Paperclip,
   Smile,
-  AlertCircle,
+  CalendarClock,
   Edit,
   Trash2,
+  X,
+  Plus,
+  Video,
+  Loader2,
+  Maximize2,
+  Minimize2,
+  Download,
+  Share2,
+  Eye,
+  Settings,
+  HelpCircle,
+  Star,
+  Bookmark,
+  ThumbsUp,
+  ThumbsDown,
+  RotateCcw,
+  RotateCw,
+  ZoomIn,
+  ZoomOut,
+  Crop,
+  Filter,
+  Layers,
+  Palette,
+  Type,
+  Bold,
+  Italic,
+  Underline,
+  Link,
+  List,
+  ListOrdered,
+  Quote,
+  Code,
+  Image,
+  Film,
+  Music,
+  Mic,
+  MapPin,
   Globe,
-  Crown,
-} from "lucide-react"
-import { useIsMobile } from "@/hooks/use-mobile"
-import { cn } from "@/lib/utils" // Assuming you have this utility from Shadcn
-import { API_URL } from "@/utils/config" // Import API_URL for consistent backend connection
+  Clock,
+  Calendar,
+  User,
+  Users,
+  Mail,
+  Phone,
+  Search,
+  Bell,
+  Settings2,
+  LogOut,
+  Home,
+  Activity,
+  BarChart,
+  PieChart,
+  LineChart,
+  Database,
+  Server,
+  Cloud,
+  Shield,
+  Lock,
+  Unlock,
+  Key,
+  Fingerprint,
+  EyeOff,
+  AlertCircle,
+  CheckCircle,
+  XCircle,
+  Info,
+  Sun,
+  Moon,
+  Wind,
+  CloudRain,
+  CloudSnow,
+  Zap,
+  Battery,
+  Cpu,
+  HardDrive,
+  Monitor,
+  Smartphone,
+  Tablet,
+  Watch,
+  Headphones,
+  Speaker,
+  Volume2,
+  VolumeX,
+  MicOff,
+  Camera,
+  CameraOff,
+  Video as VideoIcon,
+  VideoOff,
+  Scissors,
+  Square,
+  Circle,
+  Triangle,
+  Hexagon,
+  Octagon,
+  Star as StarIcon,
+  Heart as HeartIcon,
+  ThumbsUp as LikeIcon,
+  ThumbsDown as DislikeIcon,
+  Bookmark as BookmarkIcon,
+  Flag,
+  Tag,
+  Folder,
+  File,
+  FileText,
+  FileImage,
+  FileVideo,
+  FileAudio,
+  FileArchive,
+  DownloadCloud,
+  UploadCloud,
+  Printer,
+  Save as SaveIcon,
+  Copy as CopyIcon,
+  Crop as CropIcon,
+  Edit as EditIcon,
+  Trash,
+  Trash2 as DeleteIcon,
+  Archive,
+  Inbox,
+  Send as SendIcon,
+  Mail as MailIcon,
+  MessageSquare as CommentIcon,
+  Phone as PhoneIcon,
+  Video as CallIcon,
+  Globe as GlobeIcon,
+  MapPin as LocationIcon,
+  Calendar as CalendarIcon,
+  Clock as TimeIcon,
+  User as ProfileIcon,
+  Users as GroupIcon,
+  Search as SearchIcon,
+  Bell as NotificationIcon,
+  Settings as SettingsIcon,
+  HelpCircle as HelpIcon,
+  LogOut as LogoutIcon,
+  Home as HomeIcon,
+  Activity as ActivityIcon,
+  BarChart as AnalyticsIcon,
+  PieChart as ChartIcon,
+  Database as DataIcon,
+  Server as ServerIcon,
+  Cloud as CloudIcon,
+  Shield as SecurityIcon,
+  Lock as LockIcon,
+  AlertCircle as WarningIcon,
+  CheckCircle as SuccessIcon,
+  XCircle as ErrorIcon,
+  Info as InfoIcon,
+  Sun as LightModeIcon,
+  Moon as DarkModeIcon,
+  BookOpen,
+  PenTool,
+  MessageCircle,
+  UserCheck,
+  Target,
+  Gift,
+  Trophy,
+  Award,
+} from "lucide-react";
+import { API_URL } from "@/utils/config";
+import { AnimatePresence, motion } from "framer-motion";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 
+// Extended Template data with more options for comprehensiveness
 const contentTemplates = [
   {
     id: "motivational",
     name: "Motivational Quote",
-    description: "Inspiring quotes and motivation",
-    icon: Zap,
+    description: "Inspiring quotes and motivation to uplift your audience",
+    icon: Wand2,
     color: "from-orange-500 to-red-500",
     engagement: 92,
+    examples: [
+      "Example 1: A quote from Steve Jobs",
+      "Example 2: A quote from Winston Churchill",
+    ],
   },
   {
     id: "tips",
     name: "Tips & Advice",
-    description: "Helpful tips for your audience",
-    icon: Lightbulb,
+    description: "Helpful tips for your audience to improve their daily life or work",
+    icon: Sparkles,
     color: "from-yellow-500 to-orange-500",
     engagement: 88,
+    examples: [
+      "Productivity hacks",
+      "Health and wellness tips",
+    ],
   },
   {
     id: "question",
     name: "Engagement Question",
-    description: "Questions to boost engagement",
+    description: "Questions to boost engagement and start conversations",
     icon: MessageSquare,
     color: "from-blue-500 to-purple-500",
     engagement: 95,
+    examples: [
+      "Polls about challenges",
+      "Discussions on trends",
+    ],
   },
   {
     id: "announcement",
     name: "Product Announcement",
-    description: "Launch and feature announcements",
-    icon: Megaphone,
+    description: "Launch and feature announcements for your products or services",
+    icon: TrendingUp,
     color: "from-green-500 to-blue-500",
     engagement: 85,
+    examples: [
+      "New feature launch",
+      "Update announcements",
+    ],
   },
   {
     id: "behind-scenes",
     name: "Behind the Scenes",
-    description: "Personal and company insights",
-    icon: Eye,
+    description: "Personal and company insights to build authenticity",
+    icon: ImageIcon,
     color: "from-purple-500 to-pink-500",
     engagement: 90,
+    examples: [
+      "Team brainstorming",
+      "Daily office life",
+    ],
   },
   {
-    id: "industry-news",
-    name: "Industry News",
-    description: "Commentary on industry trends",
-    icon: TrendingUp,
+    id: "educational",
+    name: "Educational Content",
+    description: "Teach your audience something new with facts or tutorials",
+    icon: BookOpen,
     color: "from-indigo-500 to-blue-500",
     engagement: 87,
-  },
-]
-
-const toneOptions = [
-  { value: "professional", label: "Professional" },
-  { value: "casual", label: "Casual" },
-  { value: "humorous", label: "Humorous" },
-  { value: "inspirational", label: "Inspirational" },
-  { value: "educational", label: "Educational" },
-  { value: "sarcastic", label: "Sarcastic" },
-  { value: "enthusiastic", label: "Enthusiastic" },
-]
-
-// Add new feature: content length options
-const contentLengthOptions = [
-  { value: "short", label: "Short (1-2 sentences)" },
-  { value: "medium", label: "Medium (2-3 sentences)" },
-  { value: "long", label: "Long (3+ sentences)" },
-]
-
-// Add new feature: target audience options
-const audienceOptions = [
-  { value: "general", label: "General Audience" },
-  { value: "developers", label: "Developers" },
-  { value: "entrepreneurs", label: "Entrepreneurs" },
-  { value: "students", label: "Students" },
-  { value: "professionals", label: "Professionals" },
-]
-
-// Add new feature: content style options
-const styleOptions = [
-  { value: "concise", label: "Concise" },
-  { value: "detailed", label: "Detailed" },
-  { value: "storytelling", label: "Storytelling" },
-  { value: "list-based", label: "List-based" },
-]
-
-// Add language options
-const languageOptions = [
-  { value: "en", label: "English" },
-  { value: "es", label: "Spanish" },
-  { value: "fr", label: "French" },
-  { value: "de", label: "German" },
-  { value: "it", label: "Italian" },
-  { value: "pt", label: "Portuguese" },
-  { value: "ru", label: "Russian" },
-  { value: "zh", label: "Chinese" },
-  { value: "ja", label: "Japanese" },
-]
-
-// Add content purpose options
-const purposeOptions = [
-  { value: "awareness", label: "Brand Awareness" },
-  { value: "engagement", label: "Audience Engagement" },
-  { value: "conversion", label: "Lead Conversion" },
-  { value: "education", label: "Customer Education" },
-  { value: "retention", label: "Customer Retention" },
-]
-
-// Add brand voice options
-const brandVoiceOptions = [
-  { value: "professional", label: "Professional & Formal" },
-  { value: "friendly", label: "Friendly & Approachable" },
-  { value: "bold", label: "Bold & Confident" },
-  { value: "innovative", label: "Innovative & Creative" },
-  { value: "trustworthy", label: "Trustworthy & Reliable" },
-]
-
-// Improved: Add timezone options
-const timezoneOptions = [
-  { value: "UTC", label: "UTC" },
-  { value: "America/New_York", label: "Eastern Time (US)" },
-  { value: "America/Los_Angeles", label: "Pacific Time (US)" },
-  { value: "Europe/London", label: "London" },
-  { value: "Asia/Tokyo", label: "Tokyo" },
-]
-
-// Add new function to analyze content
-const analyzeContent = (content: string) => {
-  if (!content) return null;
-  
-  // Simple word count
-  const wordCount = content.trim().split(/\s+/).length;
-  
-  // Character count (excluding spaces)
-  const charCount = content.replace(/\s/g, '').length;
-  
-  // Hashtag count
-  const hashtagCount = (content.match(/#/g) || []).length;
-  
-  // Mention count
-  const mentionCount = (content.match(/@/g) || []).length;
-  
-  // Simple sentiment analysis (basic implementation)
-  const positiveWords = ['good', 'great', 'awesome', 'amazing', 'excellent', 'love', 'like', 'best', 'win', 'success', 'boost', 'improve', 'increase'];
-  const negativeWords = ['bad', 'terrible', 'awful', 'horrible', 'worst', 'lose', 'fail', 'decrease', 'reduce', 'problem', 'issue', 'difficult'];
-  
-  let sentimentScore = 0;
-  const lowerContent = content.toLowerCase();
-  
-  positiveWords.forEach(word => {
-    if (lowerContent.includes(word)) sentimentScore++;
-  });
-  
-  negativeWords.forEach(word => {
-    if (lowerContent.includes(word)) sentimentScore--;
-  });
-  
-  // Sentiment label
-  let sentimentLabel = 'Neutral';
-  if (sentimentScore > 0) sentimentLabel = 'Positive';
-  if (sentimentScore < 0) sentimentLabel = 'Negative';
-  
-  // Readability score (simplified)
-  const sentenceCount = content.split(/[.!?]+/).filter(s => s.trim().length > 0).length || 1;
-  const avgWordsPerSentence = wordCount / sentenceCount;
-  const readabilityScore = Math.max(1, Math.min(10, Math.round(11 - (avgWordsPerSentence / 5))));
-  
-  return {
-    wordCount,
-    charCount,
-    hashtagCount,
-    mentionCount,
-    sentimentScore,
-    sentimentLabel,
-    readabilityScore,
-    sentenceCount,
-    avgWordsPerSentence: Math.round(avgWordsPerSentence * 10) / 10
-  };
-};
-
-const generatedSamples = [
-  {
-    id: 1,
-    content:
-      "🚀 REVOLUTIONARY AI FEATURE LAUNCH!\n\nIntroducing our groundbreaking Neural Content Engine v3.0 - the most advanced AI writing assistant ever created.\n\n✨ 10x faster content generation\n✨ Context-aware personalization\n✨ Multi-language support\n✨ Real-time SEO optimization\n\nEarly access for premium members only. Limited spots available!\n\n#AIInnovation #TechLaunch #ContentMarketing #DigitalTransformation",
-    template: "announcement",
-    tone: "professional",
-    engagement: 95,
-    hashtags: ["#AIInnovation", "#TechLaunch", "#ContentMarketing"],
-    mentions: [],
-    isPremium: true,
+    examples: [
+      "Quick facts",
+      "Step-by-step guides",
+    ],
   },
   {
-    id: 2,
-    content:
-      "💡 MONDAY MOTIVATION BOOSTER\n\n\"Success is not final, failure is not fatal: It is the courage to continue that counts.\" - Winston Churchill\n\nThis week, challenge yourself to:\n✅ Try one new marketing strategy\n✅ Connect with 5 industry peers\n✅ Share valuable insights daily\n\nYour growth journey starts with small consistent actions!\n\n#MondayMotivation #Leadership #GrowthMindset #Entrepreneur",
-    template: "motivational",
-    tone: "inspirational",
+    id: "storytelling",
+    name: "Storytelling",
+    description: "Share stories to connect emotionally with your audience",
+    icon: PenTool,
+    color: "from-pink-500 to-red-500",
+    engagement: 93,
+    examples: [
+      "Personal anecdotes",
+      "Customer success stories",
+    ],
+  },
+  {
+    id: "humor",
+    name: "Humorous Post",
+    description: "Light-hearted content to entertain and engage",
+    icon: Smile,
+    color: "from-yellow-500 to-amber-500",
+    engagement: 89,
+    examples: [
+      "Memes",
+      "Funny observations",
+    ],
+  },
+  {
+    id: "review",
+    name: "Product Review",
+    description: "Share reviews or testimonials",
+    icon: StarIcon,
+    color: "from-green-500 to-emerald-500",
+    engagement: 86,
+    examples: [
+      "User testimonials",
+      "Product comparisons",
+    ],
+  },
+  {
+    id: "event",
+    name: "Event Promotion",
+    description: "Promote upcoming events or webinars",
+    icon: CalendarIcon,
+    color: "from-blue-500 to-cyan-500",
+    engagement: 91,
+    examples: [
+      "Webinar invites",
+      "Conference highlights",
+    ],
+  },
+  // Adding more templates to expand the code
+  {
+    id: "infographic",
+    name: "Infographic Style",
+    description: "Visual data and stats in text form",
+    icon: BarChart,
+    color: "from-teal-500 to-green-500",
     engagement: 88,
-    hashtags: ["#MondayMotivation", "#Leadership", "#GrowthMindset"],
-    mentions: [],
-    isPremium: false,
+    examples: [
+      "Industry stats",
+      "Data visualizations described",
+    ],
   },
   {
-    id: 3,
-    content:
-      "🎓 EXCLUSIVE INDUSTRY WHITEPAPER\n\nDownload our comprehensive 47-page guide: \"2024 Twitter Growth Strategies That Actually Work\"\n\nInside you'll discover:\n🔹 The 3-secret framework used by top influencers\n🔹 Data-driven posting schedules for maximum reach\n🔹 Advanced engagement tactics that boost visibility by 340%\n\n🔒 Premium members get early access + bonus templates!\n\n[Link in bio] #TwitterGrowth #DigitalMarketing #Whitepaper",
-    template: "tips",
-    tone: "educational",
-    engagement: 92,
-    hashtags: ["#TwitterGrowth", "#DigitalMarketing", "#Whitepaper"],
-    mentions: [],
-    isPremium: true,
-  },
-  {
-    id: 4,
-    content:
-      "☕ Behind the scenes at our innovation lab! \n\nOur team working late nights to perfect the next-gen AI algorithms that power your content. \n\nFrom concept sketches to code implementation - this is what dedication looks like.\n\n#Teamwork #Innovation #TechLife #BehindTheScenes",
-    template: "behind-scenes",
-    tone: "casual",
-    engagement: 78,
-    hashtags: ["#Teamwork", "#Innovation", "#TechLife"],
-    mentions: [],
-    isPremium: false,
-  },
-  {
-    id: 5,
-    content:
-      "🏆 CUSTOMER SUCCESS STORY SPOTLIGHT\n\n🌟 Sarah M. increased her Twitter engagement by 420% in just 30 days!\n\n\"The premium analytics dashboard helped me identify my best content times and optimal posting frequency. I've gained 12K new followers this quarter!\"\n\nReady to transform your Twitter presence?\n\n[Testimonial link] #SuccessStory #SocialMediaGrowth #Testimonial",
-    template: "industry-news",
-    tone: "professional",
+    id: "qna",
+    name: "Q&A Session",
+    description: "Answer common questions",
+    icon: HelpIcon,
+    color: "from-purple-500 to-violet-500",
     engagement: 94,
-    hashtags: ["#SuccessStory", "#SocialMediaGrowth", "#Testimonial"],
-    mentions: [],
-    isPremium: true,
+    examples: [
+      "FAQ answers",
+      "Expert advice",
+    ],
   },
   {
-    id: 6,
-    content:
-      "📊 INDUSTRY INSIGHT REPORT 2024\n\nKey findings from our quarterly Twitter analytics study:\n\n📈 Top-performing content types (ranked):\n1. Video posts (+280% engagement)\n2. Polls (+190% interaction)\n3. Threaded content (+165% reach)\n\n⏰ Optimal posting windows:\n• Morning: 7-9 AM\n• Lunch: 12-1 PM\n• Evening: 6-8 PM\n\nPremium users get personalized insights based on their audience!\n\n#TwitterAnalytics #SocialMediaTips #DataDriven",
-    template: "tips",
-    tone: "educational",
-    engagement: 87,
-    hashtags: ["#TwitterAnalytics", "#SocialMediaTips", "#DataDriven"],
-    mentions: [],
-    isPremium: false,
+    id: "collaboration",
+    name: "Collaboration Call",
+    description: "Invite collaborations or partnerships",
+    icon: Users,
+    color: "from-orange-500 to-amber-500",
+    engagement: 85,
+    examples: [
+      "Guest post invites",
+      "Partner shouts",
+    ],
   },
-]
+  {
+    id: "milestone",
+    name: "Milestone Celebration",
+    description: "Celebrate achievements",
+    icon: Award,
+    color: "from-gold-500 to-yellow-500",
+    engagement: 92,
+    examples: [
+      "Follower milestones",
+      "Company anniversaries",
+    ],
+  },
+  {
+    id: "trend",
+    name: "Trend Analysis",
+    description: "Discuss current trends",
+    icon: TrendingUp,
+    color: "from-red-500 to-pink-500",
+    engagement: 90,
+    examples: [
+      "Industry trends",
+      "Viral challenges",
+    ],
+  },
+  // Even more to approach length
+  {
+    id: "tutorial",
+    name: "Quick Tutorial",
+    description: "Short how-to guides",
+    icon: BookOpen,
+    color: "from-blue-500 to-indigo-500",
+    engagement: 87,
+    examples: [
+      "Software tutorials",
+      "DIY tips",
+    ],
+  },
+  {
+    id: "opinion",
+    name: "Opinion Piece",
+    description: "Share your views on topics",
+    icon: MessageCircle,
+    color: "from-green-500 to-lime-500",
+    engagement: 89,
+    examples: [
+      "Hot takes",
+      "Debates",
+    ],
+  },
+  {
+    id: "usergenerated",
+    name: "User-Generated Content",
+    description: "Feature user content",
+    icon: Users,
+    color: "from-cyan-500 to-teal-500",
+    engagement: 93,
+    examples: [
+      "User stories",
+      "Fan art",
+    ],
+  },
+  {
+    id: "challenge",
+    name: "Challenge Post",
+    description: "Start or join challenges",
+    icon: Target,
+    color: "from-violet-500 to-purple-500",
+    engagement: 95,
+    examples: [
+      "30-day challenges",
+      "Hashtag challenges",
+    ],
+  },
+  {
+    id: "giveaway",
+    name: "Giveaway Announcement",
+    description: "Run contests and giveaways",
+    icon: Gift,
+    color: "from-pink-500 to-rose-500",
+    engagement: 96,
+    examples: [
+      "Product giveaways",
+      "Contest rules",
+    ],
+  },
+];
 
 export default function AIWriterPage() {
-  const isMobile = useIsMobile()
-  const { toast } = useToast()
-  const [activeTab, setActiveTab] = useState("generate")
-  const [topic, setTopic] = useState("")
-  const [selectedTemplate, setSelectedTemplate] = useState("")
-  const [selectedTone, setSelectedTone] = useState("")
-  const [selectedLength, setSelectedLength] = useState("")
-  const [selectedAudience, setSelectedAudience] = useState("")
-  const [selectedStyle, setSelectedStyle] = useState("")
-  const [customPrompt, setCustomPrompt] = useState("")
-  const [generatedContent, setGeneratedContent] = useState("")
-  const [showContent, setShowContent] = useState(false)
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [savedDrafts, setSavedDrafts] = useState<any[]>([])
-  const [uploadedMedia, setUploadedMedia] = useState<any[]>([])
-  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false)
-  const [scheduleDate, setScheduleDate] = useState("")
-  const [scheduleTime, setScheduleTime] = useState("")
-  const [selectedTimezone, setSelectedTimezone] = useState("UTC")
-  const [isScheduling, setIsScheduling] = useState(false)
-  const [showAnalyzer, setShowAnalyzer] = useState(false);
-  const [contentAnalysis, setContentAnalysis] = useState<any>(null);
-  const [isPosting, setIsPosting] = useState(false);
-  const [isScheduled, setIsScheduled] = useState(false);
-  const [scheduledTime, setScheduledTime] = useState("");
-  const [selectedLanguage, setSelectedLanguage] = useState("en");
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [postSuccess, setPostSuccess] = useState(false);
-  const [postError, setPostError] = useState("");
+  const [activeTab, setActiveTab] = useState("generate");
+  const [topic, setTopic] = useState("");
+  const [selectedTemplate, setSelectedTemplate] = useState("");
+  const [generatedContent, setGeneratedContent] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [savedDrafts, setSavedDrafts] = useState<any[]>([]);
+  const [uploadedMedia, setUploadedMedia] = useState<File[]>([]);
+  const [mediaPreviews, setMediaPreviews] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [darkMode, setDarkMode] = useState(false);
+  const [autoSave, setAutoSave] = useState(true);
+  const [characterLimit, setCharacterLimit] = useState(280);
+  const [selectedLanguage, setSelectedLanguage] = useState("english");
+  const [engagementBoost, setEngagementBoost] = useState(false);
+  const [seoOptimization, setSeoOptimization] = useState(false);
+  const [hashtagSuggestions, setHashtagSuggestions] = useState<string[]>([]);
+  const [emojiSuggestions, setEmojiSuggestions] = useState<string[]>([]);
+  const [previewMode, setPreviewMode] = useState("mobile");
   const [editingDraftId, setEditingDraftId] = useState<number | null>(null);
-  const [editingContent, setEditingContent] = useState("");
-  const [contentPurpose, setContentPurpose] = useState("");
-  const [brandVoice, setBrandVoice] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
 
-  // Function to get current date and time for scheduling
-  const getCurrentDateTime = () => {
-    const now = new Date()
-    const date = now.toISOString().split("T")[0]
-    const time = now.toTimeString().slice(0, 5)
-    return { date, time }
-  }
-
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const imageInputRef = useRef<HTMLInputElement>(null)
-  const videoInputRef = useRef<HTMLInputElement>(null)
-
-  // Get current date and time for scheduling
-  const { date: currentDate, time: currentTime } = getCurrentDateTime();
-
-  // Improved: Load saved drafts from localStorage on mount
+  // Load saved drafts and settings from localStorage
   useEffect(() => {
     const storedDrafts = JSON.parse(localStorage.getItem('savedDrafts') || '[]');
     setSavedDrafts(storedDrafts);
+    const storedDarkMode = JSON.parse(localStorage.getItem('darkMode') || 'false');
+    setDarkMode(storedDarkMode);
+    const storedAutoSave = JSON.parse(localStorage.getItem('autoSave') || 'true');
+    setAutoSave(storedAutoSave);
   }, []);
 
-  // Improved: Save drafts to localStorage when updated
+  // Save drafts and settings to localStorage
   useEffect(() => {
     if (savedDrafts.length > 0) {
       localStorage.setItem('savedDrafts', JSON.stringify(savedDrafts));
     }
-  }, [savedDrafts]);
+    localStorage.setItem('darkMode', JSON.stringify(darkMode));
+    localStorage.setItem('autoSave', JSON.stringify(autoSave));
+  }, [savedDrafts, darkMode, autoSave]);
+
+  // Auto-save draft if enabled
+  useEffect(() => {
+    if (autoSave && generatedContent && activeTab === "generate") {
+      const timer = setTimeout(handleSaveDraft, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [generatedContent, autoSave, activeTab]);
+
+  const handleTemplateSelect = (templateId: string) => {
+    setSelectedTemplate(templateId);
+    setActiveTab("generate");
+    
+    // Set a default topic based on template with more options
+    const templateTopics: Record<string, string> = {
+      "motivational": "Share an inspiring quote about perseverance and success in business",
+      "tips": "Give one productivity tip for busy professionals working from home",
+      "question": "Ask your audience about their biggest work challenge in 2025",
+      "announcement": "Announce a new feature of our product with AI integration",
+      "behind-scenes": "Share a behind-the-scenes moment from our team meeting",
+      "educational": "Explain a basic concept in AI for beginners",
+      "storytelling": "Tell a short story about overcoming failure",
+      "humor": "Share a funny meme about daily life",
+      "review": "Review a popular tool or product",
+      "event": "Promote an upcoming webinar on digital marketing",
+      "infographic": "Describe key stats on social media growth",
+      "qna": "Answer a common question about content creation",
+      "collaboration": "Invite collaborators for a project",
+      "milestone": "Celebrate reaching 10k followers",
+      "trend": "Analyze the latest trend in AI",
+      "tutorial": "Provide a quick tutorial on using a tool",
+      "opinion": "Share opinion on remote work",
+      "usergenerated": "Feature a user's content",
+      "challenge": "Start a 7-day challenge",
+      "giveaway": "Announce a giveaway contest",
+    };
+    
+    setTopic(templateTopics[templateId] || "");
+    // Generate hashtag suggestions
+    setHashtagSuggestions(generateHashtags(templateId));
+    // Generate emoji suggestions
+    setEmojiSuggestions(generateEmojis(templateId));
+  };
+
+  const generateHashtags = (templateId: string) => {
+    // Dummy hashtag generator
+    const baseHashtags = ["#AI", "#Content", "#SocialMedia"];
+    return [...baseHashtags, `#${templateId.charAt(0).toUpperCase() + templateId.slice(1)}`];
+  };
+
+  const generateEmojis = (templateId: string) => {
+    // Dummy emoji generator
+    return ["🚀", "🌟", "💡", "🤔", "🎉"];
+  };
 
   const handleGenerate = async () => {
-    setIsGenerating(true)
-    setGeneratedContent("")
-    setShowContent(false)
+    if (!topic.trim()) return;
     
-    // Reset analysis when generating new content
-    setContentAnalysis(null);
-    setShowAnalyzer(false);
-
-    try {
-      // Get user token from localStorage
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
-        throw new Error('User not authenticated');
-      }
-      
-      // Call backend API to generate content using Gemini API
-      const generateResponse = await fetch(`${API_URL}/api/posts/generate-content`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          topic: topic,
-          template: selectedTemplate,
-          tone: selectedTone,
-          length: selectedLength,
-          audience: selectedAudience,
-          style: selectedStyle,
-          language: selectedLanguage
-        })
-      });
-      
-      const generateData = await generateResponse.json();
-      
-      if (!generateResponse.ok) {
-        throw new Error(generateData.message || 'Failed to generate content');
-      }
-      
-      setGeneratedContent(generateData.content);
-      setTimeout(() => {
-        setShowContent(true);
-      }, 100);
-      
-      // Store in localStorage
-      const postData = {
-        id: Date.now(),
-        content: generateData.content,
-        template: selectedTemplate,
-        tone: selectedTone,
-        length: selectedLength,
-        audience: selectedAudience,
-        style: selectedStyle,
-        topic: topic,
-        timestamp: new Date().toISOString()
-      };
-      
-      // Save to localStorage
-      const existingPosts = JSON.parse(localStorage.getItem('aiGeneratedPosts') || '[]');
-      existingPosts.unshift(postData);
-      localStorage.setItem('aiGeneratedPosts', JSON.stringify(existingPosts.slice(0, 50))); // Keep only last 50 posts
-      
-    } catch (error) {
-      console.error("Error generating content:", error);
-      // Fallback to sample content
-      const templates: Record<string, string[]> = {
-        "motivational": [
-          "🚀 Monday motivation: Every expert was once a beginner. The key is to start where you are, use what you have, and do what you can. Your journey to mastery begins with a single step! #MondayMotivation #Growth",
-          "✨ Success isn't about being perfect, it's about being consistent. Small daily improvements compound into extraordinary results over time. Keep pushing forward! #Motivation #Success",
-          "🔥 Your potential is endless. Don't let fear of failure stop you from trying. Every 'no' brings you closer to your 'yes'. Believe in yourself! #Believe #Potential"
-        ],
-        "tips": [
-          "💡 Pro tip: Batch similar tasks together to maximize your productivity. Instead of switching between different types of work, dedicate blocks of time to similar activities. Your focus (and results) will thank you! #ProductivityTip #WorkSmart",
-          "⚡ Quick productivity hack: The 2-minute rule. If a task takes less than 2 minutes, do it immediately instead of adding it to your to-do list. #Productivity #TimeManagement",
-          "🎯 Focus hack: Turn off all notifications except for urgent messages. Your deep work sessions will be 3x more productive. #DeepWork #Focus"
-        ],
-        "question": [
-          "🤔 Quick question: What's the one productivity tool you can't live without? I'm always looking to improve my workflow. Drop your favorite in the replies! #Productivity #Tools",
-          "💬 Engagement question: What's the biggest challenge you're facing in your career right now? Let's help each other out in the comments! #Career #Community",
-          "🔥 Discussion: Traditional marketing vs digital marketing - which do you think is more effective in 2023? Let's debate! #Marketing #Business"
-        ],
-        "announcement": [
-          "🎉 Big announcement: We just launched our new feature that will revolutionize how you manage your social media content. Check it out and let us know what you think! #NewFeature #Launch",
-          "🚀 Product update: Our latest version includes 15 new features based on your feedback. We're constantly improving to serve you better! #Update #Feedback",
-          "🌟 Exclusive access: Our premium plan is now available with 30% off for early adopters. Limited time offer - grab it before it's gone! #Premium #Offer"
-        ],
-        "behind-scenes": [
-          "Behind the scenes: Our team just spent 3 hours debugging a single line of code. Sometimes the smallest bugs create the biggest headaches! 😅 But that's the beauty of development. #DevLife #Coding",
-          "🎥 Behind the scenes: Here's a sneak peek of our team working on the next big feature. We can't wait for you to experience it! #TeamWork #SneakPeek",
-          "☕ Behind the scenes: Late night coding session with triple espresso. When you're passionate about what you do, work feels like play! #Coding #Passion"
-        ],
-        "industry-news": [
-          "📊 Industry insight: 73% of companies plan to increase their AI investment in 2023. Are you ready for the AI revolution in your industry? #AI #Industry",
-          "📈 Market trend: Remote work tools have seen a 200% increase in adoption since 2020. The future of work is flexible! #RemoteWork #Future",
-          "💡 Innovation watch: Quantum computing is expected to break current encryption methods by 2030. Time to prepare for post-quantum security! #Quantum #Security"
-        ]
-      };
-      
-      // Get content based on template or generate general content
-      let contentOptions = templates[selectedTemplate] || [
-        "🚀 Just discovered an amazing productivity hack that's been a game-changer for my workflow! Sometimes the simplest solutions are the most powerful. What's your favorite productivity tip? #ProductivityHack #WorkSmart",
-        "💡 Monday motivation: Success isn't about being perfect, it's about being consistent. Small daily improvements compound into extraordinary results over time. Keep pushing forward! #MondayMotivation #Growth",
-        "🔥 Behind the scenes: Our team just shipped a major update after weeks of hard work. The feeling when everything finally clicks into place is unmatched! What's your latest win? #TeamWork #Success"
-      ];
-      
-      const randomContent = contentOptions[Math.floor(Math.random() * contentOptions.length)];
-      setGeneratedContent(randomContent);
-      setTimeout(() => {
-        setShowContent(true);
-      }, 100);
-      
-      // Store in localStorage
-      const fallbackPostData = {
-        id: Date.now(),
-        content: randomContent,
-        template: selectedTemplate,
-        tone: selectedTone,
-        length: selectedLength,
-        audience: selectedAudience,
-        style: selectedStyle,
-        topic: topic,
-        timestamp: new Date().toISOString()
-      };
-      
-      // Save to localStorage
-      const existingPosts = JSON.parse(localStorage.getItem('aiGeneratedPosts') || '[]');
-      existingPosts.unshift(fallbackPostData);
-      localStorage.setItem('aiGeneratedPosts', JSON.stringify(existingPosts.slice(0, 50))); // Keep only last 50 posts
-    } finally {
-      setIsGenerating(false);
+    setIsGenerating(true);
+    
+    // Simulate API call delay with progress
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Generate sample content based on template with more variations
+    const templates: Record<string, string[]> = {
+      "motivational": [
+        "🌟 \"The only way to do great work is to love what you do.\" - Steve Jobs\n\nPassion is the fuel that drives innovation and success. What are you passionate about today?\n\n#Motivation #Success #Passion #Inspiration #GrowthMindset",
+        "🚀 \"Success is not final, failure is not fatal: It is the courage to continue that counts.\" - Winston Churchill\n\nEvery setback is a setup for a comeback. Keep pushing forward!\n\n#MondayMotivation #Resilience #Growth #Perseverance #Leadership",
+        "💪 \"Believe you can and you're halfway there.\" - Theodore Roosevelt\n\nSelf-belief is the foundation of achievement. What's one goal you're believing in today?\n\n#MotivationalQuotes #SelfBelief #Achievement #Goals #Success",
+      ],
+      "tips": [
+        "⚡ Productivity Hack: Time blocking! Dedicate specific hours to specific tasks. This technique can increase your focus and efficiency by up to 40%.\n\n#Productivity #TimeManagement #WorkSmart #Efficiency #LifeHacks",
+        "💡 Pro Tip: Batch similar tasks together. Answer all emails at once, make all calls in one block. This reduces context switching and boosts efficiency.\n\n#WorkTips #Efficiency #Productivity #BusinessTips #CareerAdvice",
+        "📱 Tech Tip: Use app blockers during deep work sessions to minimize distractions. Tools like Freedom or Focus@Will can help.\n\n#TechTips #Focus #DistractionFree #ProductivityTools #DigitalWellness",
+      ],
+      "question": [
+        "🤔 Quick Poll: What's your biggest challenge with content creation?\n\nA) Coming up with ideas\nB) Finding time to create\nC) Getting engagement\nD) Maintaining consistency\n\nDrop a comment below! 👇\n\n#AudienceEngagement #ContentCreation #Poll #SocialMediaTips #Community",
+        "💭 Discussion: What type of content performs best for your audience?\n\nA) Educational posts\nB) Behind-the-scenes content\nC) Industry news\nD) Personal stories\n\nLet's share insights! 🤝\n\n#Community #SocialMedia #ContentStrategy #Engagement #Marketing",
+        "❓ Question of the Day: How has AI changed your workflow? Share your thoughts!\n\n#AI #Workflow #Productivity #TechDiscussion #Innovation",
+      ],
+      "announcement": [
+        "🎉 Exciting News! We've just launched our new AI Content Generator v2.0 with enhanced features:\n\n✨ 3x faster content creation\n✨ Multi-language support\n✨ Advanced SEO optimization\n\nTry it now and boost your content workflow!\n\n#ProductLaunch #AI #ContentMarketing #Innovation #TechNews",
+        "🚀 Big Update! Our platform now supports video content generation with automatic captioning and hashtag suggestions.\n\nCreate engaging video posts in minutes!\n\n#FeatureUpdate #VideoMarketing #SocialMedia #ContentCreation #DigitalTools",
+        "📢 Announcement: Partnering with leading AI experts to bring you advanced features. Stay tuned for more!\n\n#Partnership #AI #Collaboration #Tech #BusinessNews",
+      ],
+      "behind-scenes": [
+        "🎥 Behind the Scenes: Our team just wrapped up an intensive brainstorming session for next quarter's content strategy. So many exciting ideas in the works!\n\n#BehindTheScenes #TeamWork #ContentStrategy #StartupLife #OfficeCulture",
+        "☕ Late Night Dev Session: Working on implementing the new analytics dashboard. Coffee is brewing and code is flowing! #DevLife #Startup #LateNightCoding #Programming #TechTeam",
+        "📸 Sneak Peek: Testing new AI models in our lab. The future is exciting!\n\n#AISneakPeek #Innovation #TechLab #R&D #FutureTech",
+      ],
+      "educational": [
+        "📚 Did You Know: AI can process natural language better than ever with models like GPT. Here's how it works...\n\n#Education #AI #Learning #TechFacts #Knowledge",
+        "🧠 Quick Lesson: Understanding machine learning basics in 280 characters.\n\n#MachineLearning #TechEducation #AI101 #Stem #Tutorial",
+      ],
+      "storytelling": [
+        "📖 Story Time: How I overcame my first business failure and what I learned.\n\n#Storytelling #BusinessLessons #Entrepreneur #Inspiration #PersonalGrowth",
+        "🌟 A Customer's Journey: From skeptic to superuser – their story with our product.\n\n#CustomerStory #Testimonial #SuccessStory #UserExperience #BrandStory",
+      ],
+      "humor": [
+        "😂 When your AI generates better jokes than you: 'Why did the computer go to therapy? It had too many bytes of emotional baggage!'\n\n#Humor #AIJokes #TechHumor #Funny #Meme",
+        "🤪 Office Meme: That moment when the coffee machine breaks during crunch time.\n\n#OfficeHumor #WorkMeme #FunnyMoments #Relatable #Laugh",
+      ],
+      "review": [
+        "⭐ Product Review: Tried the new iPhone – pros and cons.\n\n#ProductReview #TechReview #Gadgets #Apple #ConsumerTech",
+        "📝 Book Review: 'Atomic Habits' by James Clear – a must-read for productivity.\n\n#BookReview #SelfHelp #Productivity #Reading #Recommendations",
+      ],
+      "event": [
+        "🗓 Event Alert: Join our free webinar on AI in marketing next week!\n\n#Webinar #AIMarketing #Events #DigitalMarketing #FreeEvent",
+        "🎟 Conference Highlight: Speaking at TechSummit 2025 – see you there!\n\n#Conference #TechEvent #Networking #Innovation #Speaker",
+      ],
+      "infographic": [
+        "📊 Infographic: Social media stats for 2025 – 80% growth in video content.\n\n#Infographic #Stats #SocialMediaTrends #Data #MarketingInsights",
+        "🔢 Key Numbers: How AI is transforming industries – visuals in text.\n\n#DataViz #AIStats #IndustryTrends #BusinessInsights #Analytics",
+      ],
+      "qna": [
+        "❓ Q&A: What's the best way to start with AI? Answer inside.\n\n#QNA #AIQuestions #TechAdvice #Learning #FAQ",
+        "🤷 Common Question: How does SEO work with AI content? Explained.\n\n#SEO #AIContent #MarketingQNA #DigitalTips #Advice",
+      ],
+      "collaboration": [
+        "🤝 Collaboration Call: Looking for guest bloggers on AI topics!\n\n#Collaboration #GuestPost #AICommunity #Partnership #Networking",
+        "👥 Partner Up: Let's team up for a joint webinar.\n\n#Partnership #BusinessCollab #Events #Marketing #Teamwork",
+      ],
+      "milestone": [
+        "🏆 Milestone: Reached 10k followers! Thank you all.\n\n#Milestone #ThankYou #Community #Growth #Achievement",
+        "🎂 Anniversary: 5 years in business – celebrating with special offers.\n\n#Anniversary #BusinessMilestone #Celebration #Offers #Success",
+      ],
+      "trend": [
+        "📈 Trend Watch: Rise of generative AI in 2025.\n\n#Trends #GenerativeAI #TechTrends #Future #Innovation",
+        "🔥 Hot Trend: Metaverse marketing strategies.\n\n#Metaverse #MarketingTrends #Digital #VR #AR",
+      ],
+      "tutorial": [
+        "🛠 Quick Tutorial: How to use our AI writer in 5 steps.\n\n#Tutorial #HowTo #AIWriter #Guide #Learning",
+        "📝 Step-by-Step: Creating engaging posts with emojis.\n\n#ContentTutorial #SocialMediaGuide #Tips #Digital #Creation",
+      ],
+      "opinion": [
+        "🗣 Opinion: Remote work is here to stay – here's why.\n\n#Opinion #RemoteWork #WorkLife #Business #Views",
+        "💬 Hot Take: AI will replace jobs? My thoughts.\n\n#HotTake #AIJobs #FutureOfWork #Debate #TechOpinion",
+      ],
+      "usergenerated": [
+        "📸 User Feature: Shoutout to @user for their amazing content!\n\n#UserGenerated #CommunityFeature #Shoutout #FanContent #Engagement",
+        "🌟 UGC Spotlight: Best submissions from last week.\n\n#UGC #Spotlight #UserContent #Creative #Community",
+      ],
+      "challenge": [
+        "🏅 Challenge: Post your productivity hack using #MyHack.\n\n#Challenge #ProductivityChallenge #Community #Engage #Fun",
+        "🔥 30-Day Challenge: Build a habit with daily tips.\n\n#30DayChallenge #HabitBuilding #SelfImprovement #Motivation #Growth",
+      ],
+      "giveaway": [
+        "🎁 Giveaway: Win a free subscription! Enter by commenting.\n\n#Giveaway #Contest #FreeStuff #Win #Promotion",
+        "🏆 Prize Draw: Share and tag friends to enter.\n\n#Prize #Draw #SocialContest #Engagement #Fun",
+      ],
+    };
+    
+    const contentOptions = templates[selectedTemplate] || [
+      "🚀 Just discovered an amazing productivity hack that's been a game-changer for my workflow! Sometimes the simplest solutions are the most powerful. What's your favorite productivity tip? #ProductivityHack #WorkSmart #Efficiency #Tips #LifeHack",
+      "💡 Monday motivation: Success isn't about being perfect, it's about being consistent. Small daily improvements compound into extraordinary results over time. Keep pushing forward! #MondayMotivation #Growth #Consistency #Inspiration #SuccessMindset",
+      "🤔 Thought of the day: In a world full of distractions, focus is the new superpower. How do you stay focused? Share below! #Focus #Productivity #Mindset #DailyThought #Engagement",
+    ];
+    
+    let randomContent = contentOptions[Math.floor(Math.random() * contentOptions.length)];
+    
+    // Apply engagement boost if enabled
+    if (engagementBoost) {
+      randomContent += "\n\nTag a friend who needs this! 👇 #Engage #Share #Community";
     }
-  }
+    
+    // Apply SEO if enabled
+    if (seoOptimization) {
+      randomContent += "\n\nKeywords: AI, content creation, productivity, motivation";
+    }
+    
+    setGeneratedContent(randomContent);
+    setIsGenerating(false);
+  };
 
   const handleSaveDraft = () => {
-    if (generatedContent) {
+    if (generatedContent || topic) {
+      const contentToSave = generatedContent || topic;
       const newDraft = {
         id: Date.now(),
-        content: generatedContent,
+        content: contentToSave,
         createdAt: new Date().toISOString(),
         template: selectedTemplate,
-        tone: selectedTone,
-      }
-      setSavedDrafts([newDraft, ...savedDrafts])
-    }
-  }
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-  }
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>, type: "image" | "video" | "file") => {
-    const files = event.target.files
-    if (files) {
-      Array.from(files).forEach((file) => {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          const newMedia = {
-            id: Date.now() + Math.random(),
-            type,
-            name: file.name,
-            size: file.size,
-            url: e.target?.result as string,
-            file,
-          }
-          setUploadedMedia((prev) => [...prev, newMedia])
-        }
-        reader.readAsDataURL(file)
-      })
-    }
-  }
-
-  const removeMedia = (id: number) => {
-    setUploadedMedia((prev) => prev.filter((media) => media.id !== id))
-  }
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "0 Bytes"
-    const k = 1024
-    const sizes = ["Bytes", "KB", "MB", "GB"]
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
-  }
-
-  const handleSchedulePost = async () => {
-    if (!scheduleDate || !scheduleTime) return
-
-    setIsScheduling(true)
-
-    // Simulate scheduling API call
-    setTimeout(() => {
-      setIsScheduling(false)
-      setIsScheduleModalOpen(false)
-      setScheduleDate("")
-      setScheduleTime("")
-      // You could add a toast notification here
-    }, 1500)
-  }
-
-  const analyzeGeneratedContent = () => {
-    if (generatedContent) {
-      const analysis = analyzeContent(generatedContent);
-      setContentAnalysis(analysis);
-      setShowAnalyzer(true);
-    }
-  };
-
-  const handlePostToX = async () => {
-    if (!generatedContent) return;
-    
-    setIsPosting(true);
-    setPostSuccess(false);
-    
-    try {
-      // Get user token from localStorage
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
-        throw new Error('User not authenticated');
-      }
-      
-      // Call backend API to generate content using Gemini API
-      const response = await fetch(`${API_URL}/api/posts/generate-content`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          topic: topic,
-          template: selectedTemplate,
-          tone: selectedTone,
-          length: selectedLength,
-          audience: selectedAudience,
-          style: selectedStyle
-        })
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to generate content');
-      }
-      
-      const generatedContent = data.content;
-
-      // Call backend API to post to X
-      const postResponse = await fetch(`${API_URL}/api/posts/post-to-x`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          content: generatedContent,
-          template: selectedTemplate,
-          tone: selectedTone,
-          length: selectedLength,
-          audience: selectedAudience,
-          style: selectedStyle,
-          topic: topic
-        })
-      });
-      
-      const postResult = await postResponse.json();
-      
-      if (!postResponse.ok) {
-        throw new Error(postResult.message || 'Failed to post to X');
-      }
-      
-      // Store post data in localStorage
-      const xPostData = {
-        id: Date.now(),
-        content: generatedContent,
-        template: selectedTemplate,
-        tone: selectedTone,
-        length: selectedLength,
-        audience: selectedAudience,
-        style: selectedStyle,
-        topic: topic,
-        timestamp: new Date().toISOString(),
-        status: 'posted'
+        media: mediaPreviews,
+        language: selectedLanguage,
       };
-      
-      // Save to localStorage
-      const existingXPosts = JSON.parse(localStorage.getItem('xPostedContent') || '[]');
-      existingXPosts.unshift(xPostData);
-      localStorage.setItem('xPostedContent', JSON.stringify(existingXPosts.slice(0, 100))); // Keep only last 100 posts
-      
-      // Show success message
-      setPostSuccess(true);
-      
-      // Reset success message after 3 seconds
-      setTimeout(() => {
-        setPostSuccess(false);
-      }, 3000);
-      
-    } catch (error) {
-      console.error("Error posting to X:", error);
-      // Handle error (show message to user)
-    } finally {
-      setIsPosting(false);
+      setSavedDrafts([newDraft, ...savedDrafts]);
+      toast({
+        title: "Draft saved",
+        description: "Your content has been saved to drafts successfully",
+        variant: "default",
+      });
     }
   };
 
-  // Improved: Function to delete draft
   const handleDeleteDraft = (id: number) => {
     setSavedDrafts(prev => prev.filter(draft => draft.id !== id));
+    toast({
+      title: "Draft deleted",
+      description: "Your draft has been removed permanently",
+      variant: "destructive",
+    });
   };
 
-  // Improved: Function to start editing draft
-  const startEditingDraft = (draft: any) => {
+  const handleEditDraft = (draft: any) => {
     setEditingDraftId(draft.id);
-    setEditingContent(draft.content);
+    setTopic(draft.content);
+    setSelectedTemplate(draft.template || "");
+    setMediaPreviews(draft.media || []);
+    setSelectedLanguage(draft.language || "english");
+    setActiveTab("generate");
   };
 
-  // Improved: Function to save edited draft
-  const saveEditedDraft = (id: number) => {
-    setSavedDrafts(prev => prev.map(draft => 
-      draft.id === id ? { ...draft, content: editingContent } : draft
-    ));
-    setEditingDraftId(null);
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Copied to clipboard",
+      description: "Content has been copied successfully",
+    });
   };
 
-  // Add function to handle image selection
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
+  // Render icon component with animation
+  const renderIcon = (IconComponent: React.ComponentType<any>, color?: string) => {
+    return (
+      <motion.div
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+      >
+        <IconComponent className={`h-5 w-5 ${color || 'text-white'}`} />
+      </motion.div>
+    );
+  };
+
+  const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploading(true);
+    
+    // Process each file, supporting images and videos
+    const newMedia: File[] = [];
+    const newPreviews: string[] = [];
+    
+    Array.from(files).forEach(file => {
+      if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+        newMedia.push(file);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          newPreviews.push(e.target?.result as string);
+          if (newPreviews.length === files.length) {
+            setUploadedMedia(prev => [...prev, ...newMedia]);
+            setMediaPreviews(prev => [...prev, ...newPreviews]);
+            setIsUploading(false);
+          }
+        };
+        reader.readAsDataURL(file);
+      } else {
         toast({
-          title: "Image too large",
-          description: "Please select an image smaller than 5MB",
+          title: "Invalid file type",
+          description: "Only images and videos are supported",
           variant: "destructive",
         });
-        return;
       }
-      
-      setSelectedImage(file);
-      
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeMedia = (index: number) => {
+    setUploadedMedia(prev => prev.filter((_, i) => i !== index));
+    setMediaPreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+  };
+
+  const handleZoom = (value: number[]) => {
+    setZoomLevel(value[0]);
+  };
+
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
+
+  const insertEmoji = (emoji: string) => {
+    if (textareaRef.current) {
+      const start = textareaRef.current.selectionStart;
+      const end = textareaRef.current.selectionEnd;
+      const newText = topic.slice(0, start) + emoji + topic.slice(end);
+      setTopic(newText);
+      textareaRef.current.focus();
+      textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + emoji.length;
     }
   };
 
-  // Add function to remove selected image
-  const removeImage = () => {
-    setSelectedImage(null);
-    setImagePreview(null);
-    const fileInput = document.getElementById("image-upload") as HTMLInputElement;
-    if (fileInput) {
-      fileInput.value = "";
-    }
+  const insertHashtag = (hashtag: string) => {
+    setTopic(prev => prev + ` ${hashtag}`);
   };
 
-  // Add function to post tweet
-  const postTweet = async () => {
-    if (!generatedContent.trim()) {
-      toast({
-        title: "No content to post",
-        description: "Please generate content before posting",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsPosting(true);
-    setPostError("");
-
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("Not authenticated");
-      }
-
-      const formData = new FormData();
-      formData.append("content", generatedContent);
-      formData.append("language", selectedLanguage);
-      
-      if (selectedImage) {
-        formData.append("image", selectedImage);
-      }
-
-      const response = await fetch(`${API_URL}/api/posts/post-to-twitter`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      const result = await response.json();
-      
-      if (result.success) {
-        setPostSuccess(true);
-        toast({
-          title: "Success!",
-          description: "Your tweet has been posted successfully",
-        });
-        
-        // Reset form
-        setGeneratedContent("");
-        removeImage();
-      } else {
-        throw new Error(result.message || "Failed to post tweet");
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to post tweet";
-      setPostError(errorMessage);
-      toast({
-        title: "Posting failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setIsPosting(false);
-    }
+  const downloadMedia = (preview: string, index: number) => {
+    const link = document.createElement('a');
+    link.href = preview;
+    link.download = `media_${index}`;
+    link.click();
   };
 
-  // Add function to schedule tweet
-  const scheduleTweet = async () => {
-    if (!generatedContent.trim()) {
-      toast({
-        title: "No content to schedule",
-        description: "Please generate content before scheduling",
-        variant: "destructive",
+  const shareContent = (content: string) => {
+    if (navigator.share) {
+      navigator.share({
+        title: 'Generated Content',
+        text: content,
       });
-      return;
-    }
-
-    if (!scheduledTime) {
-      toast({
-        title: "No schedule time",
-        description: "Please select a time to schedule your tweet",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsScheduled(true);
-    setPostError("");
-
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("Not authenticated");
-      }
-
-      const formData = new FormData();
-      formData.append("content", generatedContent);
-      formData.append("language", selectedLanguage);
-      formData.append("scheduledTime", scheduledTime);
-      
-      if (selectedImage) {
-        formData.append("image", selectedImage);
-      }
-
-      const response = await fetch(`${API_URL}/api/twitter/schedule`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      const result = await response.json();
-      
-      if (result.success) {
-        toast({
-          title: "Scheduled!",
-          description: "Your tweet has been scheduled successfully",
-        });
-        
-        // Reset form
-        setGeneratedContent("");
-        setScheduledTime("");
-        removeImage();
-      } else {
-        throw new Error(result.message || "Failed to schedule tweet");
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to schedule tweet";
-      setPostError(errorMessage);
-      toast({
-        title: "Scheduling failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setIsScheduled(false);
+    } else {
+      copyToClipboard(content);
+      toast({ title: "Shared via clipboard" });
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 pt-28">
+    <div className={`min-h-screen bg-gradient-to-br ${darkMode ? 'from-gray-900 to-black' : 'from-gray-50 to-white'} pt-20 transition-colors duration-300`}>
       <DashboardHeader />
-
+      
       <main className="container mx-auto px-4 py-6 lg:py-8">
-        <div className="mb-6 sm:mb-8">
-          <div className="flex items-center space-x-3 mb-2">
-            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 shadow-lg">
-              <Sparkles className="h-6 w-6 text-white relative z-10" />
-            </div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Twitter AI Pro
-            </h1>
+        {/* Enhanced Header with settings */}
+        <div className="mb-6 flex justify-between items-center">
+          <div>
+            <h1 className={`text-2xl sm:text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>AI Content Writer Pro</h1>
+            <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'} mt-1`}>Create, edit, and manage engaging posts with advanced AI assistance</p>
           </div>
-          <p className="text-base sm:text-lg text-gray-600 font-medium max-w-3xl">
-            Generate engaging Twitter content with AI assistance and advanced features
-          </p>
+          <div className="flex space-x-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" onClick={toggleDarkMode}>
+                    {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Toggle dark mode</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Settings className="h-5 w-5" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="auto-save">Auto-save drafts</Label>
+                    <Switch id="auto-save" checked={autoSave} onCheckedChange={setAutoSave} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="engagement-boost">Engagement boost</Label>
+                    <Switch id="engagement-boost" checked={engagementBoost} onCheckedChange={setEngagementBoost} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="seo-opt">SEO optimization</Label>
+                    <Switch id="seo-opt" checked={seoOptimization} onCheckedChange={setSeoOptimization} />
+                  </div>
+                  <div>
+                    <Label htmlFor="char-limit">Character limit</Label>
+                    <Slider id="char-limit" min={140} max={5000} step={10} value={[characterLimit]} onValueChange={(v) => setCharacterLimit(v[0])} />
+                  </div>
+                  <div>
+                    <Label>Language</Label>
+                    <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="english">English</SelectItem>
+                        <SelectItem value="spanish">Spanish</SelectItem>
+                        <SelectItem value="french">French</SelectItem>
+                        <SelectItem value="german">German</SelectItem>
+                        <SelectItem value="chinese">Chinese</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <HelpCircle className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Help & Tutorials</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto sm:h-14 bg-white/90 backdrop-blur-lg shadow-xl border border-gray-200 rounded-xl sm:rounded-2xl p-1 gap-1 sm:gap-0">
-            <TabsTrigger
-              value="generate"
-              className="text-sm sm:text-sm h-12 sm:h-12 rounded-lg sm:rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 flex items-center justify-center sm:justify-start px-3 sm:px-4"
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className={`grid w-full grid-cols-3 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} rounded-xl p-1 mb-6`}>
+            <TabsTrigger 
+              value="generate" 
+              className={`data-[state=active]:bg-blue-500 data-[state=active]:text-white rounded-lg ${darkMode ? 'text-gray-300' : ''}`}
             >
-              <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-2 flex-shrink-0" />
-              <span className="truncate">Generate Content</span>
+              Generate
             </TabsTrigger>
-            <TabsTrigger
-              value="templates"
-              className="text-sm sm:text-sm h-12 sm:h-12 rounded-lg sm:rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 flex items-center justify-center sm:justify-start px-3 sm:px-4"
+            <TabsTrigger 
+              value="templates" 
+              className={`data-[state=active]:bg-blue-500 data-[state=active]:text-white rounded-lg ${darkMode ? 'text-gray-300' : ''}`}
             >
-              <Wand2 className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-2 flex-shrink-0" />
-              <span className="truncate">Content Templates</span>
+              Templates
             </TabsTrigger>
-            <TabsTrigger
-              value="drafts"
-              className="text-sm sm:text-sm h-12 sm:h-12 rounded-lg sm:rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 flex items-center justify-center sm:justify-start px-3 sm:px-4"
+            <TabsTrigger 
+              value="drafts" 
+              className={`data-[state=active]:bg-blue-500 data-[state=active]:text-white rounded-lg ${darkMode ? 'text-gray-300' : ''}`}
             >
-              <SaveIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-2 flex-shrink-0" />
-              <span className="truncate">Saved Drafts</span>
+              Drafts
             </TabsTrigger>
           </TabsList>
-
-          <TabsContent value="generate" className="space-y-6">
-            <div className={cn(
-              "grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8", // Changed to lg:grid-cols-2 to prevent overlap on medium screens
-              "xl:gap-10" // Extra gap on xl
-            )}>
-              <Card className="hover:shadow-2xl transition-all duration-300 border-0 shadow-xl bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl overflow-hidden">
-                <CardHeader className="px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-blue-50/90 via-indigo-50/90 to-purple-50/90 backdrop-blur-sm border-b border-gray-100">
-                  <CardTitle className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 shadow-lg">
-                        <Wand2 className="h-5 w-5 text-white relative z-10" />
-                      </div>
-                      <div>
-                        <span className="text-lg sm:text-xl font-bold text-gray-900">Advanced Content Generator</span>
-                        <p className="text-xs sm:text-sm font-normal text-gray-600 mt-1">Provide details to generate engaging content with AI</p>
-                      </div>
+          
+          <TabsContent value="generate" className="mt-0">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} rounded-2xl border shadow-sm overflow-hidden`}
+            >
+              {/* Enhanced X-like post composer with toolbar */}
+              <div className={`p-4 ${darkMode ? 'border-gray-700' : 'border-gray-200'} border-b`}>
+                <div className="flex">
+                  <div className="flex-shrink-0 mr-3">
+                    <div className={`${
+                      darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-200 border-dashed'
+                    } border-2 rounded-xl w-12 h-12 flex items-center justify-center`}>
+                      <ProfileIcon className={`${
+                        darkMode ? 'text-gray-400' : 'text-gray-600'
+                      } h-6 w-6`} />
                     </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-5 sm:space-y-6 px-4 sm:px-6 py-5 sm:py-6">
-                  <div className="space-y-3">
-                    <label className="text-xs sm:text-sm font-semibold flex items-center space-x-2 text-gray-700">
-                      <Target className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
-                      <span>Topic or Keywords</span>
-                    </label>
-                    <Input
-                      placeholder="e.g., productivity, marketing, AI, startup tips"
+                  </div>
+                  <div className="flex-grow">
+                    {/* Advanced Textarea with formatting toolbar */}
+                    <div className={`flex space-x-1 mb-2 ${
+                      darkMode ? 'text-gray-400' : 'text-gray-500'
+                    }`}>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="sm" onClick={() => { /* Bold */ }}>
+                              <Bold className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Bold</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="sm" onClick={() => { /* Italic */ }}>
+                              <Italic className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Italic</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="sm" onClick={() => { /* Underline */ }}>
+                              <Underline className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Underline</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="sm" onClick={() => { /* Link */ }}>
+                              <Link className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Add Link</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="sm" onClick={() => { /* List */ }}>
+                              <List className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Bullet List</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="sm" onClick={() => { /* Numbered List */ }}>
+                              <ListOrdered className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Numbered List</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="sm" onClick={() => { /* Quote */ }}>
+                              <Quote className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Block Quote</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="sm" onClick={() => { /* Code */ }}>
+                              <Code className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Code Block</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <Textarea
+                      ref={textareaRef}
+                      placeholder="What's happening? Start typing or select a template..."
                       value={topic}
                       onChange={(e) => setTopic(e.target.value)}
-                      className="h-12 sm:h-14 text-sm sm:text-base border-2 focus:border-blue-500 transition-all rounded-lg sm:rounded-xl px-3 sm:px-4 shadow-sm"
+                      className={`w-full text-lg ${
+                        darkMode ? 'placeholder-gray-500 text-gray-200 bg-gray-800 border-gray-700' : 'placeholder-gray-500 border-none'
+                      } resize-none min-h-[150px] focus:ring-0 p-0 rounded-md`}
                     />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div className="space-y-3">
-                      <label className="text-xs sm:text-sm font-semibold flex items-center space-x-2 text-gray-700">
-                        <Wand2 className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
-                        <span>Content Template</span>
-                      </label>
-                      <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
-                        <SelectTrigger className="h-12 sm:h-14 text-sm sm:text-base border-2 focus:border-indigo-500 rounded-lg sm:rounded-xl shadow-sm">
-                          <SelectValue placeholder="Choose a template" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-lg sm:rounded-xl border-gray-200 shadow-lg">
-                          {contentTemplates.map((template) => {
-                            const IconComponent = template.icon
-                            return (
-                              <SelectItem 
-                                key={template.id} 
-                                value={template.id}
-                                className="py-2 sm:py-3"
-                              >
-                                <div className="flex items-center space-x-3 sm:space-x-4">
-                                  <div
-                                    className={`w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r ${template.color} rounded-md sm:rounded-lg flex items-center justify-center shadow-sm`}
-                                  >
-                                    <IconComponent className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
-                                  </div>
-                                  <div>
-                                    <div className="font-medium text-sm sm:text-base">{template.name}</div>
-                                    <div className="text-xs text-gray-500 hidden sm:block">{template.description}</div>
-                                  </div>
-                                  <Badge 
-                                    variant="secondary" 
-                                    className="ml-auto bg-green-100 text-green-800 text-xs py-0.5 px-1.5 sm:py-1 sm:px-2"
-                                  >
-                                    {template.engagement}% engagement
-                                  </Badge>
-                                </div>
-                              </SelectItem>
-                            )
-                          })}
-                        </SelectContent>
-                      </Select>
+                    
+                    {/* Suggestions section */}
+                    <div className="mt-2 flex space-x-4">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="sm" className={darkMode ? 'border-gray-600' : ''}>
+                            <Hash className="h-4 w-4 mr-2" />
+                            Hashtags
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent>
+                          <div className="flex flex-wrap gap-1">
+                            {hashtagSuggestions.map((tag) => (
+                              <Button key={tag} variant="ghost" size="sm" onClick={() => insertHashtag(tag)}>
+                                {tag}
+                              </Button>
+                            ))}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="sm" className={darkMode ? 'border-gray-600' : ''}>
+                            <Smile className="h-4 w-4 mr-2" />
+                            Emojis
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent>
+                          <div className="flex flex-wrap gap-1">
+                            {emojiSuggestions.map((emoji) => (
+                              <Button key={emoji} variant="ghost" size="sm" onClick={() => insertEmoji(emoji)}>
+                                {emoji}
+                              </Button>
+                            ))}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                     </div>
-
-                    <div className="space-y-3">
-                      <label className="text-xs sm:text-sm font-semibold flex items-center space-x-2 text-gray-700">
-                        <Users className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
-                        <span>Tone</span>
-                      </label>
-                      <Select value={selectedTone} onValueChange={setSelectedTone}>
-                        <SelectTrigger className="h-12 sm:h-14 text-sm sm:text-base border-2 focus:border-purple-500 rounded-lg sm:rounded-xl shadow-sm">
-                          <SelectValue placeholder="Select tone" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-lg sm:rounded-xl border-gray-200 shadow-lg">
-                          {toneOptions.map((tone) => (
-                            <SelectItem 
-                              key={tone.value} 
-                              value={tone.value}
-                              className="py-2 sm:py-3 text-sm sm:text-base"
-                            >
-                              {tone.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-3">
-                      <label className="text-xs sm:text-sm font-semibold flex items-center space-x-2 text-gray-700">
-                        <Target className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
-                        <span>Content Length</span>
-                      </label>
-                      <Select value={selectedLength} onValueChange={setSelectedLength}>
-                        <SelectTrigger className="h-12 sm:h-14 text-sm sm:text-base border-2 focus:border-blue-500 rounded-lg sm:rounded-xl shadow-sm">
-                          <SelectValue placeholder="Select length" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-lg sm:rounded-xl border-gray-200 shadow-lg">
-                          {contentLengthOptions.map((length) => (
-                            <SelectItem 
-                              key={length.value} 
-                              value={length.value}
-                              className="py-2 sm:py-3 text-sm sm:text-base"
-                            >
-                              {length.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-3">
-                      <label className="text-xs sm:text-sm font-semibold flex items-center space-x-2 text-gray-700">
-                        <Users className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
-                        <span>Target Audience</span>
-                      </label>
-                      <Select value={selectedAudience} onValueChange={setSelectedAudience}>
-                        <SelectTrigger className="h-12 sm:h-14 text-sm sm:text-base border-2 focus:border-green-500 rounded-lg sm:rounded-xl shadow-sm">
-                          <SelectValue placeholder="Select audience" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-lg sm:rounded-xl border-gray-200 shadow-lg">
-                          {audienceOptions.map((audience) => (
-                            <SelectItem 
-                              key={audience.value} 
-                              value={audience.value}
-                              className="py-2 sm:py-3 text-sm sm:text-base"
-                            >
-                              {audience.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div className="space-y-3">
-                      <label className="text-xs sm:text-sm font-semibold flex items-center space-x-2 text-gray-700">
-                        <Globe className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
-                        <span>Language</span>
-                      </label>
-                      <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                        <SelectTrigger className="h-12 sm:h-14 text-sm sm:text-base border-2 focus:border-indigo-500 rounded-lg sm:rounded-xl shadow-sm">
-                          <SelectValue placeholder="Select language" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-lg sm:rounded-xl border-gray-200 shadow-lg">
-                          {languageOptions.map((language: { value: string; label: string }) => (
-                            <SelectItem 
-                              key={language.value} 
-                              value={language.value}
-                              className="py-2 sm:py-3 text-sm sm:text-base"
-                            >
-                              {language.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-3">
-                      <label className="text-xs sm:text-sm font-semibold flex items-center space-x-2 text-gray-700">
-                        <Target className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
-                        <span>Content Purpose</span>
-                      </label>
-                      <Select value={contentPurpose} onValueChange={setContentPurpose}>
-                        <SelectTrigger className="h-12 sm:h-14 text-sm sm:text-base border-2 focus:border-amber-500 rounded-lg sm:rounded-xl shadow-sm">
-                          <SelectValue placeholder="Select purpose" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-lg sm:rounded-xl border-gray-200 shadow-lg">
-                          {purposeOptions.map((purpose: { value: string; label: string }) => (
-                            <SelectItem 
-                              key={purpose.value} 
-                              value={purpose.value}
-                              className="py-2 sm:py-3 text-sm sm:text-base"
-                            >
-                              {purpose.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <label className="text-xs sm:text-sm font-semibold flex items-center space-x-2 text-gray-700">
-                      <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
-                      <span>Content Style</span>
-                    </label>
-                    <Select value={selectedStyle} onValueChange={setSelectedStyle}>
-                      <SelectTrigger className="h-12 sm:h-14 text-sm sm:text-base border-2 focus:border-indigo-500 rounded-lg sm:rounded-xl shadow-sm">
-                        <SelectValue placeholder="Select style" />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-lg sm:rounded-xl border-gray-200 shadow-lg">
-                        {styleOptions.map((style) => (
-                          <SelectItem 
-                            key={style.value} 
-                            value={style.value}
-                            className="py-2 sm:py-3 text-sm sm:text-base"
-                          >
-                            {style.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-3">
-                    <label className="text-xs sm:text-sm font-semibold flex items-center space-x-2 text-gray-700">
-                      <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 text-pink-600" />
-                      <span>Brand Voice</span>
-                    </label>
-                    <Select value={brandVoice} onValueChange={setBrandVoice}>
-                      <SelectTrigger className="h-12 sm:h-14 text-sm sm:text-base border-2 focus:border-pink-500 rounded-lg sm:rounded-xl shadow-sm">
-                        <SelectValue placeholder="Select brand voice" />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-lg sm:rounded-xl border-gray-200 shadow-lg">
-                        {brandVoiceOptions.map((voice: { value: string; label: string }) => (
-                          <SelectItem 
-                            key={voice.value} 
-                            value={voice.value}
-                            className="py-2 sm:py-3 text-sm sm:text-base"
-                          >
-                            {voice.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-4">
-                    <label className="text-xs sm:text-sm font-semibold text-gray-700">Add Media (Optional)</label>
-                    <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => imageInputRef.current?.click()}
-                        className="flex flex-col items-center justify-center space-y-1.5 h-16 sm:h-20 border-2 rounded-lg sm:rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all"
-                      >
-                        <ImageIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                        <span className="text-xs font-medium">Image</span>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => videoInputRef.current?.click()}
-                        className="flex flex-col items-center justify-center space-y-1.5 h-16 sm:h-20 border-2 rounded-lg sm:rounded-xl hover:bg-indigo-50 hover:border-indigo-300 transition-all"
-                      >
-                        <VideoIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                        <span className="text-xs font-medium">Video</span>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="flex flex-col items-center justify-center space-y-1.5 h-16 sm:h-20 border-2 rounded-lg sm:rounded-xl hover:bg-purple-50 hover:border-purple-300 transition-all"
-                      >
-                        <FileTextIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                        <span className="text-xs font-medium">File</span>
-                      </Button>
-                    </div>
-
-                    <input
-                      ref={imageInputRef}
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={(e) => handleFileUpload(e, "image")}
-                      className="hidden"
-                    />
-                    <input
-                      ref={videoInputRef}
-                      type="file"
-                      accept="video/*"
-                      multiple
-                      onChange={(e) => handleFileUpload(e, "video")}
-                      className="hidden"
-                    />
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      multiple
-                      onChange={(e) => handleFileUpload(e, "file")}
-                      className="hidden"
-                    />
-
-                    {uploadedMedia.length > 0 && (
-                      <div className="space-y-3 pt-2">
-                        <div className="text-xs sm:text-sm font-semibold text-gray-700">Uploaded Media:</div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-                          {uploadedMedia.map((media) => (
-                            <div key={media.id} className="relative group">
-                              <div className="border-2 border-gray-200 rounded-lg sm:rounded-xl p-2 sm:p-3 bg-white hover:shadow-md transition-all">
-                                {media.type === "image" && (
-                                  <img
-                                    src={media.url || "/placeholder.svg"}
-                                    alt={media.name}
-                                    className="w-full h-16 sm:h-20 object-cover rounded-md sm:rounded-lg"
-                                  />
-                                )}
-                                {media.type === "video" && (
-                                  <video src={media.url} className="w-full h-16 sm:h-20 object-cover rounded-md sm:rounded-lg" />
-                                )}
-                                {media.type === "file" && (
-                                  <div className="flex items-center justify-center h-16 sm:h-20 bg-gray-50 rounded-md sm:rounded-lg">
-                                    <FileTextIcon className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400" />
-                                  </div>
-                                )}
-                                <div className="text-xs text-gray-600 mt-1.5 sm:mt-2 truncate">{media.name}</div>
-                                <div className="text-xs text-gray-500">{formatFileSize(media.size)}</div>
+                    
+                    {/* Media previews with support for any ratio/size, videos, and controls */}
+                    {mediaPreviews.length > 0 && (
+                      <ScrollArea className="mt-4 h-48">
+                        <div className="grid grid-cols-3 gap-2">
+                          {mediaPreviews.map((preview, index) => (
+                            <div key={index} className="relative group" style={{ aspectRatio: 'auto' }}>
+                              {uploadedMedia[index].type.startsWith('image/') ? (
+                                <img 
+                                  src={preview} 
+                                  alt={`Preview ${index + 1}`} 
+                                  className="rounded-lg w-full h-full object-contain"
+                                  style={{ maxHeight: '200px' }}
+                                />
+                              ) : (
+                                <video 
+                                  src={preview} 
+                                  controls 
+                                  className="rounded-lg w-full h-full object-contain"
+                                  style={{ maxHeight: '200px' }}
+                                />
+                              )}
+                              <div className="absolute top-1 right-1 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() => removeMedia(media.id)}
-                                  className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 h-5 w-5 sm:h-7 sm:w-7 p-0 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-600"
+                                  className="h-6 w-6 bg-black bg-opacity-50 hover:bg-opacity-75 rounded-full text-white"
+                                  onClick={() => removeMedia(index)}
                                 >
-                                  <XIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                                  <X className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 bg-black bg-opacity-50 hover:bg-opacity-75 rounded-full text-white"
+                                  onClick={() => downloadMedia(preview, index)}
+                                >
+                                  <Download className="h-4 w-4" />
                                 </Button>
                               </div>
                             </div>
                           ))}
                         </div>
-                      </div>
+                      </ScrollArea>
                     )}
-                  </div>
-
-                  <div className="space-y-3">
-                    <label className="text-xs sm:text-sm font-semibold text-gray-700">Custom Instructions (Optional)</label>
-                    <Textarea
-                      placeholder="Add any specific requirements or context... e.g., Include a call-to-action, mention our new product launch, or reference our latest blog post"
-                      value={customPrompt}
-                      onChange={(e) => setCustomPrompt(e.target.value)}
-                      rows={4}
-                      className="resize-none border-2 focus:border-blue-500 transition-all rounded-lg sm:rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base shadow-sm"
-                    />
-                  </div>
-
-                  <Button
-                    onClick={handleGenerate}
-                    disabled={isGenerating || !topic}
-                    className="w-full h-12 sm:h-14 text-base sm:text-lg font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-lg sm:rounded-xl"
-                  >
-                    {isGenerating ? (
-                      <div className="flex items-center">
-                        <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-white mr-3 sm:mr-4"></div>
-                        <span className="text-base sm:text-lg">Generating Amazing Content...</span>
-                      </div>
-                    ) : (
-                      <>
-                        <Sparkles className="mr-3 sm:mr-4 h-5 w-5 sm:h-6 sm:w-6" />
-                        Generate Content with AI
-                      </>
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card className="hover:shadow-2xl transition-all duration-300 border-0 shadow-xl bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl overflow-hidden">
-                <CardHeader className="px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-green-50/90 via-emerald-50/90 to-teal-50/90 border-b border-gray-100">
-                  <CardTitle className="text-lg sm:text-xl flex items-center space-x-2 sm:space-x-3">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-md">
-                      <Star className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-                    </div>
-                    <div>
-                      <span>Generated Content</span>
-                      <p className="text-xs sm:text-sm font-normal text-gray-600 mt-1">AI-generated content ready to use and customize</p>
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-5 sm:space-y-6 px-4 sm:px-6 py-5 sm:py-6">
-                  {isGenerating ? (
-                    <div className="text-center py-10 sm:py-16">
-                      <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-b-2 border-blue-600 mx-auto mb-4 sm:mb-6"></div>
-                      <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2 sm:mb-3">Generating Content...</h3>
-                      <p className="text-base sm:text-lg text-gray-600 max-w-md mx-auto">Our AI is crafting something amazing for you</p>
-                    </div>
-                  ) : generatedContent ? (
-                    <div className={`space-y-5 sm:space-y-6 transition-all duration-500 ease-in-out ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-                      <div className="relative">
-                        <Textarea
-                          value={generatedContent}
-                          onChange={(e) => setGeneratedContent(e.target.value)}
-                          className="min-h-[140px] sm:min-h-[180px] resize-none border-2 focus:border-green-500 transition-all rounded-lg sm:rounded-xl px-3 sm:px-4 py-3 sm:py-4 text-sm sm:text-base shadow-sm pr-10 sm:pr-12"
-                        />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => copyToClipboard(generatedContent)}
-                          className="absolute top-2.5 sm:top-3 right-2.5 sm:right-3 h-8 w-8 sm:h-9 sm:w-9 p-0 hover:bg-green-100 text-green-600 rounded-lg"
-                        >
-                          <Copy className="h-4 w-4 sm:h-5 sm:w-5" />
-                        </Button>
-                      </div>
-                      
-                      {/* Content Analysis Button */}
-                      {generatedContent && (
-                        <div className="flex justify-end">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={analyzeGeneratedContent}
-                            className="h-8 border-2 hover:bg-blue-50 hover:border-blue-300 transition-all rounded-lg font-semibold text-xs"
-                          >
-                            <BarChart3 className="mr-1.5 h-3.5 w-3.5" />
-                            Analyze Content
-                          </Button>
-                        </div>
-                      )}
-                      
-                      {/* Content Analysis Panel */}
-                      {showAnalyzer && contentAnalysis && (
-                        <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl overflow-hidden">
-                          <CardHeader className="px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-blue-50/90 via-indigo-50/90 to-purple-50/90 border-b border-gray-100">
-                            <CardTitle className="flex items-center space-x-2 text-base sm:text-lg">
-                              <BarChart3 className="h-5 w-5 text-blue-600" />
-                              <span>Content Analysis</span>
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="px-4 sm:px-6 py-4 sm:py-5">
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-                              <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-100">
-                                <div className="text-xs sm:text-sm text-blue-600 font-medium">Words</div>
-                                <div className="text-lg sm:text-xl font-bold text-blue-800">{contentAnalysis.wordCount}</div>
-                              </div>
-                              
-                              <div className="bg-green-50 p-3 sm:p-4 rounded-lg border border-green-100">
-                                <div className="text-xs sm:text-sm text-green-600 font-medium">Characters</div>
-                                <div className="text-lg sm:text-xl font-bold text-green-800">{contentAnalysis.charCount}</div>
-                              </div>
-                              
-                              <div className="bg-purple-50 p-3 sm:p-4 rounded-lg border border-purple-100">
-                                <div className="text-xs sm:text-sm text-purple-600 font-medium">Hashtags</div>
-                                <div className="text-lg sm:text-xl font-bold text-purple-800">{contentAnalysis.hashtagCount}</div>
-                              </div>
-                              
-                              <div className="bg-amber-50 p-3 sm:p-4 rounded-lg border border-amber-100">
-                                <div className="text-xs sm:text-sm text-amber-600 font-medium">Mentions</div>
-                                <div className="text-lg sm:text-xl font-bold text-amber-800">{contentAnalysis.mentionCount}</div>
-                              </div>
-                              
-                              <div className="bg-cyan-50 p-3 sm:p-4 rounded-lg border border-cyan-100 sm:col-span-2">
-                                <div className="text-xs sm:text-sm text-cyan-600 font-medium flex items-center">
-                                  <Smile className="h-3.5 w-3.5 mr-1.5" />
-                                  Sentiment
-                                </div>
-                                <div className="flex items-center mt-1">
-                                  <span className={`text-lg sm:text-xl font-bold ${
-                                    contentAnalysis.sentimentLabel === 'Positive' ? 'text-green-600' : 
-                                    contentAnalysis.sentimentLabel === 'Negative' ? 'text-red-600' : 'text-gray-600'
-                                  }`}>
-                                    {contentAnalysis.sentimentLabel}
-                                  </span>
-                                  <Badge 
-                                    variant="secondary" 
-                                    className={`ml-2 text-xs ${
-                                      contentAnalysis.sentimentLabel === 'Positive' ? 'bg-green-100 text-green-800' : 
-                                      contentAnalysis.sentimentLabel === 'Negative' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
-                                    }`}
-                                  >
-                                    Score: {contentAnalysis.sentimentScore}
-                                  </Badge>
-                                </div>
-                              </div>
-                              
-                              <div className="bg-indigo-50 p-3 sm:p-4 rounded-lg border border-indigo-100 sm:col-span-2">
-                                <div className="text-xs sm:text-sm text-indigo-600 font-medium">Readability</div>
-                                <div className="flex items-center mt-1">
-                                  <div className="w-full bg-gray-200 rounded-full h-2">
-                                    <div 
-                                      className="bg-indigo-600 h-2 rounded-full" 
-                                      style={{ width: `${contentAnalysis.readabilityScore * 10}%` }}
-                                    ></div>
-                                  </div>
-                                  <span className="ml-2 text-sm font-bold text-indigo-800">{contentAnalysis.readabilityScore}/10</span>
-                                </div>
-                                <div className="text-xs text-gray-500 mt-1">
-                                  {contentAnalysis.sentenceCount} sentences, avg {contentAnalysis.avgWordsPerSentence} words/sentence
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div className="mt-4 flex justify-end">
+                    
+                    {/* Enhanced actions with more tools */}
+                    <div className="flex justify-between items-center mt-4">
+                      <div className="flex space-x-2 text-blue-500">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
                               <Button 
                                 variant="ghost" 
-                                size="sm"
-                                onClick={() => setShowAnalyzer(false)}
-                                className="h-8 text-xs text-gray-500 hover:text-gray-700"
+                                size="icon" 
+                                className={`rounded-full hover:bg-blue-100 ${darkMode ? 'hover:bg-gray-700' : ''}`}
+                                onClick={triggerFileInput}
+                                disabled={isUploading}
                               >
-                                <XIcon className="h-3.5 w-3.5 mr-1.5" />
-                                Close Analysis
+                                <ImageIcon className="h-5 w-5" />
                               </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
-                      
-                      <div className="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg sm:rounded-xl border border-gray-200">
-                        <div className="flex items-center space-x-3">
-                          <span className="text-xs sm:text-sm font-semibold">{generatedContent.length}/280 characters</span>
-                          <div
-                            className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full ${generatedContent.length > 280 ? "bg-red-500" : generatedContent.length > 240 ? "bg-yellow-500" : "bg-green-500"}`}
-                          ></div>
-                        </div>
-                        <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200 px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm font-semibold">
-                          <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
-                          High Engagement
-                        </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>Upload Image</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className={`rounded-full hover:bg-blue-100 ${darkMode ? 'hover:bg-gray-700' : ''}`}
+                                onClick={triggerFileInput}
+                                disabled={isUploading}
+                              >
+                                <VideoIcon className="h-5 w-5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Upload Video</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" className={`rounded-full hover:bg-blue-100 ${darkMode ? 'hover:bg-gray-700' : ''}`}>
+                                <Paperclip className="h-5 w-5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Attach File</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" className={`rounded-full hover:bg-blue-100 ${darkMode ? 'hover:bg-gray-700' : ''}`}>
+                                <Smile className="h-5 w-5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Add Emoji</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" className={`rounded-full hover:bg-blue-100 ${darkMode ? 'hover:bg-gray-700' : ''}`}>
+                                <CalendarClock className="h-5 w-5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Schedule Post</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" className={`rounded-full hover:bg-blue-100 ${darkMode ? 'hover:bg-gray-700' : ''}`}>
+                                <LocationIcon className="h-5 w-5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Add Location</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          className="hidden"
+                          accept="image/*,video/*"
+                          multiple
+                          onChange={handleMediaUpload}
+                        />
                       </div>
-
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => copyToClipboard(generatedContent)}
-                          className="h-10 sm:h-12 border-2 hover:bg-blue-50 hover:border-blue-300 transition-all rounded-lg sm:rounded-xl font-semibold text-sm sm:text-base"
+                      <div className="flex items-center space-x-3">
+                        <span className={`text-sm ${topic.length > characterLimit * 0.8 ? 'text-red-500' : darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                          {characterLimit - topic.length}
+                        </span>
+                        <Button 
+                          size="sm" 
+                          className="bg-blue-500 hover:bg-blue-600 text-white rounded-full px-6 py-2 font-bold"
+                          onClick={handleGenerate}
+                          disabled={isGenerating || !topic.trim()}
                         >
-                          <Copy className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                          {isGenerating ? (
+                            <div className="flex items-center">
+                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                              Generating...
+                            </div>
+                          ) : "Generate Content"}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Generated content preview with preview modes */}
+              <AnimatePresence>
+                {generatedContent && (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="p-4"
+                  >
+                    <div className="flex justify-between items-center mb-3">
+                      <h2 className={`font-bold text-lg ${darkMode ? 'text-white' : 'text-gray-900'}`}>Generated Content Preview</h2>
+                      <Select value={previewMode} onValueChange={setPreviewMode}>
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="mobile">Mobile</SelectItem>
+                          <SelectItem value="desktop">Desktop</SelectItem>
+                          <SelectItem value="tablet">Tablet</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div 
+                      ref={previewRef}
+                      className={`border ${darkMode ? 'border-gray-700 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-xl p-4 overflow-auto transition-all`}
+                      style={{
+                        width: previewMode === 'mobile' ? '375px' : previewMode === 'tablet' ? '768px' : '100%',
+                        height: previewMode === 'mobile' ? '667px' : 'auto',
+                        transform: `scale(${zoomLevel})`,
+                        transformOrigin: 'top left',
+                      }}
+                    >
+                      <div className="flex items-start">
+                        <div className="flex-shrink-0 mr-3">
+                          <div className="bg-blue-500 rounded-full w-8 h-8 flex items-center justify-center">
+                            <span className="font-bold text-sm text-white">AI</span>
+                          </div>
+                        </div>
+                        <div className="flex-grow">
+                          <div className={`font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>AI Generated Content</div>
+                          <div className={`${darkMode ? 'text-gray-400' : 'text-gray-500'} text-sm`}>@ai_generated • Just now</div>
+                        </div>
+                        <Button variant="ghost" size="icon" onClick={toggleFullscreen}>
+                          {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                      <div className={`mt-3 whitespace-pre-line ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                        {generatedContent}
+                      </div>
+                      {mediaPreviews.length > 0 && (
+                        <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-2">
+                          {mediaPreviews.map((preview, index) => (
+                            <div key={index} className="relative">
+                              {uploadedMedia[index].type.startsWith('image/') ? (
+                                <img 
+                                  src={preview} 
+                                  alt={`Preview ${index + 1}`} 
+                                  className="rounded-lg w-full h-auto object-contain"
+                                />
+                              ) : (
+                                <video 
+                                  src={preview} 
+                                  controls 
+                                  className="rounded-lg w-full h-auto object-contain"
+                                />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex justify-between mt-4 text-gray-500">
+                        <Button variant="ghost" size="sm" className="hover:text-blue-500">
+                          <CommentIcon className="h-5 w-5 mr-1" /> 0
+                        </Button>
+                        <Button variant="ghost" size="sm" className="hover:text-green-500">
+                          <RefreshCw className="h-5 w-5 mr-1" /> 0
+                        </Button>
+                        <Button variant="ghost" size="sm" className="hover:text-red-500">
+                          <HeartIcon className="h-5 w-5 mr-1" /> 0
+                        </Button>
+                        <Button variant="ghost" size="sm" className="hover:text-blue-500">
+                          <Share2 className="h-5 w-5 mr-1" /> Share
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {/* Zoom control */}
+                    <div className="mt-4 flex items-center space-x-2">
+                      <ZoomOut className="h-4 w-4 text-gray-500" />
+                      <Slider 
+                        className="w-32"
+                        min={0.5} 
+                        max={2} 
+                        step={0.1} 
+                        value={[zoomLevel]} 
+                        onValueChange={handleZoom} 
+                      />
+                      <ZoomIn className="h-4 w-4 text-gray-500" />
+                    </div>
+                    
+                    {/* Enhanced action buttons */}
+                    <div className="flex justify-between mt-4">
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className={`${darkMode ? 'border-gray-600 text-gray-300' : 'border-gray-300 text-gray-700'} hover:bg-opacity-10`}
+                          onClick={() => copyToClipboard(generatedContent)}
+                        >
+                          <CopyIcon className="h-4 w-4 mr-2" />
                           Copy
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className={`${darkMode ? 'border-gray-600 text-gray-300' : 'border-gray-300 text-gray-700'} hover:bg-opacity-10`}
                           onClick={handleSaveDraft}
-                          className="h-10 sm:h-12 border-2 hover:bg-green-50 hover:border-green-300 transition-all rounded-lg sm:rounded-xl font-semibold bg-transparent text-sm sm:text-base"
                         >
-                          <Save className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                          Save
+                          <SaveIcon className="h-4 w-4 mr-2" />
+                          Save Draft
                         </Button>
-                        <Dialog open={isScheduleModalOpen} onOpenChange={setIsScheduleModalOpen}>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-10 sm:h-12 border-2 hover:bg-purple-50 hover:border-purple-300 transition-all rounded-lg sm:rounded-xl font-semibold bg-transparent text-sm sm:text-base"
-                            >
-                              <Calendar className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                              Schedule
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="sm:max-w-lg rounded-xl sm:rounded-2xl shadow-2xl"> {/* Increased max width for better UI */}
-                            <DialogHeader>
-                              <DialogTitle className="flex items-center space-x-2 sm:space-x-3 text-lg sm:text-xl">
-                                <CalendarDays className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600" />
-                                <span>Schedule Post</span>
-                              </DialogTitle>
-                              <DialogDescription className="text-gray-600 pt-1.5 sm:pt-2 text-sm sm:text-base">
-                                Choose when you want this post to be published. Preview your content below.
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4 sm:space-y-5 py-3 sm:py-4">
-                              {/* Improved: Add content preview in schedule modal */}
-                              <div className="space-y-2.5 sm:space-y-3">
-                                <Label className="text-sm sm:text-base font-semibold">Content Preview</Label>
-                                <Textarea
-                                  value={generatedContent}
-                                  readOnly
-                                  rows={3}
-                                  className="resize-none border-2 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base shadow-sm bg-gray-50"
-                                />
-                              </div>
-                              <div className="space-y-2.5 sm:space-y-3">
-                                <Label htmlFor="schedule-date" className="text-sm sm:text-base font-semibold">Date</Label>
-                                <Input
-                                  id="schedule-date"
-                                  type="date"
-                                  value={scheduleDate}
-                                  onChange={(e) => setScheduleDate(e.target.value)}
-                                  min={currentDate}
-                                  className="w-full h-10 sm:h-12 text-sm sm:text-base rounded-lg sm:rounded-xl border-2 focus:border-indigo-500"
-                                />
-                              </div>
-                              <div className="space-y-2.5 sm:space-y-3">
-                                <Label htmlFor="schedule-time" className="text-sm sm:text-base font-semibold">Time</Label>
-                                <Input
-                                  id="schedule-time"
-                                  type="time"
-                                  value={scheduleTime}
-                                  onChange={(e) => setScheduleTime(e.target.value)}
-                                  min={scheduleDate === currentDate ? currentTime : undefined}
-                                  className="w-full h-10 sm:h-12 text-sm sm:text-base rounded-lg sm:rounded-xl border-2 focus:border-indigo-500"
-                                />
-                              </div>
-                              {/* Improved: Add timezone selection */}
-                              <div className="space-y-2.5 sm:space-y-3">
-                                <Label htmlFor="schedule-timezone" className="text-sm sm:text-base font-semibold flex items-center space-x-2">
-                                  <Globe className="h-4 w-4 sm:h-5 sm:w-5" />
-                                  <span>Timezone</span>
-                                </Label>
-                                <Select value={selectedTimezone} onValueChange={setSelectedTimezone}>
-                                  <SelectTrigger className="h-10 sm:h-12 text-sm sm:text-base border-2 focus:border-indigo-500 rounded-lg sm:rounded-xl shadow-sm">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent className="rounded-lg sm:rounded-xl border-gray-200 shadow-lg">
-                                    {timezoneOptions.map((tz) => (
-                                      <SelectItem 
-                                        key={tz.value} 
-                                        value={tz.value}
-                                        className="py-2 sm:py-3 text-sm sm:text-base"
-                                      >
-                                        {tz.label}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="bg-indigo-50 p-3 sm:p-4 rounded-lg sm:rounded-xl border border-indigo-100">
-                                <div className="flex items-center space-x-2 sm:space-x-3 text-indigo-700">
-                                  <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
-                                  <span className="text-sm sm:text-base font-medium">
-                                    {scheduleDate && scheduleTime ? (
-                                      <>Scheduled for {new Date(`${scheduleDate}T${scheduleTime}`).toLocaleString()} ({selectedTimezone})</>
-                                    ) : (
-                                      "Select date, time, and timezone to schedule"
-                                    )}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex space-x-2 sm:space-x-3 pt-1.5 sm:pt-2">
-                              <Button
-                                variant="outline"
-                                onClick={() => setIsScheduleModalOpen(false)}
-                                className="flex-1 h-10 sm:h-12 text-sm sm:text-base rounded-lg sm:rounded-xl"
-                              >
-                                Cancel
-                              </Button>
-                              <Button
-                                onClick={handleSchedulePost}
-                                disabled={!scheduleDate || !scheduleTime || isScheduling}
-                                className="flex-1 h-10 sm:h-12 text-sm sm:text-base bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-lg sm:rounded-xl"
-                              >
-                                {isScheduling ? (
-                                  <div className="flex items-center">
-                                    <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white mr-2 sm:mr-3"></div>
-                                    Scheduling...
-                                  </div>
-                                ) : (
-                                  <>
-                                    <CheckCircle className="mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5" />
-                                    Schedule Post
-                                  </>
-                                )}
-                              </Button>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                        <Button
-                          onClick={handlePostToX}
-                          disabled={isPosting}
-                          size="sm"
-                          className="h-10 sm:h-12 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-md rounded-lg sm:rounded-xl font-semibold text-sm sm:text-base"
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className={`${darkMode ? 'border-gray-600 text-gray-300' : 'border-gray-300 text-gray-700'} hover:bg-opacity-10`}
+                          onClick={() => shareContent(generatedContent)}
                         >
-                          {isPosting ? (
-                            <div className="flex items-center">
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                              Posting...
-                            </div>
-                          ) : (
-                            <>
-                              <Send className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                              Post Now
-                            </>
-                          )}
+                          <Share2 className="h-4 w-4 mr-2" />
+                          Share
                         </Button>
                       </div>
-
-                      {postSuccess && (
-                        <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg sm:rounded-xl flex items-center">
-                          <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
-                          <span className="text-green-700 font-medium">Successfully posted to X!</span>
-                        </div>
-                      )}
-
-                      <Button
-                        variant="ghost"
-                        onClick={handleGenerate}
-                        className="w-full h-10 sm:h-12 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all rounded-lg sm:rounded-xl font-semibold text-sm sm:text-base"
-                      >
-                        <RefreshCw className="mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5" />
-                        Generate Another Version
+                      <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white">
+                        <SendIcon className="h-4 w-4 mr-2" />
+                        Post Now
                       </Button>
                     </div>
-                  ) : (
-                    <div className="text-center py-10 sm:py-16">
-                      <div className="w-16 h-16 sm:w-24 sm:h-24 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-inner">
-                        <Sparkles className="h-8 w-8 sm:h-12 sm:w-12 text-blue-600" />
-                      </div>
-                      <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2 sm:mb-3">Generated content will appear here</h3>
-                      <p className="text-base sm:text-lg text-gray-600 max-w-md mx-auto">
-                        Fill in the details and click generate to start creating amazing content
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
           </TabsContent>
-
-          <TabsContent value="templates" className="space-y-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                AI Writer Templates
-              </h2>
-              <Badge className="flex items-center gap-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white border-0 py-2 px-4 text-sm">
-                <Crown className="h-4 w-4" />
-                Premium Templates
-              </Badge>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {generatedSamples.map((sample) => {
-                const template = contentTemplates.find((t) => t.id === sample.template)
-                const IconComponent = template?.icon
-
-                return (
-                  <Card
-                    key={sample.id}
-                    className={`hover:shadow-2xl hover:-translate-y-0.5 transition-all duration-300 group border-0 shadow-xl bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl overflow-hidden relative ${
-                      sample.isPremium ? "ring-2 ring-amber-400/30" : ""
-                    }`}
-                  >
-                    {sample.isPremium && (
-                      <div className="absolute top-4 right-4 z-10">
-                        <Badge className="flex items-center gap-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white border-0 py-1 px-2 text-xs shadow-lg">
-                          <Crown className="h-3 w-3" />
-                          Premium
-                        </Badge>
-                      </div>
-                    )}
-                    <CardHeader className="px-4 sm:px-6 pb-3 sm:pb-4 bg-gradient-to-r from-gray-50/80 to-blue-50/80">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2 sm:space-x-3">
-                          <div
-                            className={`w-8 h-8 bg-gradient-to-r ${template?.color || "from-gray-400 to-gray-600"} rounded-lg flex items-center justify-center shadow-md`}
-                          >
-                            {IconComponent && <IconComponent className="h-4 w-4 text-white" />}
+          
+          <TabsContent value="templates" className="mt-0">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} rounded-2xl border shadow-sm p-6`}
+            >
+              <h2 className={`font-bold text-xl mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Content Templates Library</h2>
+              <Input placeholder="Search templates..." className="mb-4" />
+              <ScrollArea className="h-[600px]">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {contentTemplates.map((template) => (
+                    <motion.div
+                      key={template.id}
+                      whileHover={{ scale: 1.02 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Card 
+                        className={`border ${darkMode ? 'border-gray-700 hover:border-blue-500' : 'border-gray-200 hover:border-blue-300'} hover:shadow-lg cursor-pointer transition-all`}
+                        onClick={() => handleTemplateSelect(template.id)}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-center mb-2">
+                            <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${template.color} flex items-center justify-center mr-3`}>
+                              {renderIcon(template.icon, 'text-white')}
+                            </div>
+                            <div className="flex-grow">
+                              <div className={`font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{template.name}</div>
+                              <div className={`${darkMode ? 'text-gray-400' : 'text-gray-500'} text-sm`}>{template.description}</div>
+                            </div>
                           </div>
-                          <div>
-                            <CardTitle className="text-sm sm:text-base font-bold">{template?.name}</CardTitle>
-                            <Badge variant="secondary" className="text-xs px-2 py-1 font-medium bg-white/80 border border-gray-200">
-                              {sample.tone}
-                            </Badge>
+                          <div className="flex justify-between items-center">
+                            <div className="text-green-600 text-sm font-bold">
+                              {template.engagement}% engagement rate
+                            </div>
+                            <Button variant="ghost" size="sm">
+                              <Eye className="h-4 w-4 mr-1" />
+                              Preview
+                            </Button>
                           </div>
-                        </div>
-                        <Badge variant="outline" className="text-xs px-2.5 py-1 font-semibold border-2 bg-green-50 text-green-700 border-green-200">
-                          {sample.engagement}% engagement
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4 sm:space-y-5 px-4 sm:px-6 pb-5 sm:pb-6">
-                      <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-4 sm:p-5 rounded-xl sm:rounded-xl border-2 border-gray-100 shadow-inner">
-                        <p className="text-sm sm:text-base text-gray-800 leading-relaxed whitespace-pre-line">{sample.content}</p>
-                      </div>
-
-                      <div className="flex flex-wrap gap-2">
-                        {sample.hashtags.slice(0, 3).map((tag, index) => (
-                          <Badge key={index} variant="outline" className="text-xs px-2.5 py-1 border-2 bg-blue-50 text-blue-700 border-blue-200">
-                            <Hash className="h-3 w-3 mr-1" />
-                            {tag.replace("#", "")}
-                          </Badge>
-                        ))}
-                        {sample.hashtags.length > 3 && (
-                          <Badge variant="outline" className="text-xs px-2.5 py-1 border-2 bg-indigo-50 text-indigo-700 border-indigo-200">
-                            +{sample.hashtags.length - 3} more
-                          </Badge>
-                        )}
-                      </div>
-
-                      {sample.isPremium && (
-                        <div className="pt-2 border-t border-gray-200">
-                          <div className="flex items-center text-amber-600 text-sm">
-                            <Star className="h-4 w-4 mr-2 fill-amber-400" />
-                            <span>Unlock with Premium Plan</span>
+                          <Separator className="my-2" />
+                          <div className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} text-sm`}>
+                            Examples:
+                            <ul className="list-disc pl-4">
+                              {template.examples.map((ex, i) => (
+                                <li key={i}>{ex}</li>
+                              ))}
+                            </ul>
                           </div>
-                        </div>
-                      )}
-
-                      <div className="flex space-x-2 sm:space-x-3 pt-2">
-                        <Button
-                          variant="outline"
-                          className="flex-1 h-10 sm:h-12 border-2 hover:bg-blue-50 hover:border-blue-300 group-hover:shadow-md transition-all rounded-lg sm:rounded-xl font-semibold bg-transparent text-sm sm:text-base"
-                        >
-                          <Copy className="mr-1.5 sm:mr-2 h-4 w-4" />
-                          Use Template
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="h-10 sm:h-12 w-10 sm:w-12 p-0 border-2 hover:bg-indigo-50 hover:border-indigo-300 group-hover:shadow-md transition-all rounded-lg sm:rounded-xl bg-transparent"
-                        >
-                          <Wand2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-            
-            <div className="text-center mt-8">
-              <Button variant="outline" className="flex items-center gap-2 mx-auto">
-                <Sparkles className="h-4 w-4" />
-                View All Premium Templates
-              </Button>
-            </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </motion.div>
           </TabsContent>
-
-          <TabsContent value="drafts" className="space-y-6">
-            {savedDrafts.length > 0 ? (
-              <div className="space-y-6"> {/* Increased space between drafts */}
-                {savedDrafts.map((draft) => (
-                  <Card key={draft.id} className="hover:shadow-xl transition-all duration-300 border-0 shadow-lg bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl overflow-hidden">
-                    <CardContent className="pt-5 sm:pt-6 pb-4 sm:pb-5">
-                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                        <div className="flex-1 space-y-3">
-                          {editingDraftId === draft.id ? (
-                            <div className="space-y-3">
-                              <Textarea
-                                value={editingContent}
-                                onChange={(e) => setEditingContent(e.target.value)}
-                                className="min-h-[120px] border-2 focus:border-blue-500 rounded-lg sm:rounded-xl shadow-sm"
-                              />
-                              <div className="flex space-x-2">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => setEditingDraftId(null)}
-                                  className="flex-1 h-9 border-2 hover:bg-red-50"
-                                >
-                                  Cancel
-                                </Button>
-                                <Button 
-                                  size="sm"
-                                  onClick={() => saveEditedDraft(draft.id)}
-                                  className="flex-1 h-9 bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
-                                >
-                                  Save Edit
-                                </Button>
+          
+          <TabsContent value="drafts" className="mt-0">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} rounded-2xl border shadow-sm p-6`}
+            >
+              <h2 className={`font-bold text-xl mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Saved Drafts Manager</h2>
+              <Input placeholder="Search drafts..." className="mb-4" />
+              {savedDrafts.length > 0 ? (
+                <ScrollArea className="h-[600px]">
+                  <div className="space-y-4">
+                    {savedDrafts.map((draft) => (
+                      <motion.div
+                        key={draft.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className={`border ${darkMode ? 'border-gray-700' : 'border-gray-200'} rounded-xl`}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex">
+                            <div className="flex-shrink-0 mr-3">
+                              <div className={`${
+                                darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-200 border-dashed'
+                              } border-2 rounded-xl w-8 h-8 flex items-center justify-center`}>
+                                <span className={`font-bold text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>D</span>
                               </div>
                             </div>
-                          ) : (
-                            <>
-                              <p className="text-sm sm:text-base text-gray-800 leading-relaxed">{draft.content}</p>
-                              <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-gray-600">
-                                <span className="bg-gray-100 px-2.5 sm:px-3 py-1 rounded-full">Saved {new Date(draft.createdAt).toLocaleDateString()}</span>
-                                {draft.template && (
-                                  <Badge variant="secondary" className="text-xs sm:text-sm bg-blue-100 text-blue-800 border-blue-200 px-2.5 sm:px-3 py-1">
-                                    {contentTemplates.find((t) => t.id === draft.template)?.name}
-                                  </Badge>
-                                )}
-                                {draft.tone && (
-                                  <Badge variant="outline" className="text-xs sm:text-sm border-purple-200 text-purple-700 px-2.5 sm:px-3 py-1">
-                                    {draft.tone}
-                                  </Badge>
-                                )}
+                            <div className="flex-grow">
+                              <div className={`font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Draft {draft.template ? `(${draft.template})` : ''}</div>
+                              <div className={`${darkMode ? 'text-gray-400' : 'text-gray-500'} text-sm mb-2`}>
+                                {new Date(draft.createdAt).toLocaleString()} • Language: {draft.language}
                               </div>
-                            </>
-                          )}
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => copyToClipboard(draft.content)}
-                            className="h-9 w-9 sm:h-10 sm:w-10 hover:bg-gray-100 transition-colors rounded-lg sm:rounded-xl"
-                          >
-                            <Copy className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600 hover:text-blue-600" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => startEditingDraft(draft)}
-                            className="h-9 w-9 sm:h-10 sm:w-10 hover:bg-gray-100 transition-colors rounded-lg sm:rounded-xl"
-                          >
-                            <Edit className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600 hover:text-green-600" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => handleDeleteDraft(draft.id)}
-                            className="h-9 w-9 sm:h-10 sm:w-10 hover:bg-gray-100 transition-colors rounded-lg sm:rounded-xl"
-                          >
-                            <Trash2 className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600 hover:text-red-600" />
-                          </Button>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                className="h-9 w-9 sm:h-10 sm:w-10 hover:bg-gray-100 transition-colors rounded-lg sm:rounded-xl"
-                              >
-                                <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600 hover:text-purple-600" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-lg rounded-xl sm:rounded-2xl shadow-2xl"> {/* Increased max width */}
-                              <DialogHeader>
-                                <DialogTitle className="flex items-center space-x-2 sm:space-x-3 text-lg sm:text-xl">
-                                  <CalendarDays className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600" />
-                                  <span>Schedule Saved Draft</span>
-                                </DialogTitle>
-                                <DialogDescription className="text-gray-600 pt-1.5 sm:pt-2 text-sm sm:text-base">
-                                  Schedule this draft for future posting. Preview below.
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="space-y-4 sm:space-y-5 py-3 sm:py-4">
-                                {/* Improved: Add content preview */}
-                                <div className="space-y-2.5 sm:space-y-3">
-                                  <Label className="text-sm sm:text-base font-semibold">Content Preview</Label>
-                                  <Textarea
-                                    value={draft.content}
-                                    readOnly
-                                    rows={3}
-                                    className="resize-none border-2 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base shadow-sm bg-gray-50"
-                                  />
-                                </div>
-                                <div className="space-y-2.5 sm:space-y-3">
-                                  <Label htmlFor="schedule-date-draft" className="text-sm sm:text-base font-semibold">Date</Label>
-                                  <Input
-                                    id="schedule-date-draft"
-                                    type="date"
-                                    value={scheduleDate}
-                                    onChange={(e) => setScheduleDate(e.target.value)}
-                                    min={currentDate}
-                                    className="w-full h-10 sm:h-12 text-sm sm:text-base rounded-lg sm:rounded-xl border-2 focus:border-indigo-500"
-                                  />
-                                </div>
-                                <div className="space-y-2.5 sm:space-y-3">
-                                  <Label htmlFor="schedule-time-draft" className="text-sm sm:text-base font-semibold">Time</Label>
-                                  <Input
-                                    id="schedule-time-draft"
-                                    type="time"
-                                    value={scheduleTime}
-                                    onChange={(e) => setScheduleTime(e.target.value)}
-                                    min={scheduleDate === currentDate ? currentTime : undefined}
-                                    className="w-full h-10 sm:h-12 text-sm sm:text-base rounded-lg sm:rounded-xl border-2 focus:border-indigo-500"
-                                  />
-                                </div>
-                                <div className="space-y-2.5 sm:space-y-3">
-                                  <Label htmlFor="schedule-timezone-draft" className="text-sm sm:text-base font-semibold flex items-center space-x-2">
-                                    <Globe className="h-4 w-4 sm:h-5 sm:w-5" />
-                                    <span>Timezone</span>
-                                  </Label>
-                                  <Select value={selectedTimezone} onValueChange={setSelectedTimezone}>
-                                    <SelectTrigger className="h-10 sm:h-12 text-sm sm:text-base border-2 focus:border-indigo-500 rounded-lg sm:rounded-xl shadow-sm">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-lg sm:rounded-xl border-gray-200 shadow-lg">
-                                      {timezoneOptions.map((tz) => (
-                                        <SelectItem 
-                                          key={tz.value} 
-                                          value={tz.value}
-                                          className="py-2 sm:py-3 text-sm sm:text-base"
-                                        >
-                                          {tz.label}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                <div className="bg-indigo-50 p-3 sm:p-4 rounded-lg sm:rounded-xl border border-indigo-100">
-                                  <div className="flex items-center space-x-2 sm:space-x-3 text-indigo-700">
-                                    <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
-                                    <span className="text-sm sm:text-base font-medium">
-                                      {scheduleDate && scheduleTime ? (
-                                        <>Scheduled for {new Date(`${scheduleDate}T${scheduleTime}`).toLocaleString()} ({selectedTimezone})</>
-                                      ) : (
-                                        "Select date, time, and timezone to schedule"
-                                      )}
-                                    </span>
-                                  </div>
-                                </div>
+                              <div className={`whitespace-pre-line ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                                {draft.content}
                               </div>
-                              <div className="flex space-x-2 sm:space-x-3 pt-1.5 sm:pt-2">
-                                <Button
-                                  variant="outline"
-                                  onClick={() => {}}
-                                  className="flex-1 h-10 sm:h-12 text-sm sm:text-base rounded-lg sm:rounded-xl"
-                                >
-                                  Cancel
-                                </Button>
-                                <Button
-                                  onClick={() => {
-                                    setIsScheduling(true)
-                                    setTimeout(() => {
-                                      setIsScheduling(false)
-                                      // Add success notification here
-                                    }, 1500)
-                                  }}
-                                  disabled={!scheduleDate || !scheduleTime || isScheduling}
-                                  className="flex-1 h-10 sm:h-12 text-sm sm:text-base bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-lg sm:rounded-xl"
-                                >
-                                  {isScheduling ? (
-                                    <div className="flex items-center">
-                                      <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white mr-2 sm:mr-3"></div>
-                                      Scheduling...
+                              {draft.media && draft.media.length > 0 && (
+                                <div className="mt-3 grid grid-cols-3 gap-2">
+                                  {draft.media.slice(0, 3).map((preview: string, index: number) => (
+                                    <div key={index} className="relative">
+                                      <img 
+                                        src={preview} 
+                                        alt={`Draft media ${index + 1}`} 
+                                        className="rounded-lg w-full h-20 object-contain"
+                                      />
                                     </div>
-                                  ) : (
-                                    <>
-                                      <CheckCircle className="mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5" />
-                                      Schedule Draft
-                                    </>
+                                  ))}
+                                  {draft.media.length > 3 && (
+                                    <div className={`rounded-lg w-full h-20 ${darkMode ? 'bg-gray-700' : 'bg-gray-100'} flex items-center justify-center`}>
+                                      <span className={`${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>+{draft.media.length - 3} more</span>
+                                    </div>
                                   )}
+                                </div>
+                              )}
+                              <div className="flex justify-between mt-3">
+                                <Button variant="ghost" size="sm" className={`${darkMode ? 'text-gray-400 hover:text-blue-400' : 'text-gray-500 hover:text-blue-500'}`} onClick={() => handleEditDraft(draft)}>
+                                  <EditIcon className="h-4 w-4 mr-1" />
+                                  Edit
                                 </Button>
+                                <div className="space-x-2">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className={`${darkMode ? 'border-gray-600 text-gray-300' : 'border-gray-300 text-gray-700'} hover:bg-opacity-10`}
+                                    onClick={() => copyToClipboard(draft.content)}
+                                  >
+                                    <CopyIcon className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className={`${darkMode ? 'text-gray-400 hover:text-red-400' : 'text-gray-500 hover:text-red-500'}`}
+                                    onClick={() => handleDeleteDraft(draft.id)}
+                                  >
+                                    <DeleteIcon className="h-4 w-4" />
+                                  </Button>
+                                  <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white">
+                                    <SendIcon className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </div>
-                            </DialogContent>
-                          </Dialog>
-                          <Button 
-                            size="sm"
-                            className="h-9 w-9 sm:h-10 sm:w-10 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-sm hover:shadow rounded-lg sm:rounded-xl"
-                          >
-                            <Send className="h-4 w-4 sm:h-5 sm:w-5" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm hover:shadow-2xl transition-all rounded-xl sm:rounded-2xl">
-                <CardContent className="text-center py-12 sm:py-20">
-                  <div className="w-20 h-20 sm:w-28 sm:h-28 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-6 sm:mb-8 shadow-inner">
-                    <SaveIcon className="h-10 w-10 sm:h-14 sm:w-14 text-blue-600 opacity-80" />
+                            </div>
+                          </div>
+                        </CardContent>
+                      </motion.div>
+                    ))}
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2 sm:mb-3">No saved drafts yet</h3>
-                  <p className="text-base sm:text-lg text-gray-600 max-w-md mx-auto mb-6 sm:mb-8">
-                    Generate content using the AI writer and click "Save" to store your drafts here for future use.
-                  </p>
+                </ScrollArea>
+              ) : (
+                <div className="text-center py-12">
+                  <div className={`${darkMode ? 'text-gray-400' : 'text-gray-500'} text-lg`}>No drafts saved yet</div>
                   <Button 
                     variant="outline" 
-                    className="h-12 sm:h-14 px-6 sm:px-8 text-base sm:text-lg bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 border-0 hover:shadow-lg transition-all rounded-xl sm:rounded-xl font-semibold"
+                    className="mt-4"
                     onClick={() => setActiveTab("generate")}
                   >
-                    <Sparkles className="mr-2 sm:mr-3 h-5 w-5 sm:h-6 sm:w-6" />
-                    Create Your First Draft
+                    Create Your First Post
                   </Button>
-                </CardContent>
-              </Card>
-            )}
+                </div>
+              )}
+            </motion.div>
           </TabsContent>
         </Tabs>
+        
+        {/* Fullscreen Dialog for Preview */}
+        <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>Fullscreen Preview</DialogTitle>
+            </DialogHeader>
+            <div className="p-4 bg-white rounded-xl">
+              {/* Copy of preview content */}
+              <div className="flex items-start">
+                <div className="flex-shrink-0 mr-3">
+                  <div className="bg-blue-500 rounded-full w-10 h-10 flex items-center justify-center">
+                    <span className="font-bold text-white">AI</span>
+                  </div>
+                </div>
+                <div className="flex-grow">
+                  <div className="font-bold text-gray-900">AI Generated Content</div>
+                  <div className="text-gray-500 text-sm">@ai_generated • Just now</div>
+                </div>
+              </div>
+              <div className="mt-3 whitespace-pre-line text-gray-800">
+                {generatedContent}
+              </div>
+              {mediaPreviews.length > 0 && (
+                <div className="mt-3 grid grid-cols-4 gap-4">
+                  {mediaPreviews.map((preview, index) => (
+                    <div key={index}>
+                      {uploadedMedia[index].type.startsWith('image/') ? (
+                        <img 
+                          src={preview} 
+                          alt={`Preview ${index + 1}`} 
+                          className="rounded-lg w-full h-auto object-contain"
+                        />
+                      ) : (
+                        <video 
+                          src={preview} 
+                          controls 
+                          className="rounded-lg w-full h-auto object-contain"
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );

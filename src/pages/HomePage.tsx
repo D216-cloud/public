@@ -22,13 +22,15 @@ const HomePage: React.FC = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden pt-28">
+    <div className="min-h-screen bg-background overflow-x-hidden">
+      
       <Header />
       <main>
         <HeroSection />
         
         {/* Trust Badges Section */}
-        <section className="py-12 bg-white border-b border-gray-100">
+        <section className="py-12 bg-gradient-to-b from-blue-50 to-white border-b border-gray-100">
+          
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               {trustBadges.map((badge, index) => {

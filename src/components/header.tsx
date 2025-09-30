@@ -12,6 +12,8 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Menu, X, Twitter, Settings, LogOut, Mail, CheckCircle, XCircle, ChevronDown, User, ArrowRight, Sparkles } from "lucide-react"
 import { API_URL } from "@/utils/config"
+import { Logo } from "@/components/logo"
+import { MobileLogo } from "@/components/mobile-logo"
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -171,16 +173,9 @@ export function Header() {
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between">
             {/* Logo */}
-            <Link to="/" className="flex items-center space-x-3 group">
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 shadow-lg group-hover:shadow-xl transition-all duration-300 overflow-hidden">
-                <Twitter className="h-5 w-5 text-white relative z-10" />
-                <div className="absolute inset-0 bg-white/20 rounded-xl transform scale-0 group-hover:scale-100 transition-transform duration-300" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-blue-600 bg-clip-text text-transparent">
-                  TwitterAI
-                </span>
-                <span className="text-xs font-medium text-blue-600">Pro</span>
+            <Link to="/" className="flex items-center group">
+              <div className="relative flex h-24 w-24 items-center justify-center rounded-xl bg-transparent transition-all duration-300 overflow-hidden">
+                <Logo className="text-white relative z-10" size="xl" />
               </div>
             </Link>
 
@@ -257,6 +252,10 @@ export function Header() {
                   <DropdownMenuTrigger asChild>
                     <button 
                       className="flex items-center space-x-3 p-3 rounded-xl bg-white hover:bg-gray-50 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 group relative overflow-hidden"
+                      onClick={(e) => {
+                        e.preventDefault();  // Prevent default behavior that might cause scrolling
+                        e.stopPropagation(); // Stop event from bubbling up
+                      }}
                     >
                       <Avatar className="h-9 w-9">
                         <AvatarImage src={userData?.profileImage || userData?.profilePicture} />
@@ -532,9 +531,11 @@ export function Header() {
           <div className="px-4 py-5 bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 relative overflow-hidden">
             <div className="absolute inset-0 bg-white opacity-5" />
             <div className="flex items-center justify-between relative z-10">
-              <h2 className="text-xl font-bold text-white">
-                {isLoggedIn ? 'Menu' : 'Navigation'}
-              </h2>
+              <div className="flex items-center">
+                <div className="relative flex h-16 w-16 items-center justify-center rounded-lg bg-transparent">
+                  <MobileLogo className="text-white" size="xl" />
+                </div>
+              </div>
               <button
                 onClick={closeMenu}
                 className="p-2 hover:bg-white/20 rounded-full transition-colors duration-200 relative group"

@@ -2,13 +2,68 @@ const twitterService = require('../services/twitterService');
 const UserTwitterConnection = require('../models/UserTwitterConnections');
 const User = require('../models/User');
 const crypto = require('crypto');
-const { verifyTwitterUsername } = require('../services/twitterVerificationService');
 
 /**
  * Twitter Controller
  * 
  * Handles all Twitter-related API endpoints
  */
+
+/**
+ * Begin Twitter OAuth flow for public users (non-authenticated)
+ * @route GET /api/twitter/auth/public
+ * @access Public
+ */
+const beginTwitterAuthPublic = async (req, res) => {
+  try {
+    // Check if Twitter credentials are configured
+    if (!process.env.TWITTER_CLIENT_ID || !process.env.TWITTER_CLIENT_SECRET) {
+      return res.status(500).json({
+        success: false,
+        message: 'Twitter API credentials not configured. Please set TWITTER_CLIENT_ID and TWITTER_CLIENT_SECRET in your environment variables.'
+      });
+    }
+    
+    // Generate a random state for security
+    const state = crypto.randomBytes(16).toString('hex');
+    
+    // For public users, we'll store state in a temporary collection or in-memory store
+    // For simplicity, we'll use a temporary user document with a special identifier
+    const tempUserId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Store state temporarily (in a real app, you might want to use Redis or a dedicated temp storage)
+    await User.findOneAndUpdate(
+      { email: `${tempUserId}@temp.local` },
+      { 
+        email: `${tempUserId}@temp.local`,
+        tempAuthState: state,
+        isTemporary: true
+      },
+      { upsert: true, new: true }
+    );
+    
+    // Get OAuth URL
+    const { url, codeVerifier } = twitterService.getTwitterOAuthURL(state);
+    
+    // Store code verifier temporarily
+    await User.findOneAndUpdate(
+      { email: `${tempUserId}@temp.local` },
+      { tempCodeVerifier: codeVerifier },
+      { upsert: true, new: true }
+    );
+    
+    res.json({
+      success: true,
+      authUrl: url
+    });
+  } catch (error) {
+    console.error('Twitter public auth error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to initiate Twitter authentication: ' + (error.message || 'Unknown error')
+    });
+  }
+};
 
 /**
  * Begin Twitter OAuth flow
@@ -55,53 +110,6 @@ const beginTwitterAuth = async (req, res) => {
 };
 
 /**
- * Begin Twitter OAuth flow for public users (no authentication required)
- * @route GET /api/twitter/auth/public
- * @access Public
- */
-const beginTwitterAuthPublic = async (req, res) => {
-  try {
-    // Check if Twitter credentials are configured
-    if (!process.env.TWITTER_CLIENT_ID || !process.env.TWITTER_CLIENT_SECRET) {
-      return res.status(500).json({
-        success: false,
-        message: 'Twitter API credentials not configured. Please set TWITTER_CLIENT_ID and TWITTER_CLIENT_SECRET in your environment variables.'
-      });
-    }
-    
-    // Generate a random state for security
-    const state = crypto.randomBytes(16).toString('hex');
-    
-    // For public auth, we'll store state in a temporary way
-    // In a production environment, you might want to use a more robust solution
-    // like Redis or a temporary database collection
-    global.tempAuthStates = global.tempAuthStates || {};
-    global.tempAuthStates[state] = {
-      createdAt: Date.now(),
-      // We'll need to handle the callback differently for public users
-      isPublicAuth: true
-    };
-    
-    // Get OAuth URL using the existing service function
-    const { url, codeVerifier } = twitterService.getTwitterOAuthURL(state);
-    
-    // Store code verifier temporarily
-    global.tempAuthStates[state].codeVerifier = codeVerifier;
-    
-    res.json({
-      success: true,
-      authUrl: url
-    });
-  } catch (error) {
-    console.error('Twitter public auth error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to initiate Twitter authentication: ' + (error.message || 'Unknown error')
-    });
-  }
-};
-
-/**
  * Handle Twitter OAuth callback
  * @route GET /api/twitter/callback
  * @access Public (but requires state verification)
@@ -117,41 +125,26 @@ const handleTwitterCallback = async (req, res) => {
       });
     }
     
-    // Check if this is a public auth flow
-    let isPublicAuth = false;
-    let tempAuthData = null;
-    
-    // First check if it's a regular authenticated user flow
+    // Verify state parameter for both authenticated and public users
     let user = await User.findOne({ tempAuthState: state });
     
+    // If no user found with that state, check if it's a temporary user for public auth
     if (!user) {
-      // Check if it's a public auth flow
-      if (global.tempAuthStates && global.tempAuthStates[state]) {
-        isPublicAuth = true;
-        tempAuthData = global.tempAuthStates[state];
-        
-        // Clean up expired states (older than 1 hour)
-        const oneHourAgo = Date.now() - 60 * 60 * 1000;
-        Object.keys(global.tempAuthStates).forEach(key => {
-          if (global.tempAuthStates[key].createdAt < oneHourAgo) {
-            delete global.tempAuthStates[key];
-          }
-        });
-      } else {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid state parameter'
-        });
-      }
+      user = await User.findOne({ 
+        tempAuthState: state,
+        email: { $regex: /^temp_[0-9]+_[a-z0-9]+@temp\.local$/ }
+      });
+    }
+    
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid state parameter'
+      });
     }
     
     // Get code verifier
-    let codeVerifier;
-    if (isPublicAuth) {
-      codeVerifier = tempAuthData.codeVerifier;
-    } else {
-      codeVerifier = user.tempCodeVerifier;
-    }
+    const codeVerifier = user.tempCodeVerifier;
     
     if (!codeVerifier) {
       return res.status(400).json({
@@ -163,19 +156,29 @@ const handleTwitterCallback = async (req, res) => {
     // Handle OAuth callback
     const twitterData = await twitterService.handleTwitterCallback(code, codeVerifier);
     
-    if (isPublicAuth) {
-      // For public auth, redirect to a special page that can handle the Twitter data
-      // This would typically be a page that allows the user to sign up or log in
+    // Check if this is a temporary user (public auth)
+    const isPublicUser = user.email && user.email.includes('@temp.local');
+    
+    if (isPublicUser) {
+      // For public users, we'll redirect to a special signup page
+      // Store the Twitter data temporarily
+      await User.findByIdAndUpdate(user._id, {
+        tempTwitterData: twitterData
+      });
+      
+      // Clean up temporary fields
+      await User.findByIdAndUpdate(user._id, {
+        $unset: {
+          tempAuthState: 1,
+          tempCodeVerifier: 1
+        }
+      });
+      
+      // Redirect to frontend signup page with Twitter data
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:8080';
-      
-      // Clean up the temporary state
-      delete global.tempAuthStates[state];
-      
-      // Redirect to a page that can handle the Twitter data
-      // You might want to pass the Twitter data as query parameters or use sessions
-      res.redirect(`${frontendUrl}/twitter-signup?twitterData=${encodeURIComponent(JSON.stringify(twitterData))}`);
+      res.redirect(`${frontendUrl}/twitter-signup?twitterConnected=true&screenName=${twitterData.userInfo.username}&tempUserId=${user._id}`);
     } else {
-      // Store temporary connection data for authenticated users
+      // For authenticated users, store temporary connection data
       await twitterService.storeTempTwitterConnection(user._id, twitterData, codeVerifier);
       
       // Clean up temporary fields
@@ -208,20 +211,7 @@ const handleTwitterCallback = async (req, res) => {
     
     // Limit the error message length and encode it properly
     const safeErrorMessage = encodeURIComponent(errorMessage.substring(0, 200));
-    
-    // Check if this is a public auth flow
-    const state = req.query.state;
-    let isPublicAuth = false;
-    if (global.tempAuthStates && global.tempAuthStates[state]) {
-      isPublicAuth = true;
-      delete global.tempAuthStates[state];
-    }
-    
-    if (isPublicAuth) {
-      res.redirect(`${frontendUrl}/twitter-signup?error=${safeErrorMessage}`);
-    } else {
-      res.redirect(`${frontendUrl}/onboarding?twitterConnected=false&error=${safeErrorMessage}`);
-    }
+    res.redirect(`${frontendUrl}/onboarding?twitterConnected=false&error=${safeErrorMessage}`);
   }
 };
 
@@ -260,19 +250,9 @@ const sendOTP = async (req, res) => {
     });
   } catch (error) {
     console.error('Send OTP error:', error);
-    
-    // Provide more specific error messages
-    let errorMessage = error.message || 'Failed to send OTP';
-    
-    if (errorMessage.includes('Email authentication failed')) {
-      errorMessage = 'Email authentication failed. Please ensure you are using a valid Gmail App Password. Check the GMAIL_SETUP_GUIDE.md file for detailed instructions.';
-    } else if (errorMessage.includes('Failed to send verification email')) {
-      errorMessage = 'Unable to send verification email. Please check your email address and try again.';
-    }
-    
     res.status(500).json({
       success: false,
-      message: errorMessage
+      message: error.message || 'Failed to send OTP'
     });
   }
 };
@@ -524,7 +504,7 @@ const disconnectTwitter = async (req, res) => {
  * @route POST /api/twitter/verify-username
  * @access Private
  */
-const verifyTwitterUsernameController = async (req, res) => {
+const verifyTwitterUsername = async (req, res) => {
   try {
     const { username } = req.body;
     
@@ -544,52 +524,53 @@ const verifyTwitterUsernameController = async (req, res) => {
       });
     }
 
+    // Use Twitter API to verify username exists
+    const { TwitterApi } = require('twitter-api-v2');
+    const twitterClient = new TwitterApi(process.env.TWITTER_BEARER_TOKEN);
+
     try {
-      // Check if user exists using our new verification service
-      const result = await verifyTwitterUsername(username);
+      // Check if user exists with profile image
+      const user = await twitterClient.v2.userByUsername(username, {
+        'user.fields': ['profile_image_url']
+      });
       
-      if (result.success) {
-        if (result.rateLimited) {
-          return res.status(429).json({
-            success: false,
-            message: result.message
-          });
+      if (user.data) {
+        // Get profile image URL (use higher resolution version)
+        let profileImageUrl = null;
+        if (user.data.profile_image_url) {
+          profileImageUrl = user.data.profile_image_url.replace('_normal', '_400x400');
         }
         
-        if (result.data) {
-          return res.json({
-            success: true,
-            message: 'Username verified successfully',
-            userId: result.data.id,
-            cached: result.cached
-          });
-        } else {
-          return res.status(404).json({
-            success: false,
-            message: 'Twitter username not found'
-          });
-        }
+        return res.json({
+          success: true,
+          message: 'Username verified successfully',
+          userId: user.data.id,
+          profileImageUrl: profileImageUrl
+        });
       } else {
-        if (result.rateLimited) {
-          return res.status(429).json({
-            success: false,
-            message: result.message
-          });
-        }
-        
         return res.status(404).json({
-            success: false,
-            message: result.message || 'Twitter username not found'
-          });
+          success: false,
+          message: 'Twitter username not found'
+        });
       }
     } catch (twitterError) {
       console.error('Twitter API error:', twitterError);
       
       // Handle specific Twitter API errors
-      if (twitterError.message && twitterError.message.includes('authentication failed')) {
+      if (twitterError.code === 401) {
         return res.status(401).json({
           success: false,
           message: 'Twitter API authentication failed. Please contact support.'
+        });
+      } else if (twitterError.code === 404) {
+        return res.status(404).json({
+          success: false,
+          message: 'Twitter username not found'
+        });
+      } else if (twitterError.code === 429) {
+        return res.status(429).json({
+          success: false,
+          message: 'Twitter API rate limit exceeded. Please try again later.'
         });
       }
       
@@ -628,24 +609,50 @@ const connectTwitterDirect = async (req, res) => {
     const User = require('../models/User');
     const UserTwitterConnection = require('../models/UserTwitterConnections');
     
+    // Try to fetch the actual Twitter profile image
+    let profileImageUrl = `https://unavatar.io/twitter/${username}`;
+    
+    try {
+      // Use Twitter API to get the actual profile image
+      if (process.env.TWITTER_BEARER_TOKEN) {
+        const { TwitterApi } = require('twitter-api-v2');
+        const twitterClient = new TwitterApi(process.env.TWITTER_BEARER_TOKEN);
+        
+        // Get user info including profile image
+        const user = await twitterClient.v2.userByUsername(username, {
+          'user.fields': ['profile_image_url']
+        });
+        
+        if (user.data && user.data.profile_image_url) {
+          // Use the higher resolution version
+          profileImageUrl = user.data.profile_image_url.replace('_normal', '_400x400');
+        }
+      }
+    } catch (twitterError) {
+      console.error('Error fetching Twitter profile image:', twitterError);
+      // Fall back to unavatar.io
+    }
+
     // Update user document
     const user = await User.findByIdAndUpdate(
       req.user.id,
       {
         twitterConnected: true,
         twitterUsername: username,
-        twitterId: `temp_${Date.now()}` // Temporary ID since we don't have real OAuth
+        twitterId: `temp_${Date.now()}`, // Temporary ID since we don't have real OAuth
+        twitterProfileImageUrl: profileImageUrl
       },
       { new: true }
     );
 
     // Create connection record
-    await UserTwitterConnection.findOneAndUpdate(
+    const connection = await UserTwitterConnection.findOneAndUpdate(
       { userId: req.user.id },
       {
         userId: req.user.id,
         twitterId: `temp_${Date.now()}`,
         screenName: username,
+        profileImageUrl: profileImageUrl,
         verified: false, // Not verified through OAuth
         connectedAt: new Date()
       },
@@ -655,379 +662,15 @@ const connectTwitterDirect = async (req, res) => {
     res.json({
       success: true,
       message: 'Twitter account connected successfully',
-      username: username
+      username: username,
+      profileImageUrl: profileImageUrl,
+      connectionId: connection._id
     });
   } catch (error) {
     console.error('Connect Twitter direct error:', error);
     res.status(500).json({
       success: false,
       message: error.message || 'Failed to connect Twitter account'
-    });
-  }
-};
-
-/**
- * Request Twitter verification code
- * This sends a verification code to the user's email for Twitter account verification
- * @route POST /api/twitter/request-verification
- * @access Private
- */
-const requestTwitterVerification = async (req, res) => {
-  try {
-    const { username, email } = req.body;
-    
-    if (!username) {
-      return res.status(400).json({
-        success: false,
-        message: 'Twitter username is required'
-      });
-    }
-    
-    if (!email) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email address is required'
-      });
-    }
-    
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid email format'
-      });
-    }
-    
-    // First verify the Twitter username exists
-    const verificationResult = await verifyTwitterUsername(username);
-    
-    if (!verificationResult.success) {
-      if (verificationResult.rateLimited) {
-        return res.status(429).json({
-          success: false,
-          message: 'Too many verification requests. Please try again later.'
-        });
-      }
-      
-      return res.status(404).json({
-        success: false,
-        message: 'Twitter username not found. Please check the username and try again.'
-      });
-    }
-    
-    // Generate a verification code
-    const crypto = require('crypto');
-    const verificationCode = crypto.randomInt(100000, 999999).toString();
-    
-    // Store the verification code temporarily (in production, use Redis or database)
-    global.tempVerificationCodes = global.tempVerificationCodes || {};
-    global.tempVerificationCodes[email] = {
-      code: verificationCode,
-      username: username,
-      userId: req.user.id,
-      createdAt: Date.now(),
-      expiresAt: Date.now() + 15 * 60 * 1000 // 15 minutes
-    };
-    
-    // Send verification email
-    const { sendVerificationCodeEmail } = require('../utils/sendMail');
-    
-    try {
-      const user = await User.findById(req.user.id);
-      const result = await sendVerificationCodeEmail(
-        email,
-        user.name || 'User',
-        verificationCode,
-        username
-      );
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to send email');
-      }
-      
-      res.json({
-        success: true,
-        message: 'Verification code sent to your email',
-        expiresAt: global.tempVerificationCodes[email].expiresAt
-      });
-    } catch (emailError) {
-      console.error('Error sending verification email:', emailError);
-      
-      // Clean up the verification code since email failed
-      delete global.tempVerificationCodes[email];
-      
-      // Handle specific email errors
-      if (emailError.message && emailError.message.includes('Invalid login')) {
-        return res.status(500).json({
-          success: false,
-          message: 'Email authentication failed. Please ensure you are using a valid Gmail App Password. Check the GMAIL_SETUP_GUIDE.md file for detailed instructions.'
-        });
-      }
-      
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to send verification email. Please try again later.'
-      });
-    }
-  } catch (error) {
-    console.error('Request Twitter verification error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to request verification. Please try again later.'
-    });
-  }
-};
-
-/**
- * Verify Twitter account with code
- * This verifies the user owns the Twitter account by checking the code sent to their email
- * @route POST /api/twitter/verify-account
- * @access Private
- */
-const verifyTwitterAccount = async (req, res) => {
-  try {
-    const { username, email, code } = req.body;
-    
-    if (!username || !email || !code) {
-      return res.status(400).json({
-        success: false,
-        message: 'Username, email, and verification code are required'
-      });
-    }
-    
-    // Check if verification code exists and is valid
-    if (!global.tempVerificationCodes || !global.tempVerificationCodes[email]) {
-      return res.status(400).json({
-        success: false,
-        message: 'No verification code found for this email. Please request a new code.'
-      });
-    }
-    
-    const verificationData = global.tempVerificationCodes[email];
-    
-    // Check if code has expired
-    if (Date.now() > verificationData.expiresAt) {
-      delete global.tempVerificationCodes[email];
-      return res.status(400).json({
-        success: false,
-        message: 'Verification code has expired. Please request a new code.'
-      });
-    }
-    
-    // Check if code matches
-    if (verificationData.code !== code) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid verification code. Please check the code and try again.'
-      });
-    }
-    
-    // Check if username matches
-    if (verificationData.username !== username) {
-      return res.status(400).json({
-        success: false,
-        message: 'Username does not match the one used for verification.'
-      });
-    }
-    
-    // Check if user ID matches
-    if (verificationData.userId !== req.user.id) {
-      return res.status(400).json({
-        success: false,
-        message: 'Verification code was requested by a different user.'
-      });
-    }
-    
-    // Clean up the verification code
-    delete global.tempVerificationCodes[email];
-    
-    // Connect the Twitter account
-    const UserTwitterConnection = require('../models/UserTwitterConnections');
-    
-    // Update user document
-    const user = await User.findByIdAndUpdate(
-      req.user.id,
-      {
-        twitterConnected: true,
-        twitterUsername: username,
-        twitterId: `verified_${Date.now()}` // Temporary ID for verified accounts
-      },
-      { new: true }
-    );
-
-    // Create connection record
-    await UserTwitterConnection.findOneAndUpdate(
-      { userId: req.user.id },
-      {
-        userId: req.user.id,
-        twitterId: `verified_${Date.now()}`,
-        screenName: username,
-        verified: true, // Verified through email
-        verifiedBy: 'email',
-        verifiedAt: new Date(),
-        connectedAt: new Date()
-      },
-      { upsert: true, new: true }
-    );
-
-    res.json({
-      success: true,
-      message: 'Twitter account verified and connected successfully',
-      username: username
-    });
-  } catch (error) {
-    console.error('Verify Twitter account error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to verify Twitter account. Please try again later.'
-    });
-  }
-};
-
-/**
- * Post a tweet
- * @route POST /api/twitter/post
- * @access Private
- */
-const postTweet = async (req, res) => {
-  try {
-    const { content, language = 'en' } = req.body;
-    const image = req.file; // Multer will handle image upload
-
-    if (!content) {
-      return res.status(400).json({
-        success: false,
-        message: 'Tweet content is required'
-      });
-    }
-
-    // Validate content length (Twitter limit is 280 characters)
-    if (content.length > 280) {
-      return res.status(400).json({
-        success: false,
-        message: 'Tweet content exceeds 280 character limit'
-      });
-    }
-
-    // Convert image buffer if provided
-    let imageBuffer = null;
-    if (image) {
-      imageBuffer = image.buffer;
-    }
-
-    // Post the tweet
-    const result = await twitterService.postTweet(req.user.id, content, imageBuffer, language);
-    
-    res.json({
-      success: true,
-      ...result
-    });
-  } catch (error) {
-    console.error('Post tweet error:', error);
-    
-    // Provide more specific error messages
-    let errorMessage = error.message || 'Failed to post tweet';
-    
-    if (errorMessage.includes('Twitter authentication failed')) {
-      errorMessage = 'Twitter authentication failed. Please reconnect your Twitter account.';
-    } else if (errorMessage.includes('rate limit')) {
-      errorMessage = 'Twitter API rate limit exceeded. Please try again later.';
-    }
-    
-    res.status(500).json({
-      success: false,
-      message: errorMessage
-    });
-  }
-};
-
-/**
- * Schedule a tweet
- * @route POST /api/twitter/schedule
- * @access Private
- */
-const scheduleTweet = async (req, res) => {
-  try {
-    const { content, scheduledTime, language = 'en' } = req.body;
-    const image = req.file; // Multer will handle image upload
-
-    if (!content || !scheduledTime) {
-      return res.status(400).json({
-        success: false,
-        message: 'Tweet content and scheduled time are required'
-      });
-    }
-
-    // Validate content length
-    if (content.length > 280) {
-      return res.status(400).json({
-        success: false,
-        message: 'Tweet content exceeds 280 character limit'
-      });
-    }
-
-    // Validate scheduled time
-    const scheduledDate = new Date(scheduledTime);
-    if (isNaN(scheduledDate.getTime())) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid scheduled time format'
-      });
-    }
-
-    // Convert image buffer if provided
-    let imageBuffer = null;
-    if (image) {
-      imageBuffer = image.buffer;
-    }
-
-    // Schedule the tweet
-    const result = await twitterService.scheduleTweet(req.user.id, content, scheduledDate, imageBuffer, language);
-    
-    res.json({
-      success: true,
-      ...result
-    });
-  } catch (error) {
-    console.error('Schedule tweet error:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to schedule tweet'
-    });
-  }
-};
-
-/**
- * Get recent tweets
- * @route GET /api/twitter/recent
- * @access Private
- */
-const getRecentTweets = async (req, res) => {
-  try {
-    const { count = 10 } = req.query;
-    
-    // Validate count parameter
-    const tweetCount = parseInt(count);
-    if (isNaN(tweetCount) || tweetCount < 1 || tweetCount > 100) {
-      return res.status(400).json({
-        success: false,
-        message: 'Count must be a number between 1 and 100'
-      });
-    }
-
-    // Get recent tweets
-    const result = await twitterService.getRecentTweets(req.user.id, tweetCount);
-    
-    res.json({
-      success: true,
-      ...result
-    });
-  } catch (error) {
-    console.error('Get recent tweets error:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to fetch recent tweets'
     });
   }
 };
@@ -1044,11 +687,6 @@ module.exports = {
   getTwitterStatus,
   confirmTwitterConnection,
   disconnectTwitter,
-  verifyTwitterUsername: verifyTwitterUsernameController,
-  connectTwitterDirect,
-  requestTwitterVerification,
-  verifyTwitterAccount,
-  postTweet,
-  scheduleTweet,
-  getRecentTweets
+  verifyTwitterUsername,
+  connectTwitterDirect
 };

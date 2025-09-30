@@ -208,8 +208,11 @@ const getPostedContent = async (req, res) => {
 // Generate content using Google AI API
 const generateContent = async (req, res) => {
   try {
-    const { topic, template, tone, length, audience, style, language = 'en' } = req.body;
+    console.log('generateContent API called');
+    const { topic, template, tone, length, audience, style, language = 'en', lineCount, purpose, brandVoice } = req.body;
     const userId = req.user._id;
+    
+    console.log('Received parameters:', { topic, template, tone, length, audience, style, language, lineCount, purpose, brandVoice });
     
     // Create a detailed prompt based on user selections for better Twitter content
     let prompt = `Generate an engaging Twitter post`;
@@ -242,8 +245,9 @@ const generateContent = async (req, res) => {
     if (length) {
       const lengthDescriptions = {
         'short': 'brief and concise (1-2 sentences)',
-        'medium': 'moderately detailed (2-3 sentences)',
-        'long': 'more comprehensive (3+ sentences)'
+        'medium': 'moderately detailed (500-800 characters, 3-4 paragraphs)',
+        'long': 'more comprehensive (800-1200 characters, 4-6 paragraphs)',
+        'verylong': 'very detailed and comprehensive (1200+ characters, 6+ paragraphs)'
       };
       prompt += `, ${lengthDescriptions[length] || length}`;
     }
@@ -273,33 +277,83 @@ const generateContent = async (req, res) => {
       prompt += ` about "${topic}"`;
     }
     
-    prompt += `. Make it engaging for Twitter with emojis, relevant hashtags, and under 280 characters. Focus on creating content that encourages likes, retweets, and replies.`;
-    
-    // Add Twitter-specific best practices
-    prompt += ` Include 1-3 relevant hashtags. Use emojis strategically. Make it conversational and engaging.`;
-    
-    if (template === 'question') {
-      prompt += ` End with a question to encourage replies.`;
-    } else if (template === 'announcement') {
-      prompt += ` Include a call-to-action.`;
-    } else if (template === 'tips') {
-      prompt += ` Start with a number or bullet point style.`;
+    if (purpose) {
+      prompt += ` with the purpose of ${purpose}`;
     }
     
-    // Try to generate content with Google AI API
-    let generatedContent;
-    try {
-      generatedContent = await googleAIService.generateContent(prompt, language);
-      console.log('Successfully generated content with Gemini API');
-    } catch (apiError) {
-      console.error('Gemini API failed, using fallback templates:', apiError.message);
+    if (brandVoice) {
+      prompt += `. Use a ${brandVoice} brand voice`;
+    }
+    
+    if (lineCount) {
+      prompt += `. Aim for approximately ${lineCount} lines`;
+    }
+    
+    // Different prompt endings based on content length
+    if (length === 'verylong') {
+      prompt += `. IMPORTANT: Create a long-form article that is at least 800 characters and up to 1200 characters. Count the words and ensure it's comprehensive. Create a detailed blog post or article with multiple paragraphs, proper structure, and in-depth analysis. Make it informative and engaging for readers, suitable for long-form content platforms.`;
       
-      // Enhanced fallback logic based on template
-      const templateKey = template ? template.toLowerCase().replace(/\s+/g, '-') : 'motivational';
-      const contentOptions = contentTemplates[templateKey] || contentTemplates.motivational;
-      generatedContent = contentOptions[Math.floor(Math.random() * contentOptions.length)];
+      // Add long-form best practices
+      prompt += ` Structure it with an introduction, body paragraphs, and conclusion. Use headings if appropriate. Make it valuable and shareable content.`;
       
-      console.log('Using fallback content for template:', templateKey);
+      if (template === 'question') {
+        prompt += ` Include thought-provoking questions throughout to engage readers.`;
+      } else if (template === 'announcement') {
+        prompt += ` Include detailed information and benefits.`;
+      } else if (template === 'tips') {
+        prompt += ` Provide step-by-step guidance and practical examples.`;
+      }
+    } else {
+      prompt += `. Make it engaging for Twitter with 4-5 emojis, relevant hashtags, and under 280 characters. Focus on creating content that encourages likes, retweets, and replies.`;
+      
+      // Add Twitter-specific best practices
+      prompt += ` Include 4-5 relevant hashtags. Use emojis strategically to make it visually appealing. Make it conversational and engaging.`;
+      
+      if (template === 'question') {
+        prompt += ` End with a question to encourage replies.`;
+      } else if (template === 'announcement') {
+        prompt += ` Build excitement and anticipation. Include a call-to-action.`;
+      } else if (template === 'tips') {
+        prompt += ` Start with a number or bullet point style.`;
+      }
+    }
+    
+    // Determine max tokens and allow long content based on length
+    let maxTokens = 1024;
+    let allowLongContent = false;
+
+    switch (length) {
+      case 'medium':
+        maxTokens = 1024; // For 500-800 characters
+        allowLongContent = true;
+        break;
+      case 'long':
+        maxTokens = 1536; // For 800-1200 characters
+        allowLongContent = true;
+        break;
+      case 'verylong':
+        maxTokens = 2048; // For 1200+ characters
+        allowLongContent = true;
+        break;
+      default:
+        maxTokens = 1024;
+        allowLongContent = false;
+    }
+
+    console.log(`Generating content with length: ${length}, maxTokens: ${maxTokens}, allowLongContent: ${allowLongContent}`);
+
+    // Generate content with Google AI API (no fallback)
+    let generatedContent = await googleAIService.generateContent(prompt, language, maxTokens, allowLongContent);
+    console.log('Successfully generated content with Gemini API, length:', generatedContent.length);
+
+    // Ensure minimum 500 characters for all content types
+    if (generatedContent.length < 500) {
+      console.log('Content too short, regenerating with higher token limit...');
+      const enhancedPrompt = prompt + '. IMPORTANT: Generate a much longer response with at least 500 characters. Expand on the topic with more details, examples, and comprehensive information.';
+        let enhancedContent = await googleAIService.generateContent(enhancedPrompt, language, maxTokens * 2, true);
+        if (enhancedContent.length > generatedContent.length) {
+          generatedContent = enhancedContent;
+        }
     }
     
     // Extract hashtags and mentions for storage

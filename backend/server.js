@@ -6,10 +6,11 @@ const authRoutes = require('./routes/authRoutes');
 const postRoutes = require('./routes/postRoutes');
 const onboardingRoutes = require('./routes/onboardingRoutes');
 const twitterRoutes = require('./routes/twitterRoutes');
+const userRoutes = require('./routes/userRoutes');
 const path = require('path');
 
-// Load env vars from main project directory
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+// Load env vars from backend directory
+dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 // Connect to database
 connectDB();
@@ -62,13 +63,14 @@ app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/onboarding', onboardingRoutes);
 app.use('/api/twitter', twitterRoutes);
+app.use('/api/user', userRoutes);
 
 // Health check endpoint
 app.get('/', (req, res) => {
   res.json({ message: 'API is running...' });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

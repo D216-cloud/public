@@ -21,15 +21,21 @@ async function testGeminiAPI(attempt = 1, maxAttempts = 3) {
     
     // Test 1: English content generation
     console.log('\n1. Testing English content generation:');
-    const englishPrompt = "Write a short motivational tweet about productivity in exactly 1 sentence.";
+    const englishPrompt = "Write a short motivational tweet about productivity.";
     const englishContent = await googleAIService.generateContent(englishPrompt, 'en');
     console.log('Generated English content:', englishContent);
     
     // Test 2: Hindi content generation
     console.log('\n2. Testing Hindi content generation:');
-    const hindiPrompt = "Write a short motivational tweet about productivity in exactly 1 sentence.";
+    const hindiPrompt = "Write a short motivational tweet about productivity.";
     const hindiContent = await googleAIService.generateContent(hindiPrompt, 'hi');
     console.log('Generated Hindi content:', hindiContent);
+    
+    // Test 3: Spanish content generation
+    console.log('\n3. Testing Spanish content generation:');
+    const spanishPrompt = "Write a short motivational tweet about productivity.";
+    const spanishContent = await googleAIService.generateContent(spanishPrompt, 'es');
+    console.log('Generated Spanish content:', spanishContent);
     
     console.log('\n✅ All tests completed successfully!');
     

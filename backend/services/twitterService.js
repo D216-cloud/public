@@ -112,7 +112,8 @@ const handleTwitterCallback = async (code, codeVerifier) => {
       userInfo: {
         id: userInfo.id,
         username: userInfo.username,
-        name: userInfo.name
+        name: userInfo.name,
+        profileImageUrl: userInfo.profile_image_url || null
       }
     };
   } catch (error) {
@@ -182,7 +183,8 @@ const createOrUpdateConnection = async (userId, connectionData) => {
   await User.findByIdAndUpdate(userId, {
     twitterConnected: true,
     twitterId: connectionData.twitterId,
-    twitterUsername: connectionData.screenName
+    twitterUsername: connectionData.screenName,
+    twitterProfileImageUrl: connectionData.profileImageUrl || null
   });
   
   return connection;
@@ -218,17 +220,7 @@ const sendOTPViaEmail = async (email, otp, userId) => {
     return true;
   } catch (error) {
     console.error('Error sending OTP email:', error);
-    
-    // Provide more specific error messages for common issues
-    if (error.code === 'EAUTH' || (error.message && error.message.includes('Invalid login'))) {
-      throw new Error('Email authentication failed. Please ensure you are using a valid Gmail App Password. Check the GMAIL_SETUP_GUIDE.md file for detailed instructions.');
-    } else if (error.code === 'EENVELOPE') {
-      throw new Error('Invalid email address. Please check the recipient email address.');
-    } else if (error.code === 'ECONNECTION') {
-      throw new Error('Unable to connect to email server. Please check your internet connection.');
-    } else {
-      throw new Error(`Failed to send verification email: ${error.message}`);
-    }
+    return false;
   }
 };
 
@@ -242,24 +234,77 @@ const sendOTPViaEmail = async (email, otp, userId) => {
 const generateAndSendOTP = async (userId, twitterId, email) => {
   const otp = generateOTP();
   const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
-  
-  // Store OTP in connection
-  await UserTwitterConnection.findOneAndUpdate(
-    { userId, twitterId },
-    {
-      otp,
-      otpExpiry,
-      verificationEmail: email
+
+  // First check if connection exists
+  let connection = await UserTwitterConnection.findOne({ userId, twitterId });
+
+  if (!connection) {
+    // If no connection exists, check if user has any Twitter connection
+    const user = await User.findById(userId);
+    if (user && user.twitterId) {
+      // Use the stored twitterId if it exists
+      connection = await UserTwitterConnection.findOne({ userId, twitterId: user.twitterId });
+      if (connection) {
+        // Update the connection with OTP
+        await UserTwitterConnection.findOneAndUpdate(
+          { userId, twitterId: user.twitterId },
+          {
+            otp,
+            otpExpiry,
+            verificationEmail: email
+          }
+        );
+      } else {
+        // Create new connection if none exists
+        connection = await UserTwitterConnection.findOneAndUpdate(
+          { userId, twitterId: user.twitterId || twitterId },
+          {
+            userId,
+            twitterId: user.twitterId || twitterId,
+            screenName: user.twitterUsername || 'Unknown',
+            accessToken: 'temp', // Will be updated when confirmed
+            otp,
+            otpExpiry,
+            verificationEmail: email
+          },
+          { new: true, upsert: true, setDefaultsOnInsert: true }
+        );
+      }
+    } else {
+      // Create new connection with provided twitterId
+      connection = await UserTwitterConnection.findOneAndUpdate(
+        { userId, twitterId },
+        {
+          userId,
+          twitterId,
+          screenName: 'Unknown', // Will be updated when confirmed
+          accessToken: 'temp', // Will be updated when confirmed
+          otp,
+          otpExpiry,
+          verificationEmail: email
+        },
+        { new: true, upsert: true, setDefaultsOnInsert: true }
+      );
     }
-  );
-  
+  } else {
+    // Update existing connection with OTP
+    await UserTwitterConnection.findOneAndUpdate(
+      { userId, twitterId },
+      {
+        otp,
+        otpExpiry,
+        verificationEmail: email
+      }
+    );
+  }
+
   // Send OTP via email
   const emailSent = await sendOTPViaEmail(email, otp, userId);
-  
+
   if (!emailSent) {
-    throw new Error('Failed to send OTP email. Please check your email configuration.');
+    throw new Error('Failed to send OTP email');
   }
-  
+
   return { otp, otpExpiry };
 };
 
@@ -271,33 +316,48 @@ const generateAndSendOTP = async (userId, twitterId, email) => {
  * @returns {Promise<boolean>} - Verification success
  */
 const verifyOTP = async (userId, twitterId, otp) => {
-  const connection = await UserTwitterConnection.findOne({ userId, twitterId });
-  
+  // First try to find connection with exact twitterId
+  let connection = await UserTwitterConnection.findOne({ userId, twitterId });
+
+  // If not found, try to find any connection for this user that has an OTP
+  if (!connection) {
+    connection = await UserTwitterConnection.findOne({
+      userId,
+      otp: { $exists: true, $ne: null },
+      otpExpiry: { $gt: new Date() }
+    });
+  }
+
   if (!connection) {
     throw new Error('Twitter connection not found');
   }
-  
+
   if (!connection.otp || !connection.otpExpiry) {
     throw new Error('No OTP found for this connection');
   }
-  
+
   if (new Date() > connection.otpExpiry) {
     throw new Error('OTP has expired');
   }
-  
+
   if (connection.otp !== otp) {
     throw new Error('Invalid OTP');
   }
-  
+
   // Mark as verified
   connection.verified = true;
   connection.verifiedBy = 'email';
   connection.verifiedAt = new Date();
   connection.otp = undefined;
   connection.otpExpiry = undefined;
-  
+
   await connection.save();
-  
+
+  // Update user verification status
+  await User.findByIdAndUpdate(userId, {
+    twitterVerified: true
+  });
+
   return true;
 };
 
@@ -409,193 +469,19 @@ const getTwitterConnectionStatus = async (userId) => {
   
   const connection = await UserTwitterConnection.findOne({ userId, twitterId: user.twitterId });
   
+  // Prefer the profile image from the connection, fallback to user document
+  const profileImageUrl = connection ? 
+    (connection.profileImageUrl || user.twitterProfileImageUrl) : 
+    user.twitterProfileImageUrl;
+  
   return {
     connected: true,
     verified: connection ? connection.verified : false,
     autoPostEnabled: connection ? connection.autoPostEnabled : false,
     screenName: user.twitterUsername,
-    twitterId: user.twitterId
+    twitterId: user.twitterId,
+    profileImageUrl: profileImageUrl || null
   };
-};
-
-/**
- * Post a tweet with optional image
- * @param {string} userId - User ID
- * @param {string} content - Tweet content
- * @param {Buffer} imageBuffer - Optional image buffer
- * @param {string} language - Language code for content
- * @returns {Promise<Object>} - Tweet result
- */
-const postTweet = async (userId, content, imageBuffer = null, language = 'en') => {
-  try {
-    // Get user's Twitter connection
-    const user = await User.findById(userId);
-    if (!user || !user.twitterId) {
-      throw new Error('Twitter account not connected');
-    }
-
-    const connection = await UserTwitterConnection.findOne({ 
-      userId, 
-      twitterId: user.twitterId 
-    });
-    
-    if (!connection || !connection.verified) {
-      throw new Error('Twitter account not verified');
-    }
-
-    // Initialize Twitter client with user tokens
-    const client = initializeTwitterClient(
-      connection.accessToken,
-      connection.refreshToken
-    );
-
-    // Handle image upload if provided
-    let mediaId = null;
-    if (imageBuffer) {
-      try {
-        // Upload media to Twitter
-        const mediaResponse = await client.v1.uploadMedia(imageBuffer, { type: 'png' });
-        mediaId = mediaResponse;
-      } catch (mediaError) {
-        console.error('Error uploading media:', mediaError);
-        throw new Error('Failed to upload image to Twitter');
-      }
-    }
-
-    // Prepare tweet parameters
-    const tweetParams = {
-      text: content
-    };
-
-    // Add media if available
-    if (mediaId) {
-      tweetParams.media = {
-        media_ids: [mediaId]
-      };
-    }
-
-    // Post the tweet
-    const tweetResult = await client.v2.tweet(tweetParams);
-    
-    // Store post record (optional: for analytics)
-    /*
-    await TwitterPost.create({
-      userId,
-      twitterId: user.twitterId,
-      tweetId: tweetResult.data.id,
-      content,
-      language,
-      hasImage: !!imageBuffer,
-      postedAt: new Date()
-    });
-    */
-
-    return {
-      success: true,
-      tweetId: tweetResult.data.id,
-      message: 'Tweet posted successfully'
-    };
-  } catch (error) {
-    console.error('Error posting tweet:', error);
-    
-    // Handle specific Twitter API errors
-    if (error.code === 401) {
-      throw new Error('Twitter authentication failed. Please reconnect your Twitter account.');
-    } else if (error.code === 403) {
-      throw new Error('Twitter API rate limit exceeded or content policy violation.');
-    } else if (error.message && error.message.includes('media')) {
-      throw new Error('Failed to upload image. Please try again with a different image.');
-    } else {
-      throw new Error(`Failed to post tweet: ${error.message || 'Unknown error'}`);
-    }
-  }
-};
-
-/**
- * Schedule a tweet for later posting
- * @param {string} userId - User ID
- * @param {string} content - Tweet content
- * @param {Date} scheduledTime - When to post the tweet
- * @param {Buffer} imageBuffer - Optional image buffer
- * @param {string} language - Language code for content
- * @returns {Promise<Object>} - Scheduled tweet result
- */
-const scheduleTweet = async (userId, content, scheduledTime, imageBuffer = null, language = 'en') => {
-  try {
-    // Validate scheduled time (must be in the future)
-    if (scheduledTime <= new Date()) {
-      throw new Error('Scheduled time must be in the future');
-    }
-
-    // Store scheduled tweet in database
-    /*
-    const scheduledTweet = await ScheduledTweet.create({
-      userId,
-      content,
-      scheduledTime,
-      language,
-      hasImage: !!imageBuffer,
-      imageBuffer: imageBuffer ? imageBuffer.toString('base64') : null,
-      createdAt: new Date()
-    });
-    */
-
-    return {
-      success: true,
-      scheduledId: 'scheduled_tweet_id', // scheduledTweet._id,
-      message: 'Tweet scheduled successfully',
-      scheduledTime
-    };
-  } catch (error) {
-    console.error('Error scheduling tweet:', error);
-    throw new Error(`Failed to schedule tweet: ${error.message || 'Unknown error'}`);
-  }
-};
-
-/**
- * Get user's recent tweets
- * @param {string} userId - User ID
- * @param {number} count - Number of tweets to fetch (default: 10)
- * @returns {Promise<Object>} - Recent tweets
- */
-const getRecentTweets = async (userId, count = 10) => {
-  try {
-    // Get user's Twitter connection
-    const user = await User.findById(userId);
-    if (!user || !user.twitterId) {
-      throw new Error('Twitter account not connected');
-    }
-
-    const connection = await UserTwitterConnection.findOne({ 
-      userId, 
-      twitterId: user.twitterId 
-    });
-    
-    if (!connection || !connection.verified) {
-      throw new Error('Twitter account not verified');
-    }
-
-    // Initialize Twitter client with user tokens
-    const client = initializeTwitterClient(
-      connection.accessToken,
-      connection.refreshToken
-    );
-
-    // Fetch user's recent tweets
-    const tweets = await client.v2.userTimeline(user.twitterId, {
-      max_results: count,
-      'tweet.fields': ['created_at', 'public_metrics', 'lang']
-    });
-
-    return {
-      success: true,
-      tweets: tweets.data?.data || [],
-      message: 'Recent tweets fetched successfully'
-    };
-  } catch (error) {
-    console.error('Error fetching recent tweets:', error);
-    throw new Error(`Failed to fetch recent tweets: ${error.message || 'Unknown error'}`);
-  }
 };
 
 module.exports = {
@@ -611,8 +497,5 @@ module.exports = {
   isTwitterVerified,
   getTwitterConnectionStatus,
   generateOTP,
-  generateVerificationCode,
-  postTweet,
-  scheduleTweet,
-  getRecentTweets
+  generateVerificationCode
 };

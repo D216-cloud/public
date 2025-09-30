@@ -3,11 +3,14 @@ const axios = require('axios');
 class GoogleAIService {
   constructor() {
     // Use the API key from environment variables
-    this.API_KEY = process.env.GEMINI_API_KEY || "AIzaSyCAlb0aYQbUDhg4sz5sjnY5qULvQFUc_5U";
+    this.API_KEY = process.env.GEMINI_API_KEY;
+    if (!this.API_KEY) {
+      throw new Error('GEMINI_API_KEY environment variable is not set');
+    }
     this.BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
   }
 
-  async generateContent(prompt, language = 'en') {
+  async generateContent(prompt, language = 'en', maxTokens = 1024, allowLongContent = false) {
     try {
       // Create language-specific prompt
       let languagePrompt = prompt;
@@ -29,13 +32,13 @@ class GoogleAIService {
         }
       }
 
-      // Try different models in order of preference (using correct model names)
-      const models = [
-        'models/gemini-2.0-flash-001',  // Stable version of Gemini 2.0 Flash
-        'models/gemini-2.0-flash',      // Gemini 2.0 Flash
-        'models/gemini-flash-latest',   // Latest release of Gemini Flash
-        'models/gemini-2.5-flash'       // Gemini 2.5 Flash
-      ];
+      // Try different models in order of preference
+        const models = [
+          'models/gemini-2.0-flash-exp',  // Gemini 2.0 Flash Experimental (recommended)
+          'models/gemini-2.0-pro-exp',    // Gemini 2.0 Pro Experimental
+          'models/gemini-1.5-flash',      // Gemini 1.5 Flash (legacy)
+          'models/gemini-1.5-pro',        // Gemini 1.5 Pro (legacy)
+        ];
 
       for (const model of models) {
         try {
@@ -48,10 +51,10 @@ class GoogleAIService {
                 }]
               }],
               generationConfig: {
-                temperature: 0.7,
+                temperature: 0.8,
                 topK: 40,
                 topP: 0.95,
-                maxOutputTokens: 1024,
+                maxOutputTokens: allowLongContent ? Math.min(maxTokens, 2048) : Math.min(maxTokens, 1024),
               },
               safetySettings: [
                 {
@@ -60,14 +63,6 @@ class GoogleAIService {
                 },
                 {
                   category: "HARM_CATEGORY_HATE_SPEECH",
-                  threshold: "BLOCK_MEDIUM_AND_ABOVE"
-                },
-                {
-                  category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                  threshold: "BLOCK_MEDIUM_AND_ABOVE"
-                },
-                {
-                  category: "HARM_CATEGORY_DANGEROUS_CONTENT",
                   threshold: "BLOCK_MEDIUM_AND_ABOVE"
                 }
               ]
@@ -83,10 +78,17 @@ class GoogleAIService {
           const generatedText = response.data.candidates?.[0]?.content?.parts?.[0]?.text || "";
           
           if (generatedText) {
-            // Clean up the generated text (remove extra whitespace, ensure it's under 280 chars)
-            const cleanedText = generatedText.trim().replace(/\n+/g, ' ').substring(0, 280);
-            console.log(`Successfully generated content with ${model}:`, cleanedText.substring(0, 100) + '...');
-            return cleanedText;
+            // For long content, don't limit to 280 characters
+            if (allowLongContent) {
+              const cleanedText = generatedText.trim();
+              console.log(`Successfully generated long content with ${model}, length: ${cleanedText.length}`);
+              return cleanedText;
+            } else {
+              // Clean up the generated text (remove extra whitespace, ensure it's under 280 chars for Twitter)
+              const cleanedText = generatedText.trim().replace(/\n+/g, ' ').substring(0, 280);
+              console.log(`Successfully generated content with ${model}:`, cleanedText.substring(0, 100) + '...');
+              return cleanedText;
+            }
           }
         } catch (modelError) {
           console.error(`Error with model ${model}:`, modelError.response?.data || modelError.message);

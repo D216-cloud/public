@@ -21,7 +21,6 @@ const upload = multer({
 
 const {
   beginTwitterAuth,
-  beginTwitterAuthPublic,
   handleTwitterCallback,
   sendOTP,
   verifyOTP,
@@ -31,13 +30,8 @@ const {
   getTwitterStatus,
   confirmTwitterConnection,
   disconnectTwitter,
-  verifyTwitterUsername,  // Add this new function
-  connectTwitterDirect,    // Add this new function
-  requestTwitterVerification, // Add this new function
-  verifyTwitterAccount,       // Add this new function
-  postTweet,        // Add this new function
-  scheduleTweet,    // Add this new function
-  getRecentTweets   // Add this new function
+  verifyTwitterUsername,
+  connectTwitterDirect
 } = require('../controllers/twitterController');
 
 const router = express.Router();
@@ -50,7 +44,7 @@ router.get('/auth', protect, beginTwitterAuth);
 // @route   GET /api/twitter/auth/public
 // @desc    Begin Twitter OAuth flow for non-authenticated users
 // @access  Public
-router.get('/auth/public', beginTwitterAuthPublic);
+// router.get('/auth/public', beginTwitterAuthPublic);
 
 // @route   GET /api/twitter/callback
 // @desc    Handle Twitter OAuth callback
@@ -70,12 +64,12 @@ router.post('/connect-direct', protect, connectTwitterDirect);
 // @route   POST /api/twitter/request-verification
 // @desc    Request verification code for Twitter account
 // @access  Private
-router.post('/request-verification', protect, requestTwitterVerification);
+// router.post('/request-verification', protect, requestTwitterVerification);
 
 // @route   POST /api/twitter/verify-account
 // @desc    Verify Twitter account with code
 // @access  Private
-router.post('/verify-account', protect, verifyTwitterAccount);
+// router.post('/verify-account', protect, verifyTwitterAccount);
 
 // @route   POST /api/twitter/send-otp
 // @desc    Send OTP to email for verification
@@ -120,16 +114,16 @@ router.post('/disconnect', protect, disconnectTwitter);
 // @route   POST /api/twitter/post
 // @desc    Post a tweet
 // @access  Private
-router.post('/post', protect, upload.single('image'), postTweet);
+// router.post('/post', protect, upload.single('image'), postTweet);
 
 // @route   POST /api/twitter/schedule
 // @desc    Schedule a tweet
 // @access  Private
-router.post('/schedule', protect, upload.single('image'), scheduleTweet);
+// router.post('/schedule', protect, upload.single('image'), scheduleTweet);
 
 // @route   GET /api/twitter/recent
 // @desc    Get recent tweets
 // @access  Private
-router.get('/recent', protect, getRecentTweets);
+// router.get('/recent', protect, getRecentTweets);
 
 module.exports = router;
