@@ -27,6 +27,7 @@ const {
 
 const {
   beginTwitterAuth,
+  beginTwitterAuthPublic,
   handleTwitterCallback,
   sendOTP,
   verifyOTP,
@@ -50,7 +51,7 @@ router.get('/auth', protect, beginTwitterAuth);
 // @route   GET /api/twitter/auth/public
 // @desc    Begin Twitter OAuth flow for non-authenticated users
 // @access  Public
-// router.get('/auth/public', beginTwitterAuthPublic);
+router.get('/auth/public', beginTwitterAuthPublic);
 
 // @route   GET /api/twitter/callback
 // @desc    Handle Twitter OAuth callback

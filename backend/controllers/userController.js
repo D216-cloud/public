@@ -199,15 +199,27 @@ const getUserTweets = async (req, res) => {
         };
       } catch (twitterError) {
         console.error('Error fetching Twitter tweets:', twitterError);
-        // Instead of mock data, return empty array with error information
-        tweets = [];
-        // Create error response
-        response = {
-          success: false,
-          tweets: [],
-          error: 'Failed to fetch Twitter tweets',
-          message: getTwitterErrorMessage(twitterError)
-        };
+        
+        // Handle rate limiting specifically
+        if (twitterError.code === 429) {
+          console.log('Twitter API rate limited, returning cached or empty data');
+          tweets = [];
+          response = {
+            success: true,
+            tweets: [],
+            message: 'Twitter API rate limited. Please wait a few minutes and refresh.',
+            rateLimited: true
+          };
+        } else {
+          // For other errors, return empty array with error information
+          tweets = [];
+          response = {
+            success: false,
+            tweets: [],
+            error: 'Failed to fetch Twitter tweets',
+            message: getTwitterErrorMessage(twitterError)
+          };
+        }
       }
     } else {
       console.log('User does not have Twitter connection or Bearer token not configured, returning empty tweets');

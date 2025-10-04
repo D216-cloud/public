@@ -61,21 +61,45 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/posts', postRoutes);
-app.use('/api/onboarding', onboardingRoutes);
-app.use('/api/twitter', twitterRoutes);
-app.use('/api/twitter-setup', twitterSetupRoutes);
-app.use('/api/user', userRoutes);
-app.use('/api/analytics', analyticsRoutes);
+// Routes (with safety wrapper to prevent crash if a router export is wrong)
+function safeMount(path, router, name){
+  if (typeof router === 'function') {
+    try {
+      app.use(path, router);
+      console.log(`✅ Mounted ${name} at ${path}`);
+    } catch (e) {
+      console.error(`❌ Failed mounting ${name} at ${path}:`, e.message);
+    }
+  } else {
+    console.error(`⚠️  Skipping ${name} at ${path}. Export type: ${typeof router}. Expected function (Express router).`);
+  }
+}
+
+console.log('Route module types (pre-mount):', {
+  auth: typeof authRoutes,
+  posts: typeof postRoutes,
+  onboarding: typeof onboardingRoutes,
+  twitter: typeof twitterRoutes,
+  twitterSetup: typeof twitterSetupRoutes,
+  user: typeof userRoutes,
+  analytics: typeof analyticsRoutes,
+});
+
+safeMount('/api/auth', authRoutes, 'authRoutes');
+safeMount('/api/posts', postRoutes, 'postRoutes');
+safeMount('/api/onboarding', onboardingRoutes, 'onboardingRoutes');
+safeMount('/api/twitter', twitterRoutes, 'twitterRoutes');
+safeMount('/api/twitter-setup', twitterSetupRoutes, 'twitterSetupRoutes');
+safeMount('/api/user', userRoutes, 'userRoutes');
+safeMount('/api/analytics', analyticsRoutes, 'analyticsRoutes');
 
 // Health check endpoint
 app.get('/', (req, res) => {
   res.json({ message: 'API is running...' });
 });
 
-const PORT = process.env.PORT || 5001;
+// Use 5000 as default so frontend hitting 5000 works
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

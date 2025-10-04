@@ -52,6 +52,28 @@ const postSchema = new mongoose.Schema(
       enum: ['draft', 'scheduled', 'posted', 'failed'],
       default: 'draft',
     },
+    hasMedia: {
+      type: Boolean,
+      default: false,
+    },
+    mediaCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 4, // Twitter's limit
+    },
+    mediaTypes: [{
+      type: String,
+      enum: ['image', 'video', 'gif'],
+    }],
+    externalId: {
+      type: String, // Twitter tweet ID, Instagram post ID, etc.
+      sparse: true, // allows null values but unique when present
+    },
+    mediaIds: {
+      type: [String],
+      default: []
+    },
     scheduledFor: {
       type: Date, // when post is planned
     },

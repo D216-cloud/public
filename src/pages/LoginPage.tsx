@@ -343,7 +343,21 @@ export default function LoginPage() {
         }
       } else {
         // User is not logged in, use the public flow
-        window.location.href = `${apiUrl}/api/twitter/auth/public`;
+        const response = await fetch(`${apiUrl}/api/twitter/auth/public`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success && data.authUrl) {
+          // Redirect to Twitter OAuth URL
+          window.location.href = data.authUrl;
+        } else {
+          throw new Error(data.message || 'Failed to initiate Twitter authentication');
+        }
       }
     } catch (error) {
       console.error("Twitter login error:", error);

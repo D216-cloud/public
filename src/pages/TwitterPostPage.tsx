@@ -280,7 +280,46 @@ export default function TwitterPostPage() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
+      // Validate existing uploads
+      if (uploadedVideos.length > 0) {
+        toast({
+          title: "Cannot add images",
+          description: "Cannot post videos and images together. Please remove videos first.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (uploadedImages.length + files.length > 4) {
+        toast({
+          title: "Too many images",
+          description: `Maximum 4 images allowed. You can add ${4 - uploadedImages.length} more.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
       Array.from(files).forEach((file) => {
+        // Validate file size (5MB max for images)
+        if (file.size > 5 * 1024 * 1024) {
+          toast({
+            title: "Image too large",
+            description: "Image file must be smaller than 5MB",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          toast({
+            title: "Invalid file type",
+            description: "Please select an image file",
+            variant: "destructive",
+          });
+          return;
+        }
+
         const reader = new FileReader();
         reader.onload = (e) => {
           setUploadedImages((prev) => [
@@ -293,13 +332,68 @@ export default function TwitterPostPage() {
         };
         reader.readAsDataURL(file);
       });
+
+      if (files.length > 0) {
+        toast({
+          title: `${files.length} image(s) uploaded`,
+          description: `Ready for posting (${uploadedImages.length + files.length}/4 images)`,
+        });
+      }
     }
   };
 
   const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
+      // Validate file count and existing uploads
+      if (uploadedVideos.length > 0) {
+        toast({
+          title: "Video limit reached",
+          description: "Only one video can be posted at a time",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (uploadedImages.length > 0) {
+        toast({
+          title: "Cannot add video",
+          description: "Cannot post videos and images together. Please remove images first.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (files.length > 1) {
+        toast({
+          title: "Too many videos",
+          description: "Only one video can be uploaded at a time",
+          variant: "destructive",
+        });
+        return;
+      }
+
       Array.from(files).forEach((file) => {
+        // Validate file size (512MB max)
+        if (file.size > 512 * 1024 * 1024) {
+          toast({
+            title: "Video too large",
+            description: "Video file must be smaller than 512MB",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Validate file type
+        if (!file.type.startsWith('video/')) {
+          toast({
+            title: "Invalid file type",
+            description: "Please select a video file",
+            variant: "destructive",
+          });
+          return;
+        }
+
         const reader = new FileReader();
         reader.onload = (e) => {
           setUploadedVideos((prev) => [
@@ -309,6 +403,11 @@ export default function TwitterPostPage() {
               url: e.target?.result as string,
             },
           ]);
+          
+          toast({
+            title: "Video uploaded",
+            description: `Video file ready for posting (${Math.round(file.size / (1024 * 1024))}MB)`,
+          });
         };
         reader.readAsDataURL(file);
       });
@@ -377,7 +476,8 @@ export default function TwitterPostPage() {
         
         // Handle Twitter connection requirement for auto-posting
         if (errorData.requiresTwitterConnection) {
-          throw new Error(`${errorData.message} Please go to Settings to connect your Twitter account.`);
+          const debugSuffix = errorData.debug ? ` (Debug: ${JSON.stringify(errorData.debug)})` : '';
+          throw new Error(`${errorData.message} Please go to Settings to connect your Twitter account.${debugSuffix}`);
         }
         
         throw new Error(errorData.message || `Failed to generate content: ${response.status} ${response.statusText}`);
@@ -435,10 +535,38 @@ export default function TwitterPostPage() {
   const handlePost = async () => {
     const contentToPost = generatedPost?.content || postContent;
 
-    if (!contentToPost.trim() && uploadedImages.length === 0) {
+    if (!contentToPost.trim() && uploadedImages.length === 0 && uploadedVideos.length === 0) {
       toast({
         title: "Cannot post",
-        description: "Please add some content or images",
+        description: "Please add some content, images, or videos",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate media combination
+    if (uploadedVideos.length > 1) {
+      toast({
+        title: "Cannot post",
+        description: "Only one video can be posted at a time",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (uploadedVideos.length > 0 && uploadedImages.length > 0) {
+      toast({
+        title: "Cannot post",
+        description: "Cannot post videos and images together",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (uploadedImages.length > 4) {
+      toast({
+        title: "Cannot post",
+        description: "Maximum 4 images can be posted at once",
         variant: "destructive",
       });
       return;
@@ -452,23 +580,50 @@ export default function TwitterPostPage() {
         throw new Error('Please log in to post content');
       }
 
-      // Post directly to Twitter using the real API
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/posts/post-to-x`, {
+      // Create FormData for the request
+      const formData = new FormData();
+      formData.append('content', contentToPost);
+      formData.append('template', "announcement");
+      formData.append('tone', selectedTone);
+      formData.append('length', selectedLength);
+      formData.append('audience', "general");
+      formData.append('style', "concise");
+      formData.append('topic', postContent);
+      formData.append('language', "en");
+
+      // Add uploaded files to FormData
+      const allMediaFiles = [...uploadedImages, ...uploadedVideos];
+      
+      if (allMediaFiles.length > 0) {
+        for (let i = 0; i < allMediaFiles.length; i++) {
+          const mediaItem = allMediaFiles[i];
+          try {
+            // Convert data URL to blob
+            const response = await fetch(mediaItem.url);
+            const blob = await response.blob();
+            
+            // Create a file from the blob
+            const fileName = `media_${i}_${Date.now()}.${blob.type.split('/')[1]}`;
+            const file = new File([blob], fileName, { type: blob.type });
+            
+            formData.append('media', file);
+          } catch (blobError) {
+            console.error('Error converting media file:', blobError);
+            throw new Error('Failed to process media file');
+          }
+        }
+      }
+
+  // Always use the media-capable endpoint
+  const endpoint = `${import.meta.env.VITE_API_URL}/api/posts/post-to-twitter`;
+
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
+          // Don't set Content-Type - let browser set it for FormData
         },
-        body: JSON.stringify({
-          content: contentToPost,
-          template: "announcement",
-          tone: selectedTone,
-          length: selectedLength,
-          audience: "general",
-          style: "concise",
-          topic: postContent,
-          language: "en"
-        }),
+        body: formData,
       });
 
       if (!response.ok) {
@@ -494,14 +649,19 @@ export default function TwitterPostPage() {
       const data = await response.json();
       console.log("Post response:", data);
 
+      const mediaDescription = data.mediaCount > 0 
+        ? ` with ${data.mediaCount} media file(s)` 
+        : '';
+
       toast({
         title: "Posted successfully!",
-        description: "Your post has been published to X (Twitter) and email notification sent!",
+        description: `Your post has been published to X (Twitter)${mediaDescription} and email notification sent!`,
       });
 
       // Reset form
       setPostContent("");
       setUploadedImages([]);
+      setUploadedVideos([]);
       setGeneratedPost(null);
       setScheduledDate("");
       setLocation("");
@@ -521,10 +681,10 @@ export default function TwitterPostPage() {
   const handleSchedule = async () => {
     const contentToPost = generatedPost?.content || postContent;
 
-    if (!contentToPost.trim() && uploadedImages.length === 0) {
+    if (!contentToPost.trim() && uploadedImages.length === 0 && uploadedVideos.length === 0) {
       toast({
         title: "Cannot schedule",
-        description: "Please add some content or images",
+        description: "Please add some content, images, or videos",
         variant: "destructive",
       });
       return;
@@ -773,6 +933,24 @@ export default function TwitterPostPage() {
                 )}
               </div>
 
+              {/* Media status indicator */}
+              {(uploadedImages.length > 0 || uploadedVideos.length > 0) && !generatedPost && (
+                <div className="mt-3 flex items-center space-x-4 text-sm font-semibold">
+                  {uploadedImages.length > 0 && (
+                    <div className="flex items-center text-blue-600">
+                      <ImageIcon className="h-4 w-4 mr-1" />
+                      <span>{uploadedImages.length}/4 images</span>
+                    </div>
+                  )}
+                  {uploadedVideos.length > 0 && (
+                    <div className="flex items-center text-purple-600">
+                      <Video className="h-4 w-4 mr-1" />
+                      <span>{uploadedVideos.length}/1 video</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {uploadedImages.length > 0 && !generatedPost && (
                 <div className="mt-4 sm:mt-6 grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-5">
                   {uploadedImages.map((image) => (
@@ -1007,7 +1185,7 @@ export default function TwitterPostPage() {
 
               <Button
                 onClick={handlePost}
-                disabled={isPosting || (!postContent.trim() && uploadedImages.length === 0 && !generatedPost)}
+                disabled={isPosting || (!postContent.trim() && uploadedImages.length === 0 && uploadedVideos.length === 0 && !generatedPost)}
                 className="flex-1 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white rounded-2xl px-6 sm:px-10 py-4 font-bold flex items-center justify-center shadow-2xl hover:shadow-[0_20px_40px_-12px_rgba(59,130,246,0.4)] transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 border border-white/20 backdrop-blur-sm text-base sm:text-lg"
               >
                 {isPosting ? (
@@ -1100,24 +1278,24 @@ export default function TwitterPostPage() {
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between pt-4 sm:pt-6 sm:pt-8 border-t border-gray-200/50">
-                    <div className="flex items-center space-x-6 sm:space-x-8 sm:space-x-12">
-                      <div className="flex items-center text-gray-600 text-sm sm:text-base sm:text-lg hover:text-blue-600 transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 font-semibold">
-                        <MessageCircle className="h-5 w-5 sm:h-6 sm:h-8 mr-1 sm:mr-2 sm:mr-3" />
+                  <div className="flex items-center justify-between pt-4 sm:pt-8 border-t border-gray-200/50">
+                    <div className="flex items-center space-x-6 sm:space-x-12">
+                      <div className="flex items-center text-gray-600 text-sm sm:text-lg hover:text-blue-600 transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 font-semibold">
+                        <MessageCircle className="h-5 w-5 sm:h-8 mr-1 sm:mr-3" />
                         <span>24</span>
                       </div>
-                      <div className="flex items-center text-gray-600 text-sm sm:text-base sm:text-lg hover:text-red-500 transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 font-semibold">
-                        <Heart className="h-5 w-5 sm:h-6 sm:h-8 mr-1 sm:mr-2 sm:mr-3" />
+                      <div className="flex items-center text-gray-600 text-sm sm:text-lg hover:text-red-500 transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 font-semibold">
+                        <Heart className="h-5 w-5 sm:h-8 mr-1 sm:mr-3" />
                         <span>142</span>
                       </div>
-                      <div className="flex items-center text-gray-600 text-sm sm:text-base sm:text-lg hover:text-blue-600 transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 font-semibold">
-                        <Share className="h-5 w-5 sm:h-6 sm:h-8 mr-1 sm:mr-2 sm:mr-3" />
+                      <div className="flex items-center text-gray-600 text-sm sm:text-lg hover:text-blue-600 transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 font-semibold">
+                        <Share className="h-5 w-5 sm:h-8 mr-1 sm:mr-3" />
                         <span>12</span>
                       </div>
                     </div>
 
-                    <div className={`flex items-center text-sm sm:text-base sm:text-lg font-black ${generatedPost.content.length > 280 ? 'text-red-600' : generatedPost.content.length > 250 ? 'text-yellow-600' : 'text-green-600'} bg-gradient-to-r ${generatedPost.content.length > 280 ? 'from-red-600 to-red-800' : generatedPost.content.length > 250 ? 'from-yellow-600 to-orange-600' : 'from-green-600 to-blue-600'} bg-clip-text text-transparent`}>
-                      <CheckCircle className="h-5 w-5 sm:h-6 sm:h-8 mr-1 sm:mr-2 sm:mr-3 drop-shadow-lg" />
+                    <div className={`flex items-center text-sm sm:text-lg font-black ${generatedPost.content.length > 280 ? 'text-red-600' : generatedPost.content.length > 250 ? 'text-yellow-600' : 'text-green-600'} bg-gradient-to-r ${generatedPost.content.length > 280 ? 'from-red-600 to-red-800' : generatedPost.content.length > 250 ? 'from-yellow-600 to-orange-600' : 'from-green-600 to-blue-600'} bg-clip-text text-transparent`}>
+                      <CheckCircle className="h-5 w-5 sm:h-8 mr-1 sm:mr-3 drop-shadow-lg" />
                       <span>{generatedPost.content.length} / 280 chars</span>
                       {generatedPost.content.length > 280 && (
                         <span className="ml-2 text-red-600 text-xs">⚠️ Too long!</span>

@@ -624,99 +624,187 @@ const testPost = async (req, res) => {
   }
 };
 
+// === Post with media (images / video) ===
+async function postToTwitterWithMedia(req, res) {
+  try {
+    const { content, language = 'en', template, tone, length, audience, style, topic } = req.body;
+    const userId = req.user._id;
+    const incomingFiles = (req.files && Array.isArray(req.files) && req.files.length > 0)
+      ? req.files
+      : (req.file ? [req.file] : []);
+
+    if (!content || !content.trim()) {
+      return res.status(400).json({ message: 'Content is required' });
+    }
+
+    if (content.length > 280) {
+      return res.status(400).json({
+        message: 'Content too long for X (Twitter)',
+        currentLength: content.length,
+        maxLength: 280
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Determine user twitter id (fallback to latest connection)
+    let effectiveTwitterId = user.twitterId;
+    if (!effectiveTwitterId) {
+      const latestConn = await UserTwitterConnection.findOne({ userId }).sort({ connectedAt: -1 });
+      if (latestConn) {
+        effectiveTwitterId = latestConn.twitterId;
+        user.twitterId = latestConn.twitterId;
+        try { await user.save(); } catch (e) { console.log('Persist twitterId failed:', e.message); }
+      }
+    }
+
+    if (!effectiveTwitterId) {
+      return res.status(400).json({
+        message: 'Twitter account not connected. Please connect first.',
+        requiresTwitterConnection: true,
+        debug: { reason: 'NO_TWITTER_ID' }
+      });
+    }
+
+    const primaryConnection = await UserTwitterConnection.findOne({ userId }).sort({ connectedAt: -1 });
+    let credentialsSource = 'user-connection';
+    let client;
+    if (primaryConnection && primaryConnection.accessToken && primaryConnection.accessTokenSecret) {
+      client = new TwitterApi({
+        appKey: process.env.TWITTER_API_KEY,
+        appSecret: process.env.TWITTER_API_SECRET,
+        accessToken: primaryConnection.accessToken,
+        accessSecret: primaryConnection.accessTokenSecret,
+      });
+    } else {
+      credentialsSource = 'environment';
+      client = new TwitterApi({
+        appKey: process.env.TWITTER_API_KEY,
+        appSecret: process.env.TWITTER_API_SECRET,
+        accessToken: process.env.TWITTER_ACCESS_TOKEN,
+        accessSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
+      });
+    }
+
+    // Media handling
+    const mediaIds = [];
+    if (incomingFiles.length > 0) {
+      const imageFiles = incomingFiles.filter(f => f.mimetype.startsWith('image/'));
+      const videoFiles = incomingFiles.filter(f => f.mimetype.startsWith('video/'));
+
+      if (videoFiles.length > 1) {
+        return res.status(400).json({ message: 'Only one video allowed' });
+      }
+      if (videoFiles.length > 0 && imageFiles.length > 0) {
+        return res.status(400).json({ message: 'Cannot mix images and video' });
+      }
+      if (imageFiles.length > 4) {
+        return res.status(400).json({ message: 'Maximum 4 images allowed' });
+      }
+
+      // Upload images
+      for (const img of imageFiles) {
+        try {
+          // twitter-api-v2 can't always infer type from raw buffer, provide explicit type mapping
+          let mediaType = 'png';
+          if (img.mimetype === 'image/jpeg' || img.mimetype === 'image/jpg') mediaType = 'jpg';
+          else if (img.mimetype === 'image/gif') mediaType = 'gif';
+          else if (img.mimetype === 'image/webp') mediaType = 'webp';
+          // Default fallback already png
+          const id = await client.v1.uploadMedia(img.buffer, { type: mediaType });
+          mediaIds.push(id);
+        } catch (e) {
+          console.error('Image upload failed:', e);
+          return res.status(500).json({ message: 'Image upload failed', error: e.message });
+        }
+      }
+
+      // Upload single video if present
+      if (videoFiles.length === 1) {
+        const vid = videoFiles[0];
+        if (vid.size > 512 * 1024 * 1024) {
+          return res.status(400).json({ message: 'Video too large (>512MB)' });
+        }
+        try {
+          const id = await client.v1.uploadMedia(vid.buffer, { type: 'video/mp4' });
+          mediaIds.push(id);
+        } catch (e) {
+          console.error('Video upload failed:', e);
+          return res.status(500).json({ message: 'Video upload failed', error: e.message });
+        }
+      }
+    }
+
+    // Post tweet
+    let tweetResponse;
+    try {
+      const payload = { text: content };
+      if (mediaIds.length > 0) {
+        payload.media = { media_ids: mediaIds };
+      }
+      tweetResponse = await client.v2.tweet(payload);
+    } catch (e) {
+      console.error('Tweet post failed:', e);
+      return res.status(500).json({ message: 'Failed to post tweet', error: e.message });
+    }
+
+    const post = new Post({
+      userId: user._id,
+      content,
+      template,
+      tone,
+      length,
+      audience,
+      style,
+      topic,
+      language,
+      platform: 'X',
+      status: 'posted',
+      postedAt: new Date(),
+      externalId: tweetResponse.data.id,
+      hasMedia: mediaIds.length > 0,
+      mediaCount: mediaIds.length,
+      mediaIds,
+      credentialsSource
+    });
+    await post.save();
+
+    // Optional success email
+    try {
+      if (user.email && user.name) {
+        await sendPostSuccessEmail(user.email, user.name, content, 'X (Twitter)');
+      }
+    } catch (emailErr) {
+      console.error('Post success email failed:', emailErr.message);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Tweet posted successfully',
+      tweetId: tweetResponse.data.id,
+      content,
+      characterCount: content.length,
+      hasMedia: mediaIds.length > 0,
+      mediaCount: mediaIds.length,
+      mediaIds,
+      credentialsSource,
+      url: `https://twitter.com/i/web/status/${tweetResponse.data.id}`
+    });
+  } catch (error) {
+    console.error('Error in postToTwitterWithMedia:', error);
+    return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+}
+
 module.exports = {
   postToTwitter,
   postToX,
   autoPostGeneratedContent,
   generateContent,
-  postToTwitterWithMedia: async (req, res) => {
-    try {
-      const { content, language = 'en', template, tone, length, audience, style, topic } = req.body;
-      const userId = req.user._id;
-      const file = req.file;
-
-      if (!content || content.trim().length === 0) {
-        return res.status(400).json({ message: 'Content is required' });
-      }
-
-      if (content.length > 270) {
-        return res.status(400).json({ 
-          message: 'Content is too long. Please keep it under 270 characters for Twitter.',
-          currentLength: content.length,
-          maxLength: 270
-        });
-      }
-
-      const user = await User.findById(userId);
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-
-      if (!user.twitterId) {
-        return res.status(400).json({ 
-          message: 'Twitter account not connected. Please connect your Twitter account first.',
-          requiresTwitterConnection: true
-        });
-      }
-
-      const twitterConnection = await UserTwitterConnection.findOne({ 
-        userId: userId, 
-        twitterId: user.twitterId 
-      });
-      
-      if (!twitterConnection || !twitterConnection.accessToken) {
-        return res.status(400).json({ 
-          message: 'Twitter account not properly connected. Please reconnect your Twitter account.',
-          requiresTwitterConnection: true
-        });
-      }
-
-      let fileBuffer = null;
-      if (file) {
-        fileBuffer = file.buffer;
-      }
-
-      const twitterResponse = await postToTwitter(content, userId, fileBuffer);
-
-      const post = new Post({
-        userId: user._id,
-        content: content,
-        template: template,
-        tone: tone,
-        length: length,
-        audience: audience,
-        style: style,
-        topic: topic,
-        language: language,
-        platform: 'X',
-        status: 'posted',
-        hasMedia: !!fileBuffer,
-        postedAt: new Date(),
-        externalId: twitterResponse.id
-      });
-
-      await post.save();
-
-      try {
-        if (user.email && user.name) {
-          await sendPostSuccessEmail(user.email, user.name, content, 'X (Twitter)');
-        }
-      } catch (emailError) {
-        console.error('Error sending post success email:', emailError);
-      }
-
-      res.status(200).json({
-        message: 'Successfully posted to Twitter',
-        post: post,
-        tweetId: twitterResponse.id,
-        characterCount: content.length,
-        hasMedia: !!fileBuffer
-      });
-    } catch (error) {
-      console.error('Error posting to Twitter:', error);
-      res.status(500).json({ message: 'Server error', error: error.message });
-    }
-  },
+  postToTwitterWithMedia,
   getPostedContent: async (req, res) => {
     try {
       const userId = req.user._id;
