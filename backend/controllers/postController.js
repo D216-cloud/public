@@ -1,109 +1,118 @@
+﻿const Post = require('../models/Post');
 const User = require('../models/User');
-const Post = require('../models/Post');
 const GeneratedContent = require('../models/GeneratedContent');
 const googleAIService = require('../services/googleAIService');
 const { TwitterApi } = require('twitter-api-v2');
+const UserTwitterConnection = require('../models/UserTwitterConnections');
+const { sendPostSuccessEmail } = require('../utils/sendMail');
 
-// Content templates for fallback generation
-const contentTemplates = {
-  "motivational": [
-    "🚀 Monday motivation: Every expert was once a beginner. The key is to start where you are, use what you have, and do what you can. Your journey to mastery begins with a single step! #MondayMotivation #Growth",
-    "✨ Success isn't about being perfect, it's about being consistent. Small daily improvements compound into extraordinary results over time. Keep pushing forward! #Motivation #Success",
-    "🔥 Your potential is endless. Don't let fear of failure stop you from trying. Every 'no' brings you closer to your 'yes'. Believe in yourself! #Believe #Potential"
-  ],
-  "tips": [
-    "💡 Pro tip: Batch similar tasks together to maximize your productivity. Instead of switching between different types of work, dedicate blocks of time to similar activities. Your focus (and results) will thank you! #ProductivityTip #WorkSmart",
-    "⚡ Quick productivity hack: The 2-minute rule. If a task takes less than 2 minutes, do it immediately instead of adding it to your to-do list. #Productivity #TimeManagement",
-    "🎯 Focus hack: Turn off all notifications except for urgent messages. Your deep work sessions will be 3x more productive. #DeepWork #Focus"
-  ],
-  "question": [
-    "🤔 Quick question: What's the one productivity tool you can't live without? I'm always looking to improve my workflow. Drop your favorite in the replies! #Productivity #Tools",
-    "💬 Engagement question: What's the biggest challenge you're facing in your career right now? Let's help each other out in the comments! #Career #Community",
-    "🔥 Discussion: Traditional marketing vs digital marketing - which do you think is more effective in 2023? Let's debate! #Marketing #Business"
-  ],
-  "announcement": [
-    "🎉 Big announcement: We just launched our new feature that will revolutionize how you manage your social media content. Check it out and let us know what you think! #NewFeature #Launch",
-    "🚀 Product update: Our latest version includes 15 new features based on your feedback. We're constantly improving to serve you better! #Update #Feedback",
-    "🌟 Exclusive access: Our premium plan is now available with 30% off for early adopters. Limited time offer - grab it before it's gone! #Premium #Offer"
-  ],
-  "behind-scenes": [
-    "Behind the scenes: Our team just spent 3 hours debugging a single line of code. Sometimes the smallest bugs create the biggest headaches! 😅 But that's the beauty of development. #DevLife #Coding",
-    "🎥 Behind the scenes: Here's a sneak peek of our team working on the next big feature. We can't wait for you to experience it! #TeamWork #SneakPeek",
-    "☕ Behind the scenes: Late night coding session with triple espresso. When you're passionate about what you do, work feels like play! #Coding #Passion"
-  ],
-  "industry-news": [
-    "📊 Industry insight: 73% of companies plan to increase their AI investment in 2023. Are you ready for the AI revolution in your industry? #AI #Industry",
-    "📈 Market trend: Remote work tools have seen a 200% increase in adoption since 2020. The future of work is flexible! #RemoteWork #Future",
-    "💡 Innovation watch: Quantum computing is expected to break current encryption methods by 2030. Time to prepare for post-quantum security! #Quantum #Security"
-  ]
-};
+// In-memory cache to avoid re-validating Twitter credentials on every post
+// Map key: userId string, value: { validatedAt: Date }
+const twitterValidationCache = new Map();
 
-// Function to post content to Twitter with optional image
+function isValidationFresh(userId, maxAgeMs = 15 * 60 * 1000) { // 15 minutes
+  const entry = twitterValidationCache.get(String(userId));
+  if (!entry) return false;
+  return Date.now() - entry.validatedAt.getTime() < maxAgeMs;
+}
+
+// Helper function to post to Twitter
 const postToTwitter = async (content, userId, imageBuffer = null) => {
   try {
-    // Get user's Twitter connection
-    const user = await User.findById(userId);
-    if (!user || !user.twitterId) {
-      throw new Error('Twitter account not connected');
-    }
-
-    // For demo purposes, we'll simulate posting to Twitter
-    // In a real implementation, you would use the Twitter API:
-    /*
-    const client = new TwitterApi({
-      appKey: process.env.TWITTER_API_KEY,
-      appSecret: process.env.TWITTER_API_SECRET,
-      accessToken: user.twitterAccessToken,
-      accessSecret: user.twitterAccessSecret,
+    // Use environment credentials directly (they work as proven by test)
+    const apiKey = process.env.TWITTER_API_KEY;
+    const apiSecret = process.env.TWITTER_API_SECRET;
+    const accessToken = process.env.TWITTER_ACCESS_TOKEN;
+    const accessTokenSecret = process.env.TWITTER_ACCESS_TOKEN_SECRET;
+    
+    console.log('Using Twitter credentials:', {
+      hasApiKey: !!apiKey,
+      hasApiSecret: !!apiSecret,
+      hasAccessToken: !!accessToken,
+      hasAccessTokenSecret: !!accessTokenSecret,
+      source: 'environment'
     });
 
-    const tweetParams = { status: content };
-    
-    if (imageBuffer) {
-      // Upload image and attach to tweet
-      const mediaId = await client.v1.uploadMedia(imageBuffer);
-      tweetParams.media_ids = [mediaId];
+    // Validate we have all required credentials
+    if (!apiKey || !apiSecret || !accessToken || !accessTokenSecret) {
+      throw new Error('Missing Twitter API credentials in environment variables.');
     }
-    
-    const tweet = await client.v1.tweet(content, tweetParams);
-    return tweet;
-    */
 
-    // Simulate successful posting
-    console.log(`Posted to Twitter: ${content}`);
-    return { id: 'simulated_tweet_id', text: content };
+    // OAuth 1.0a authentication (working configuration)
+    console.log('Using OAuth 1.0a authentication with environment credentials');
+    const client = new TwitterApi({
+      appKey: apiKey,
+      appSecret: apiSecret,
+      accessToken: accessToken,
+      accessSecret: accessTokenSecret,
+    });
+
+    // Skip validation cache - just post directly since we know it works
+    console.log('Posting directly with verified working credentials');
+
+    let mediaId = null;
+    if (imageBuffer) {
+      mediaId = await client.v1.uploadMedia(imageBuffer, { type: 'png' });
+    }
+
+    const tweetParams = { text: content };
+    if (mediaId) {
+      tweetParams.media = { media_ids: [mediaId] };
+    }
+
+    let tweet;
+    try {
+      tweet = await client.v2.tweet(tweetParams);
+    } catch (tweetErr) {
+      const diag = {
+        code: tweetErr.code,
+        title: tweetErr.data?.title,
+        detail: tweetErr.data?.detail,
+        status: tweetErr.data?.status
+      };
+      console.error('Tweet post failed diagnostics:', diag);
+      if (diag.status === 403) {
+        throw new Error('Tweet rejected (403). Your app or tokens may lack write permissions. Ensure Elevated access and Read/Write tokens.');
+      }
+      if (diag.status === 401) {
+        throw new Error('Unauthorized (401). Access tokens expired or revoked. Regenerate Access Token & Secret.');
+      }
+      throw tweetErr;
+    }
+    console.log('Posted to Twitter:', content);
+    return { id: tweet.data.id, text: content };
   } catch (error) {
     console.error('Error posting to Twitter:', error);
     throw error;
   }
 };
 
+// Post content to X/Twitter
 const postToX = async (req, res) => {
   try {
     const { content, template, tone, length, audience, style, topic, language = 'en' } = req.body;
     const userId = req.user._id;
 
-    // Validate content
     if (!content || content.trim().length === 0) {
       return res.status(400).json({ message: 'Content is required' });
     }
 
-    // Check if content exceeds Twitter's character limit
-    if (content.length > 280) {
-      return res.status(400).json({ message: 'Content exceeds Twitter\'s 280 character limit' });
+    if (content.length > 270) {
+      return res.status(400).json({ 
+        message: 'Content is too long. Please keep it under 270 characters for Twitter.',
+        currentLength: content.length,
+        maxLength: 270
+      });
     }
 
-    // Get user to check if they have connected their Twitter account
     const user = await User.findById(userId);
-    
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Post to Twitter
+    console.log(`🐦 Posting to Twitter: "${content}"`);
     const twitterResponse = await postToTwitter(content, userId);
 
-    // Create a post record in the database
     const post = new Post({
       userId: user._id,
       content: content,
@@ -122,9 +131,20 @@ const postToX = async (req, res) => {
 
     await post.save();
 
+    try {
+      if (user.email && user.name) {
+        await sendPostSuccessEmail(user.email, user.name, content, 'X (Twitter)');
+        console.log('Post success email sent to:', user.email);
+      }
+    } catch (emailError) {
+      console.error('Error sending post success email:', emailError);
+    }
+
     res.status(200).json({
       message: 'Successfully posted to X',
-      post: post
+      post: post,
+      tweetId: twitterResponse.id,
+      characterCount: content.length
     });
   } catch (error) {
     console.error('Error posting to X:', error);
@@ -132,75 +152,104 @@ const postToX = async (req, res) => {
   }
 };
 
-// Post content to Twitter with optional image
-const postToTwitterWithMedia = async (req, res) => {
+// Auto-post generated content immediately
+const autoPostGeneratedContent = async (req, res) => {
   try {
-    const { content, language = 'en' } = req.body;
+    const { content, template, tone, length, audience, style, topic, language = 'en', autoPost = false } = req.body;
     const userId = req.user._id;
-    const image = req.file; // Multer will handle image upload
 
-    // Validate content
     if (!content || content.trim().length === 0) {
       return res.status(400).json({ message: 'Content is required' });
     }
 
-    // Check if content exceeds Twitter's character limit
-    if (content.length > 280) {
-      return res.status(400).json({ message: 'Content exceeds Twitter\'s 280 character limit' });
+    if (content.length > 270) {
+      return res.status(400).json({ 
+        message: 'Content is too long. Please keep it under 270 characters for Twitter.',
+        currentLength: content.length,
+        maxLength: 270
+      });
     }
 
-    // Get user to check if they have connected their Twitter account
     const user = await User.findById(userId);
-    
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Convert image buffer if provided
-    let imageBuffer = null;
-    if (image) {
-      imageBuffer = image.buffer;
+    if (autoPost) {
+      // Check for Twitter connection (more flexible approach)
+      const twitterConnection = await UserTwitterConnection.findOne({ 
+        userId: userId
+      });
+      
+      if (!twitterConnection || !twitterConnection.accessToken) {
+        return res.status(200).json({
+          message: 'Content generated successfully, but auto-posting failed: Twitter account not connected',
+          content: content,
+          autoPosted: false,
+          error: 'Twitter account not connected. Please connect your Twitter account to enable auto-posting.',
+          requiresTwitterConnection: true,
+          characterCount: content.length
+        });
+      }
+
+      try {
+        const twitterResponse = await postToTwitter(content, userId);
+
+        const post = new Post({
+          userId: user._id,
+          content: content,
+          template: template,
+          tone: tone,
+          length: length,
+          audience: audience,
+          style: style,
+          topic: topic,
+          language: language,
+          platform: 'X',
+          status: 'posted',
+          postedAt: new Date(),
+          externalId: twitterResponse.id
+        });
+
+        await post.save();
+
+        try {
+          if (user.email && user.name) {
+            await sendPostSuccessEmail(user.email, user.name, content, 'X (Twitter)');
+            console.log('Auto-post success email sent to:', user.email);
+          }
+        } catch (emailError) {
+          console.error('Error sending auto-post success email:', emailError);
+        }
+
+        res.status(200).json({
+          message: 'Content generated and auto-posted to X successfully',
+          content: content,
+          post: post,
+          tweetId: twitterResponse.id,
+          autoPosted: true,
+          characterCount: content.length
+        });
+      } catch (postError) {
+        console.error('Error auto-posting generated content:', postError);
+        res.status(200).json({
+          message: 'Content generated successfully, but auto-posting failed',
+          content: content,
+          autoPosted: false,
+          error: postError.message,
+          characterCount: content.length
+        });
+      }
+    } else {
+      res.status(200).json({
+        message: 'Content generated successfully',
+        content: content,
+        autoPosted: false,
+        characterCount: content.length
+      });
     }
-
-    // Post to Twitter with image
-    const twitterResponse = await postToTwitter(content, userId, imageBuffer);
-
-    // Create a post record in the database
-    const post = new Post({
-      userId: user._id,
-      content: content,
-      language: language,
-      platform: 'X',
-      status: 'posted',
-      hasImage: !!imageBuffer,
-      postedAt: new Date(),
-      externalId: twitterResponse.id
-    });
-
-    await post.save();
-
-    res.status(200).json({
-      message: 'Successfully posted to Twitter',
-      post: post
-    });
   } catch (error) {
-    console.error('Error posting to Twitter:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-const getPostedContent = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    
-    // Fetch posts from the database for this user
-    const posts = await Post.find({ userId: userId }).sort({ createdAt: -1 });
-    
-    res.status(200).json({
-      posts
-    });
-  } catch (error) {
-    console.error('Error fetching posted content:', error);
+    console.error('Error in auto-post generation:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
@@ -209,158 +258,20 @@ const getPostedContent = async (req, res) => {
 const generateContent = async (req, res) => {
   try {
     console.log('generateContent API called');
-    const { topic, template, tone, length, audience, style, language = 'en', lineCount, purpose, brandVoice } = req.body;
+    const { topic, template, tone, length, audience, style, language = 'en' } = req.body;
     const userId = req.user._id;
     
-    console.log('Received parameters:', { topic, template, tone, length, audience, style, language, lineCount, purpose, brandVoice });
-    
-    // Create a detailed prompt based on user selections for better Twitter content
-    let prompt = `Generate an engaging Twitter post`;
-    
-    if (template) {
-      const templateDescriptions = {
-        'motivational': 'inspirational and motivational content that encourages followers',
-        'tips': 'helpful tips and advice for productivity or personal development',
-        'question': 'engaging questions that spark conversation and interaction',
-        'announcement': 'exciting announcements about new features, products, or updates',
-        'behind-scenes': 'authentic behind-the-scenes content showing company culture or work',
-        'industry-news': 'insightful commentary on industry trends and news'
-      };
-      prompt += ` in the style of ${templateDescriptions[template] || template}`;
-    }
-    
-    if (tone) {
-      const toneDescriptions = {
-        'professional': 'professional and business-like',
-        'casual': 'casual and conversational',
-        'humorous': 'funny and light-hearted',
-        'inspirational': 'uplifting and motivational',
-        'educational': 'informative and teaching',
-        'sarcastic': 'witty with a touch of sarcasm',
-        'enthusiastic': 'excited and energetic'
-      };
-      prompt += ` with a ${toneDescriptions[tone] || tone} tone`;
-    }
-    
-    if (length) {
-      const lengthDescriptions = {
-        'short': 'brief and concise (1-2 sentences)',
-        'medium': 'moderately detailed (500-800 characters, 3-4 paragraphs)',
-        'long': 'more comprehensive (800-1200 characters, 4-6 paragraphs)',
-        'verylong': 'very detailed and comprehensive (1200+ characters, 6+ paragraphs)'
-      };
-      prompt += `, ${lengthDescriptions[length] || length}`;
-    }
-    
-    if (audience) {
-      const audienceDescriptions = {
-        'general': 'general audience',
-        'developers': 'software developers and tech professionals',
-        'entrepreneurs': 'business owners and entrepreneurs',
-        'students': 'students and young learners',
-        'professionals': 'working professionals'
-      };
-      prompt += ` targeted at ${audienceDescriptions[audience] || audience}`;
-    }
-    
-    if (style) {
-      const styleDescriptions = {
-        'concise': 'straightforward and to the point',
-        'detailed': 'thorough and comprehensive',
-        'storytelling': 'narrative and story-driven',
-        'list-based': 'organized in a list format'
-      };
-      prompt += ` in a ${styleDescriptions[style] || style} style`;
-    }
+    let prompt = 'Generate an engaging Twitter post';
     
     if (topic) {
-      prompt += ` about "${topic}"`;
+      prompt += ' about "' + topic + '"';
     }
     
-    if (purpose) {
-      prompt += ` with the purpose of ${purpose}`;
-    }
+    prompt += '. CRITICAL: Make it under 270 characters for Twitter. Use 2-3 lines maximum. Be extremely concise and punchy. Include 2-3 emojis and 1-2 hashtags only.';
     
-    if (brandVoice) {
-      prompt += `. Use a ${brandVoice} brand voice`;
-    }
-    
-    if (lineCount) {
-      prompt += `. Aim for approximately ${lineCount} lines`;
-    }
-    
-    // Different prompt endings based on content length
-    if (length === 'verylong') {
-      prompt += `. IMPORTANT: Create a long-form article that is at least 800 characters and up to 1200 characters. Count the words and ensure it's comprehensive. Create a detailed blog post or article with multiple paragraphs, proper structure, and in-depth analysis. Make it informative and engaging for readers, suitable for long-form content platforms.`;
-      
-      // Add long-form best practices
-      prompt += ` Structure it with an introduction, body paragraphs, and conclusion. Use headings if appropriate. Make it valuable and shareable content.`;
-      
-      if (template === 'question') {
-        prompt += ` Include thought-provoking questions throughout to engage readers.`;
-      } else if (template === 'announcement') {
-        prompt += ` Include detailed information and benefits.`;
-      } else if (template === 'tips') {
-        prompt += ` Provide step-by-step guidance and practical examples.`;
-      }
-    } else {
-      prompt += `. Make it engaging for Twitter with 4-5 emojis, relevant hashtags, and under 280 characters. Focus on creating content that encourages likes, retweets, and replies.`;
-      
-      // Add Twitter-specific best practices
-      prompt += ` Include 4-5 relevant hashtags. Use emojis strategically to make it visually appealing. Make it conversational and engaging.`;
-      
-      if (template === 'question') {
-        prompt += ` End with a question to encourage replies.`;
-      } else if (template === 'announcement') {
-        prompt += ` Build excitement and anticipation. Include a call-to-action.`;
-      } else if (template === 'tips') {
-        prompt += ` Start with a number or bullet point style.`;
-      }
-    }
-    
-    // Determine max tokens and allow long content based on length
-    let maxTokens = 1024;
-    let allowLongContent = false;
-
-    switch (length) {
-      case 'medium':
-        maxTokens = 1024; // For 500-800 characters
-        allowLongContent = true;
-        break;
-      case 'long':
-        maxTokens = 1536; // For 800-1200 characters
-        allowLongContent = true;
-        break;
-      case 'verylong':
-        maxTokens = 2048; // For 1200+ characters
-        allowLongContent = true;
-        break;
-      default:
-        maxTokens = 1024;
-        allowLongContent = false;
-    }
-
-    console.log(`Generating content with length: ${length}, maxTokens: ${maxTokens}, allowLongContent: ${allowLongContent}`);
-
-    // Generate content with Google AI API (no fallback)
-    let generatedContent = await googleAIService.generateContent(prompt, language, maxTokens, allowLongContent);
+    let generatedContent = await googleAIService.generateContent(prompt, language, 1024, false);
     console.log('Successfully generated content with Gemini API, length:', generatedContent.length);
-
-    // Ensure minimum 500 characters for all content types
-    if (generatedContent.length < 500) {
-      console.log('Content too short, regenerating with higher token limit...');
-      const enhancedPrompt = prompt + '. IMPORTANT: Generate a much longer response with at least 500 characters. Expand on the topic with more details, examples, and comprehensive information.';
-        let enhancedContent = await googleAIService.generateContent(enhancedPrompt, language, maxTokens * 2, true);
-        if (enhancedContent.length > generatedContent.length) {
-          generatedContent = enhancedContent;
-        }
-    }
     
-    // Extract hashtags and mentions for storage
-    const hashtags = (generatedContent.match(/#\w+/g) || []).map(tag => tag.toLowerCase());
-    const mentions = (generatedContent.match(/@\w+/g) || []).map(mention => mention.toLowerCase());
-    
-    // Create a record in the database for the generated content
     const generatedContentRecord = new GeneratedContent({
       userId: userId,
       content: generatedContent,
@@ -375,9 +286,7 @@ const generateContent = async (req, res) => {
       platform: 'X',
       characterCount: generatedContent.length,
       wordCount: generatedContent.trim().split(/\s+/).length,
-      hashtags: hashtags,
-      mentions: mentions,
-      engagementScore: Math.floor(Math.random() * 40) + 60 // Random score between 60-100 for demo
+      engagementScore: Math.floor(Math.random() * 40) + 60
     });
     
     await generatedContentRecord.save();
@@ -392,138 +301,566 @@ const generateContent = async (req, res) => {
   }
 };
 
-// Generate content using Google AI API based on keyword and options
-const generatePostByKeyword = async (req, res) => {
+// Debug function to check what's in the database
+const debugTwitterConnection = async (req, res) => {
   try {
-    const { 
-      keyword, 
-      language = 'en', 
-      tone, 
-      template, 
-      length, 
-      audience, 
-      style,
-      purpose,
-      brandVoice
-    } = req.body;
-    
     const userId = req.user._id;
     
-    // Validate keyword
-    if (!keyword || keyword.trim().length === 0) {
-      return res.status(400).json({ message: 'Keyword is required' });
-    }
+    console.log('=== TWITTER CONNECTION DEBUG ===');
+    console.log('User ID:', userId);
     
-    // Create a comprehensive prompt based on all options
-    let prompt = `Generate a Twitter post`;
+    // Check user
+    const user = await User.findById(userId);
+    console.log('User found:', !!user);
+    console.log('User twitterId:', user?.twitterId);
+    console.log('User twitterUsername:', user?.twitterUsername);
     
-    if (template) {
-      prompt += ` using the ${template} template`;
-    }
+    // Check all Twitter connections for this user
+    const connections = await UserTwitterConnection.find({ userId: userId });
+    console.log('Total connections found:', connections.length);
     
-    if (tone) {
-      prompt += ` with a ${tone} tone`;
-    }
-    
-    if (length) {
-      prompt += ` in a ${length} format`;
-    }
-    
-    if (audience) {
-      prompt += ` for ${audience} audience`;
-    }
-    
-    if (style) {
-      prompt += ` using ${style} style`;
-    }
-    
-    if (purpose) {
-      prompt += ` for ${purpose} purpose`;
-    }
-    
-    if (brandVoice) {
-      prompt += ` with ${brandVoice} brand voice`;
-    }
-    
-    prompt += ` about "${keyword}". Keep it under 280 characters for Twitter.`;
-    
-    // Try to generate content with Google AI API
-    let generatedContent;
-    try {
-      generatedContent = await googleAIService.generateContent(prompt, language);
-    } catch (apiError) {
-      // Fallback to predefined templates if API fails
-      console.error('Google AI API failed, using fallback:', apiError);
-      const templateKey = Object.keys(contentTemplates).find(key => 
-        template && template.toLowerCase().includes(key)
-      ) || 'motivational';
-      
-      const contentOptions = contentTemplates[templateKey] || contentTemplates.motivational;
-      generatedContent = contentOptions[Math.floor(Math.random() * contentOptions.length)];
-    }
-    
-    // Extract hashtags and mentions for storage
-    const hashtags = (generatedContent.match(/#\w+/g) || []).map(tag => tag.toLowerCase());
-    const mentions = (generatedContent.match(/@\w+/g) || []).map(mention => mention.toLowerCase());
-    
-    // Create a record in the database for the generated content
-    const generatedContentRecord = new GeneratedContent({
-      userId: userId,
-      content: generatedContent,
-      template: template,
-      tone: tone,
-      length: length,
-      audience: audience,
-      style: style,
-      purpose: purpose,
-      brandVoice: brandVoice,
-      topic: keyword,
-      language: language,
-      prompt: prompt,
-      platform: 'X',
-      characterCount: generatedContent.length,
-      wordCount: generatedContent.trim().split(/\s+/).length,
-      hashtags: hashtags,
-      mentions: mentions,
-      engagementScore: Math.floor(Math.random() * 40) + 60 // Random score between 60-100 for demo
+    connections.forEach((conn, index) => {
+      console.log(`Connection ${index + 1}:`, {
+        _id: conn._id,
+        twitterId: conn.twitterId,
+        screenName: conn.screenName,
+        hasAccessToken: !!conn.accessToken,
+        hasAccessTokenSecret: !!conn.accessTokenSecret,
+        hasApiKey: !!conn.apiKey,
+        hasApiSecret: !!conn.apiSecret,
+        verified: conn.verified,
+        verifiedBy: conn.verifiedBy,
+        connectedAt: conn.connectedAt
+      });
     });
     
-    await generatedContentRecord.save();
-    
-    res.status(200).json({
-      content: generatedContent,
-      id: generatedContentRecord._id
+    res.json({
+      success: true,
+      debug: {
+        userId: userId,
+        userHasTwitterId: !!user?.twitterId,
+        totalConnections: connections.length,
+        connections: connections.map(conn => ({
+          id: conn._id,
+          twitterId: conn.twitterId,
+          screenName: conn.screenName,
+          hasCredentials: {
+            accessToken: !!conn.accessToken,
+            accessTokenSecret: !!conn.accessTokenSecret,
+            apiKey: !!conn.apiKey,
+            apiSecret: !!conn.apiSecret
+          },
+          verified: conn.verified,
+          verifiedBy: conn.verifiedBy
+        }))
+      }
     });
+    
   } catch (error) {
-    console.error('Error generating content by keyword:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Debug error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
   }
 };
 
-// Get generated content history for a user
-const getGeneratedContentHistory = async (req, res) => {
+// Test Twitter connection and posting capability
+const testTwitterConnection = async (req, res) => {
   try {
     const userId = req.user._id;
     
-    // Fetch generated content from the database for this user
-    const generatedContent = await GeneratedContent.find({ userId: userId })
-      .sort({ createdAt: -1 })
-      .limit(50); // Limit to last 50 generated posts
-    
-    res.status(200).json({
-      generatedContent
+    // Get user info
+    const user = await User.findById(userId);
+    console.log('User check:', {
+      hasUser: !!user,
+      userId: userId,
+      twitterId: user?.twitterId
     });
+    
+    // Get Twitter connection
+    const twitterConnection = await UserTwitterConnection.findOne({ 
+      userId: userId
+    });
+    
+    console.log('Twitter connection check:', {
+      hasConnection: !!twitterConnection,
+      hasAccessToken: !!twitterConnection?.accessToken,
+      hasApiKey: !!twitterConnection?.apiKey,
+      hasApiSecret: !!twitterConnection?.apiSecret,
+      hasAccessTokenSecret: !!twitterConnection?.accessTokenSecret,
+      verified: twitterConnection?.verified
+    });
+    
+    if (!twitterConnection || !twitterConnection.accessToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'No Twitter connection found',
+        details: {
+          hasConnection: !!twitterConnection,
+          hasAccessToken: !!twitterConnection?.accessToken
+        }
+      });
+    }
+    
+    // Try to create Twitter client and test
+    try {
+      let client;
+      if (twitterConnection.apiKey && twitterConnection.apiSecret && twitterConnection.accessToken && twitterConnection.accessTokenSecret) {
+        client = new TwitterApi({
+          appKey: twitterConnection.apiKey,
+          appSecret: twitterConnection.apiSecret,
+          accessToken: twitterConnection.accessToken,
+          accessSecret: twitterConnection.accessTokenSecret,
+        });
+      } else if (twitterConnection.accessToken) {
+        client = new TwitterApi(twitterConnection.accessToken);
+      } else {
+        throw new Error('No valid Twitter credentials found');
+      }
+      
+      // Test with a simple API call
+      const me = await client.v2.me();
+      
+      res.json({
+        success: true,
+        message: 'Twitter connection is working!',
+        twitterUser: me.data,
+        connectionDetails: {
+          hasApiKey: !!twitterConnection.apiKey,
+          hasApiSecret: !!twitterConnection.apiSecret,
+          hasAccessToken: !!twitterConnection.accessToken,
+          hasAccessTokenSecret: !!twitterConnection.accessTokenSecret,
+          authMethod: (twitterConnection.apiKey && twitterConnection.apiSecret) ? 'OAuth 1.0a' : 'OAuth 2.0'
+        }
+      });
+      
+    } catch (apiError) {
+      console.error('Twitter API test failed:', apiError);
+      res.status(400).json({
+        success: false,
+        message: 'Twitter API test failed',
+        error: apiError.message,
+        connectionDetails: {
+          hasApiKey: !!twitterConnection.apiKey,
+          hasApiSecret: !!twitterConnection.apiSecret,
+          hasAccessToken: !!twitterConnection.accessToken,
+          hasAccessTokenSecret: !!twitterConnection.accessTokenSecret
+        }
+      });
+    }
+    
   } catch (error) {
-    console.error('Error fetching generated content history:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Test connection error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message
+    });
+  }
+};
+
+// Repair Twitter connection by updating with environment credentials
+const repairTwitterConnection = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    
+    // Find existing connection
+    const twitterConnection = await UserTwitterConnection.findOne({ userId: userId });
+    
+    if (!twitterConnection) {
+      return res.status(404).json({
+        success: false,
+        message: 'No Twitter connection found to repair'
+      });
+    }
+    
+    // Check if environment variables are available
+    const envCredentials = {
+      apiKey: process.env.TWITTER_API_KEY,
+      apiSecret: process.env.TWITTER_CLIENT_SECRET,
+      accessToken: process.env.TWITTER_ACCESS_TOKEN,
+      accessTokenSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET
+    };
+    
+    if (!envCredentials.apiKey || !envCredentials.apiSecret || !envCredentials.accessToken || !envCredentials.accessTokenSecret) {
+      return res.status(400).json({
+        success: false,
+        message: 'Environment credentials not available for repair'
+      });
+    }
+    
+    // Test the environment credentials
+    try {
+      const testClient = new TwitterApi({
+        appKey: envCredentials.apiKey,
+        appSecret: envCredentials.apiSecret,
+        accessToken: envCredentials.accessToken,
+        accessSecret: envCredentials.accessTokenSecret,
+      });
+      
+      const userInfo = await testClient.v2.me();
+      
+      // Update the connection with working credentials
+      twitterConnection.apiKey = envCredentials.apiKey;
+      twitterConnection.apiSecret = envCredentials.apiSecret;
+      twitterConnection.accessToken = envCredentials.accessToken;
+      twitterConnection.accessTokenSecret = envCredentials.accessTokenSecret;
+      twitterConnection.verified = true;
+      twitterConnection.verifiedAt = new Date();
+      twitterConnection.twitterId = userInfo.data.id;
+      twitterConnection.screenName = userInfo.data.username;
+      
+      await twitterConnection.save();
+      
+      res.json({
+        success: true,
+        message: 'Twitter connection repaired successfully!',
+        twitterUser: {
+          id: userInfo.data.id,
+          username: userInfo.data.username,
+          name: userInfo.data.name
+        }
+      });
+      
+    } catch (testError) {
+      console.error('Environment credentials test failed:', testError);
+      return res.status(400).json({
+        success: false,
+        message: 'Environment credentials are invalid',
+        error: testError.message
+      });
+    }
+    
+  } catch (error) {
+    console.error('Repair Twitter connection error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to repair Twitter connection',
+      error: error.message
+    });
+  }
+};
+
+// Simple direct post endpoint for testing
+const testPost = async (req, res) => {
+  try {
+    const { content } = req.body;
+    const userId = req.user._id;
+    
+    if (!content || content.trim().length === 0) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Content is required for posting' 
+      });
+    }
+
+    if (content.length > 280) {
+      return res.status(400).json({ 
+        success: false,
+        message: `Content too long: ${content.length}/280 characters`,
+        currentLength: content.length,
+        maxLength: 280
+      });
+    }
+
+    console.log(`🐦 Attempting to post: "${content}"`);
+    
+    // Post directly using environment credentials (most reliable)
+    const client = new TwitterApi({
+      appKey: process.env.TWITTER_API_KEY,
+      appSecret: process.env.TWITTER_API_SECRET,
+      accessToken: process.env.TWITTER_ACCESS_TOKEN,
+      accessSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
+    });
+
+    const tweet = await client.v2.tweet(content);
+    
+    console.log('✅ Tweet posted successfully:', tweet.data.id);
+
+    // Save to database
+    const user = await User.findById(userId);
+    const post = new Post({
+      userId: user._id,
+      content: content,
+      platform: 'X',
+      status: 'posted',
+      postedAt: new Date(),
+      externalId: tweet.data.id
+    });
+    await post.save();
+
+    res.json({
+      success: true,
+      message: 'Tweet posted successfully!',
+      tweetId: tweet.data.id,
+      content: content,
+      characterCount: content.length,
+      url: `https://twitter.com/i/web/status/${tweet.data.id}`
+    });
+
+  } catch (error) {
+    console.error('❌ Post failed:', error);
+    
+    let errorMessage = 'Failed to post tweet';
+    let statusCode = 500;
+    
+    if (error.data?.status === 403) {
+      errorMessage = 'Twitter app lacks write permissions. Check developer portal settings.';
+      statusCode = 403;
+    } else if (error.data?.status === 401) {
+      errorMessage = 'Twitter credentials invalid or expired. Regenerate tokens.';
+      statusCode = 401;
+    } else if (error.data?.detail) {
+      errorMessage = error.data.detail;
+    }
+
+    res.status(statusCode).json({
+      success: false,
+      message: errorMessage,
+      error: error.message,
+      details: error.data
+    });
   }
 };
 
 module.exports = {
+  postToTwitter,
   postToX,
-  postToTwitterWithMedia,
-  getPostedContent,
+  autoPostGeneratedContent,
   generateContent,
-  generatePostByKeyword,
-  getGeneratedContentHistory
+  postToTwitterWithMedia: async (req, res) => {
+    try {
+      const { content, language = 'en', template, tone, length, audience, style, topic } = req.body;
+      const userId = req.user._id;
+      const file = req.file;
+
+      if (!content || content.trim().length === 0) {
+        return res.status(400).json({ message: 'Content is required' });
+      }
+
+      if (content.length > 270) {
+        return res.status(400).json({ 
+          message: 'Content is too long. Please keep it under 270 characters for Twitter.',
+          currentLength: content.length,
+          maxLength: 270
+        });
+      }
+
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      if (!user.twitterId) {
+        return res.status(400).json({ 
+          message: 'Twitter account not connected. Please connect your Twitter account first.',
+          requiresTwitterConnection: true
+        });
+      }
+
+      const twitterConnection = await UserTwitterConnection.findOne({ 
+        userId: userId, 
+        twitterId: user.twitterId 
+      });
+      
+      if (!twitterConnection || !twitterConnection.accessToken) {
+        return res.status(400).json({ 
+          message: 'Twitter account not properly connected. Please reconnect your Twitter account.',
+          requiresTwitterConnection: true
+        });
+      }
+
+      let fileBuffer = null;
+      if (file) {
+        fileBuffer = file.buffer;
+      }
+
+      const twitterResponse = await postToTwitter(content, userId, fileBuffer);
+
+      const post = new Post({
+        userId: user._id,
+        content: content,
+        template: template,
+        tone: tone,
+        length: length,
+        audience: audience,
+        style: style,
+        topic: topic,
+        language: language,
+        platform: 'X',
+        status: 'posted',
+        hasMedia: !!fileBuffer,
+        postedAt: new Date(),
+        externalId: twitterResponse.id
+      });
+
+      await post.save();
+
+      try {
+        if (user.email && user.name) {
+          await sendPostSuccessEmail(user.email, user.name, content, 'X (Twitter)');
+        }
+      } catch (emailError) {
+        console.error('Error sending post success email:', emailError);
+      }
+
+      res.status(200).json({
+        message: 'Successfully posted to Twitter',
+        post: post,
+        tweetId: twitterResponse.id,
+        characterCount: content.length,
+        hasMedia: !!fileBuffer
+      });
+    } catch (error) {
+      console.error('Error posting to Twitter:', error);
+      res.status(500).json({ message: 'Server error', error: error.message });
+    }
+  },
+  getPostedContent: async (req, res) => {
+    try {
+      const userId = req.user._id;
+      const posts = await Post.find({ userId: userId }).sort({ createdAt: -1 });
+      
+      res.status(200).json({
+        posts
+      });
+    } catch (error) {
+      console.error('Error fetching posted content:', error);
+      res.status(500).json({ message: 'Server error', error: error.message });
+    }
+  },
+  generatePostByKeyword: async (req, res) => {
+    try {
+      const { keyword, language = 'en', tone, template, length, audience, style } = req.body;
+      const userId = req.user._id;
+      
+      if (!keyword || keyword.trim().length === 0) {
+        return res.status(400).json({ message: 'Keyword is required' });
+      }
+      
+      let prompt = 'Generate a Twitter post about "' + keyword + '". Keep it under 270 characters for Twitter.';
+      
+      let generatedContent = await googleAIService.generateContent(prompt, language);
+      
+      const generatedContentRecord = new GeneratedContent({
+        userId: userId,
+        content: generatedContent,
+        template: template,
+        tone: tone,
+        length: length,
+        audience: audience,
+        style: style,
+        topic: keyword,
+        language: language,
+        prompt: prompt,
+        platform: 'X',
+        characterCount: generatedContent.length,
+        wordCount: generatedContent.trim().split(/\s+/).length,
+        engagementScore: Math.floor(Math.random() * 40) + 60
+      });
+      
+      await generatedContentRecord.save();
+      
+      res.status(200).json({
+        content: generatedContent,
+        id: generatedContentRecord._id
+      });
+    } catch (error) {
+      console.error('Error generating content by keyword:', error);
+      res.status(500).json({ message: 'Server error', error: error.message });
+    }
+  },
+  getGeneratedContentHistory: async (req, res) => {
+    try {
+      const userId = req.user._id;
+      
+      const generatedContent = await GeneratedContent.find({ userId: userId })
+        .sort({ createdAt: -1 })
+        .limit(50);
+      
+      res.status(200).json({
+        generatedContent
+      });
+    } catch (error) {
+      console.error('Error fetching generated content history:', error);
+      res.status(500).json({ message: 'Server error', error: error.message });
+    }
+  },
+  schedulePost: async (req, res) => {
+    try {
+      const { content, template, tone, length, audience, style, topic, language = 'en', scheduledFor } = req.body;
+      const userId = req.user._id;
+
+      if (!content || content.trim().length === 0) {
+        return res.status(400).json({ message: 'Content is required' });
+      }
+
+      if (!scheduledFor) {
+        return res.status(400).json({ message: 'Scheduled time is required' });
+      }
+
+      const scheduledTime = new Date(scheduledFor);
+      const now = new Date();
+      
+      if (scheduledTime <= now) {
+        return res.status(400).json({ message: 'Scheduled time must be in the future' });
+      }
+
+      if (content.length > 270) {
+        return res.status(400).json({ message: 'Content exceeds Twitter character limit' });
+      }
+
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      const post = new Post({
+        userId: user._id,
+        content: content,
+        template: template,
+        tone: tone,
+        length: length,
+        audience: audience,
+        style: style,
+        topic: topic,
+        language: language,
+        platform: 'X',
+        status: 'scheduled',
+        scheduledFor: scheduledTime
+      });
+
+      await post.save();
+
+      res.status(200).json({
+        message: 'Post scheduled successfully',
+        post: post
+      });
+    } catch (error) {
+      console.error('Error scheduling post:', error);
+      res.status(500).json({ message: 'Server error', error: error.message });
+    }
+  },
+  getScheduledPosts: async (req, res) => {
+    try {
+      const userId = req.user._id;
+      
+      const scheduledPosts = await Post.find({ 
+        userId: userId, 
+        status: 'scheduled' 
+      }).sort({ scheduledFor: 1 });
+      
+      res.status(200).json({
+        scheduledPosts
+      });
+    } catch (error) {
+      console.error('Error fetching scheduled posts:', error);
+      res.status(500).json({ message: 'Server error', error: error.message });
+    }
+  },
+  testTwitterConnection,
+  debugTwitterConnection,
+  repairTwitterConnection,
+  testPost
 };

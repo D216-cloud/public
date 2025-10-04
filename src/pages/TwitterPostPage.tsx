@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { toast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
 import {
   ImageIcon,
   Smile,
@@ -24,6 +25,8 @@ import {
   ChevronDown,
   ChevronUp,
   Video,
+  Twitter,
+  AlertCircle,
 } from "lucide-react";
 
 // Emoji data
@@ -82,9 +85,9 @@ const TONE_OPTIONS = [
 
 // Content length options
 const LENGTH_OPTIONS = [
-  { value: "medium", label: "Medium (500-800 chars)" },
-  { value: "long", label: "Long (800-1200 chars)" },
-  { value: "verylong", label: "Very Long (1200+ chars)" },
+  { value: "short", label: "Short (under 140 chars)" },
+  { value: "medium", label: "Medium (140-200 chars)" },
+  { value: "long", label: "Long (200-280 chars)" },
 ];
 
 export default function TwitterPostPage() {
@@ -103,6 +106,8 @@ export default function TwitterPostPage() {
   const [selectedTone, setSelectedTone] = useState<string>("professional");
   const [selectedLength, setSelectedLength] = useState<string>("medium");
   const [hashtags, setHashtags] = useState<string>("");
+  const [autoPostEnabled, setAutoPostEnabled] = useState<boolean>(false);
+  const [twitterConnected, setTwitterConnected] = useState<boolean | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
@@ -128,6 +133,148 @@ export default function TwitterPostPage() {
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    checkTwitterConnection();
+  }, []);
+
+  const checkTwitterConnection = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.log('No auth token found');
+        return;
+      }
+
+      console.log('Checking Twitter connection...');
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/twitter-setup/status`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      console.log('Twitter connection status response:', data);
+      
+      setTwitterConnected(data.connected || false);
+      
+      if (!data.connected) {
+        console.warn('Twitter not connected:', data.message);
+      } else {
+        console.log('Twitter connected successfully:', data.twitterUser);
+      }
+    } catch (error) {
+      console.error('Error checking Twitter connection:', error);
+      setTwitterConnected(false);
+    }
+  };
+
+  // Add a test function for debugging Twitter connection
+  const testTwitterConnection = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No auth token found');
+        toast({
+          title: "Authentication Error",
+          description: "No auth token found. Please log in again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('=== DEBUGGING TWITTER CONNECTION ===');
+      toast({
+        title: "Debugging Connection",
+        description: "Checking your Twitter connection details...",
+      });
+
+      // First, get debug info
+      const debugResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/posts/debug-twitter-connection`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const debugData = await debugResponse.json();
+      console.log('=== DEBUG RESULTS ===');
+      console.log('Full debug data:', debugData);
+      
+      if (debugData.success) {
+        const { debug } = debugData;
+        console.log(`User ID: ${debug.userId}`);
+        console.log(`Total connections: ${debug.totalConnections}`);
+        console.log('Connections:', debug.connections);
+        
+        if (debug.totalConnections === 0) {
+          toast({
+            title: "No Connections Found",
+            description: "You have no Twitter connections in the database. Please connect your Twitter account in Settings.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        // Try to post
+        console.log('=== ATTEMPTING TO POST ===');
+        const testContent = "🔥 Test post from my awesome social media tool! #test #api";
+        
+        const postResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/posts/post-to-x`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            content: testContent,
+            template: "announcement",
+            tone: "casual",
+            length: "short",
+            audience: "general",
+            style: "concise",
+            topic: "test",
+            language: "en"
+          }),
+        });
+
+        const postData = await postResponse.json();
+        console.log('Post response:', postData);
+        
+        if (postResponse.ok) {
+          toast({
+            title: "SUCCESS! 🎉",
+            description: `Test post successful! Tweet ID: ${postData.tweetId}`,
+          });
+        } else {
+          toast({
+            title: "Post Failed",
+            description: postData.message || 'Unknown error',
+            variant: "destructive",
+          });
+        }
+      } else {
+        toast({
+          title: "Debug Failed",
+          description: debugData.error || 'Unknown error',
+          variant: "destructive",
+        });
+      }
+
+    } catch (error) {
+      console.error('Test connection error:', error);
+      toast({
+        title: "Test Failed",
+        description: "Error testing Twitter connection",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Make test function available in console for debugging
+  React.useEffect(() => {
+    (window as any).testTwitterConnection = testTwitterConnection;
+    console.log('Debug: testTwitterConnection() function available in console');
   }, []);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -185,7 +332,7 @@ export default function TwitterPostPage() {
     if (!postContent.trim()) {
       toast({
         title: "Cannot generate",
-        description: "Please enter a topic or keyword to generate content",
+        description: "Please enter a topic or idea first",
         variant: "destructive",
       });
       return;
@@ -199,7 +346,12 @@ export default function TwitterPostPage() {
         throw new Error('Please log in to generate content');
       }
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/posts/generate-content`, {
+      // Use auto-post endpoint if auto-posting is enabled
+      const endpoint = autoPostEnabled 
+        ? `${import.meta.env.VITE_API_URL}/api/posts/auto-post-generated`
+        : `${import.meta.env.VITE_API_URL}/api/posts/generate-content`;
+
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -209,18 +361,26 @@ export default function TwitterPostPage() {
           topic: postContent,
           tone: selectedTone,
           length: selectedLength,
-          template: "announcement", // Default template
+          template: "announcement",
           audience: "general",
           style: "concise",
           purpose: hashtags ? `Include these hashtags: ${hashtags}` : "Create engaging social media content",
-          language: "en"
+          language: "en",
+          autoPost: autoPostEnabled,
+          content: postContent
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
         console.error("API error:", errorData);
-        throw new Error(`Failed to generate content: ${response.status} ${response.statusText}`);
+        
+        // Handle Twitter connection requirement for auto-posting
+        if (errorData.requiresTwitterConnection) {
+          throw new Error(`${errorData.message} Please go to Settings to connect your Twitter account.`);
+        }
+        
+        throw new Error(errorData.message || `Failed to generate content: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -232,10 +392,34 @@ export default function TwitterPostPage() {
         videos: uploadedVideos.map((video) => video.url),
       });
 
-      toast({
-        title: "Content generated!",
-        description: `Your post has ${generatedText.length} characters`,
-      });
+      if (data.autoPosted) {
+        toast({
+          title: "🚀 Content generated and posted!",
+          description: `Your post has been automatically published to X (Twitter) and email notification sent! (${data.characterCount} characters)`,
+        });
+        
+        // Reset form since content was auto-posted
+        setPostContent("");
+        setUploadedImages([]);
+        setGeneratedPost(null);
+        setScheduledDate("");
+        setLocation("");
+        setHashtags("");
+      } else if (autoPostEnabled && data.error) {
+        // Auto-posting was attempted but failed
+        toast({
+          title: "⚠️ Content generated, auto-post failed",
+          description: data.error.includes('Twitter') ? 
+            `${data.error} You can still post manually.` : 
+            `Auto-posting failed: ${data.error}`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "✨ Content generated!",
+          description: `Your post has ${data.characterCount || generatedText.length} characters`,
+        });
+      }
     } catch (error) {
       console.error("Generation error:", error);
       toast({
@@ -263,13 +447,59 @@ export default function TwitterPostPage() {
     setIsPosting(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Please log in to post content');
+      }
+
+      // Post directly to Twitter using the real API
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/posts/post-to-x`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          content: contentToPost,
+          template: "announcement",
+          tone: selectedTone,
+          length: selectedLength,
+          audience: "general",
+          style: "concise",
+          topic: postContent,
+          language: "en"
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Post failed with error data:', errorData);
+        
+        // Handle Twitter connection requirement
+        if (errorData.requiresTwitterConnection) {
+          throw new Error(`${errorData.message} Please go to Settings to connect your Twitter account.`);
+        }
+        
+        // Provide detailed error message
+        const errorMessage = errorData.message || `Failed to post: ${response.status} ${response.statusText}`;
+        console.error('Detailed error:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData: errorData
+        });
+        
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      console.log("Post response:", data);
 
       toast({
         title: "Posted successfully!",
-        description: "Your post has been published",
+        description: "Your post has been published to X (Twitter) and email notification sent!",
       });
 
+      // Reset form
       setPostContent("");
       setUploadedImages([]);
       setGeneratedPost(null);
@@ -277,9 +507,10 @@ export default function TwitterPostPage() {
       setLocation("");
       setHashtags("");
     } catch (error) {
+      console.error("Post error:", error);
       toast({
         title: "Error posting",
-        description: "Please try again",
+        description: error instanceof Error ? error.message : "Please try again",
         variant: "destructive",
       });
     } finally {
@@ -448,13 +679,45 @@ export default function TwitterPostPage() {
                     className="w-full p-4 border-2 border-gray-200/50 rounded-2xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-400/50 bg-white/80 backdrop-blur-sm text-gray-800 transition-all duration-300 hover:border-purple-300/50 shadow-lg text-base sm:text-lg font-medium"
                   />
                 </div>
+
+                <div className="sm:col-span-2">
+                  <label className="flex items-center text-base font-bold text-gray-800 mb-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={autoPostEnabled}
+                      onChange={(e) => setAutoPostEnabled(e.target.checked)}
+                      className="mr-3 w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-purple-500 focus:ring-2"
+                    />
+                    <span>🚀 Auto-post generated content immediately</span>
+                  </label>
+                  <p className="text-sm text-gray-600 ml-8">
+                    When enabled, generated content will be automatically posted to X (Twitter) and you'll receive an email notification.
+                  </p>
+                  <div className="ml-8 mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-700">
+                      💡 <strong>Note:</strong> Auto-posting requires a connected Twitter account. If you haven't connected your Twitter account yet, please go to Settings → Social Accounts to connect it first.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           )}
 
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
-            <div className="text-base font-bold text-gray-700 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              {postContent.length} characters
+            <div className="flex flex-col gap-1">
+              <div className={`text-base font-bold ${postContent.length > 280 ? 'text-red-600' : postContent.length > 250 ? 'text-yellow-600' : 'text-gray-700'} bg-gradient-to-r ${postContent.length > 280 ? 'from-red-600 to-red-800' : postContent.length > 250 ? 'from-yellow-600 to-orange-600' : 'from-purple-600 to-pink-600'} bg-clip-text text-transparent`}>
+                {postContent.length} / 280 characters
+              </div>
+              {postContent.length > 280 && (
+                <div className="text-sm text-red-600 font-medium">
+                  ⚠️ Too long for Twitter! Please shorten by {postContent.length - 280} characters.
+                </div>
+              )}
+              {postContent.length > 250 && postContent.length <= 280 && (
+                <div className="text-sm text-yellow-600 font-medium">
+                  ⚡ Close to limit! {280 - postContent.length} characters remaining.
+                </div>
+              )}
             </div>
             <Button
               onClick={handleGenerate}
@@ -498,6 +761,17 @@ export default function TwitterPostPage() {
                 }}
                 className="w-full border-0 p-0 resize-none focus:ring-0 text-xl sm:text-2xl min-h-[120px] sm:min-h-[160px] placeholder-gray-400 text-gray-900 font-bold tracking-tight leading-relaxed"
               />
+              
+              {/* Character count for textarea */}
+              <div className={`mt-2 text-sm font-bold ${(generatedPost?.content || postContent).length > 280 ? 'text-red-600' : (generatedPost?.content || postContent).length > 250 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                {(generatedPost?.content || postContent).length} / 280 characters
+                {(generatedPost?.content || postContent).length > 280 && (
+                  <span className="ml-2 text-red-600">⚠️ Too long for Twitter!</span>
+                )}
+                {(generatedPost?.content || postContent).length > 250 && (generatedPost?.content || postContent).length <= 280 && (
+                  <span className="ml-2 text-yellow-600">⚡ Close to limit</span>
+                )}
+              </div>
 
               {uploadedImages.length > 0 && !generatedPost && (
                 <div className="mt-4 sm:mt-6 grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-5">
@@ -842,9 +1116,15 @@ export default function TwitterPostPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center text-green-600 text-sm sm:text-base sm:text-lg font-black bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                    <div className={`flex items-center text-sm sm:text-base sm:text-lg font-black ${generatedPost.content.length > 280 ? 'text-red-600' : generatedPost.content.length > 250 ? 'text-yellow-600' : 'text-green-600'} bg-gradient-to-r ${generatedPost.content.length > 280 ? 'from-red-600 to-red-800' : generatedPost.content.length > 250 ? 'from-yellow-600 to-orange-600' : 'from-green-600 to-blue-600'} bg-clip-text text-transparent`}>
                       <CheckCircle className="h-5 w-5 sm:h-6 sm:h-8 mr-1 sm:mr-2 sm:mr-3 drop-shadow-lg" />
-                      <span>{generatedPost.content.length} chars</span>
+                      <span>{generatedPost.content.length} / 280 chars</span>
+                      {generatedPost.content.length > 280 && (
+                        <span className="ml-2 text-red-600 text-xs">⚠️ Too long!</span>
+                      )}
+                      {generatedPost.content.length > 250 && generatedPost.content.length <= 280 && (
+                        <span className="ml-2 text-yellow-600 text-xs">⚡ Close to limit</span>
+                      )}
                     </div>
                   </div>
                 </div>

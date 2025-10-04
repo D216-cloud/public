@@ -20,6 +20,12 @@ const upload = multer({
 });
 
 const {
+  postToX,
+  schedulePost,
+  getScheduledPosts
+} = require('../controllers/postController');
+
+const {
   beginTwitterAuth,
   handleTwitterCallback,
   sendOTP,
@@ -114,12 +120,17 @@ router.post('/disconnect', protect, disconnectTwitter);
 // @route   POST /api/twitter/post
 // @desc    Post a tweet
 // @access  Private
-// router.post('/post', protect, upload.single('image'), postTweet);
+router.post('/post', protect, postToX);
 
 // @route   POST /api/twitter/schedule
 // @desc    Schedule a tweet
 // @access  Private
-// router.post('/schedule', protect, upload.single('image'), scheduleTweet);
+router.post('/schedule', protect, schedulePost);
+
+// @route   GET /api/twitter/scheduled
+// @desc    Get scheduled tweets
+// @access  Private
+router.get('/scheduled', protect, getScheduledPosts);
 
 // @route   GET /api/twitter/recent
 // @desc    Get recent tweets

@@ -34,6 +34,18 @@ const userTwitterConnectionSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  accessTokenSecret: {
+    type: String,
+    default: null
+  },
+  apiKey: {
+    type: String,
+    default: null
+  },
+  apiSecret: {
+    type: String,
+    default: null
+  },
   refreshToken: {
     type: String,
     default: null

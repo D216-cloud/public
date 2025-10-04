@@ -15,6 +15,7 @@ import SettingsPage from './pages/SettingsPage'
 import OnboardingPage from './pages/OnboardingPage'
 import DemoPage from './pages/DemoPage'
 import TwitterPostPage from './pages/TwitterPostPage'
+import TwitterSetupPage from './pages/TwitterSetupPage'
 import TwitterSignupPage from './pages/TwitterSignupPage'
 import XProfilePage from './pages/XProfilePage'
 import ContentSchedulerPage from './pages/ContentSchedulerPage'
@@ -73,6 +74,11 @@ function App() {
               <Route path="/post" element={
                 <ProtectedRoute>
                   <TwitterPostPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/twitter-setup" element={
+                <ProtectedRoute>
+                  <TwitterSetupPage />
                 </ProtectedRoute>
               } />
             </Routes>

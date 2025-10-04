@@ -12,7 +12,7 @@ class GoogleAIService {
 
   async generateContent(prompt, language = 'en', maxTokens = 1024, allowLongContent = false) {
     try {
-      // Create language-specific prompt
+      // Create language-specific prompt with strict character limit
       let languagePrompt = prompt;
       if (language !== 'en') {
         const languageMap = {
@@ -31,6 +31,9 @@ class GoogleAIService {
           languagePrompt = `Generate content in ${languageMap[language]} language. ${prompt}`;
         }
       }
+
+      // Add very strict character limit instruction for Twitter posts
+      languagePrompt += ` CRITICAL RULES: 1) Maximum 280 characters total 2) Only 2-3 lines maximum 3) No long sentences 4) Be extremely concise 5) Use short words and phrases 6) Stop generating at 270 characters to be safe. Make it punchy and engaging but VERY short.`;
 
       // Try different models in order of preference
         const models = [
@@ -84,9 +87,35 @@ class GoogleAIService {
               console.log(`Successfully generated long content with ${model}, length: ${cleanedText.length}`);
               return cleanedText;
             } else {
-              // Clean up the generated text (remove extra whitespace, ensure it's under 280 chars for Twitter)
-              const cleanedText = generatedText.trim().replace(/\n+/g, ' ').substring(0, 280);
-              console.log(`Successfully generated content with ${model}:`, cleanedText.substring(0, 100) + '...');
+              // Clean up the generated text and ensure it's under 280 characters STRICTLY
+              let cleanedText = generatedText.trim();
+              
+              // Split into lines and ensure max 2-3 lines
+              let lines = cleanedText.split(/\n+/).filter(line => line.trim());
+              if (lines.length > 3) {
+                lines = lines.slice(0, 3);
+              }
+              cleanedText = lines.join('\n');
+              
+              // Hard cut at 280 characters - no exceptions
+              if (cleanedText.length > 280) {
+                // Try to cut at word boundary within 280 chars
+                const words = cleanedText.split(' ');
+                let trimmedText = '';
+                
+                for (let i = 0; i < words.length; i++) {
+                  const potentialText = trimmedText + (trimmedText ? ' ' : '') + words[i];
+                  if (potentialText.length <= 275) { // Leave 5 chars buffer
+                    trimmedText = potentialText;
+                  } else {
+                    break;
+                  }
+                }
+                
+                cleanedText = trimmedText || cleanedText.substring(0, 275);
+              }
+              
+              console.log(`Successfully generated content with ${model}, length: ${cleanedText.length}`);
               return cleanedText;
             }
           }

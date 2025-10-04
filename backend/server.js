@@ -6,7 +6,9 @@ const authRoutes = require('./routes/authRoutes');
 const postRoutes = require('./routes/postRoutes');
 const onboardingRoutes = require('./routes/onboardingRoutes');
 const twitterRoutes = require('./routes/twitterRoutes');
+const twitterSetupRoutes = require('./routes/twitterSetupRoutes');
 const userRoutes = require('./routes/userRoutes');
+const { startScheduler } = require('./services/schedulerService');
 const path = require('path');
 
 // Load env vars from backend directory
@@ -63,6 +65,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/onboarding', onboardingRoutes);
 app.use('/api/twitter', twitterRoutes);
+app.use('/api/twitter-setup', twitterSetupRoutes);
 app.use('/api/user', userRoutes);
 
 // Health check endpoint
@@ -74,4 +77,7 @@ const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  
+  // Start the scheduler
+  startScheduler();
 });

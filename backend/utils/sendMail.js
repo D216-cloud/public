@@ -227,4 +227,110 @@ const sendVerificationCodeEmail = async (userEmail, userName, verificationCode, 
   }
 };
 
-module.exports = { sendWelcomeEmail, sendVerificationCodeEmail };
+/**
+ * Send a post success notification email
+ * @param {string} userEmail - The email address of the user
+ * @param {string} userName - The name of the user
+ * @param {string} postContent - The content that was posted
+ * @param {string} platform - The platform where it was posted (X/Twitter)
+ * @returns {Promise<Object>} - Result of the email sending operation
+ */
+const sendPostSuccessEmail = async (userEmail, userName, postContent, platform = 'X (Twitter)') => {
+  try {
+    // Validate required environment variables
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      throw new Error('Email credentials not configured in environment variables');
+    }
+
+    // Create transporter
+    const transporter = createTransporter();
+
+    // Define email content with styled HTML
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: userEmail,
+      subject: `Your post has been published successfully on ${platform}!`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Post Published Successfully</title>
+        </head>
+        <body style="margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f5f7fa;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f7fa; padding: 20px 0;">
+            <tr>
+              <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                  <!-- Header -->
+                  <tr>
+                    <td style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); padding: 30px 20px; text-align: center;">
+                      <h1 style="color: white; margin: 0; font-size: 28px; font-weight: bold;">✅ Post Published!</h1>
+                      <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 16px;">TwitterAI Pro</p>
+                    </td>
+                  </tr>
+                  
+                  <!-- Content -->
+                  <tr>
+                    <td style="padding: 40px 30px;">
+                      <h2 style="color: #333; margin-top: 0; font-size: 24px;">Great news, ${userName}!</h2>
+                      
+                      <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 20px 0;">
+                        Your post has been successfully published on ${platform}. Here's what was shared:
+                      </p>
+                      
+                      <div style="background-color: #f8f9fa; border-radius: 8px; padding: 30px; margin: 30px 0; border-left: 4px solid #10B981;">
+                        <h3 style="color: #10B981; margin-top: 0; font-size: 18px;">📝 Your Published Content</h3>
+                        <div style="font-size: 16px; color: #333; line-height: 1.6; margin: 20px 0; white-space: pre-wrap;">
+                          ${postContent}
+                        </div>
+                        <p style="color: #777; font-size: 14px; margin: 0;">
+                          Published on ${new Date().toLocaleString()}
+                        </p>
+                      </div>
+                      
+                      <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 20px 0;">
+                        🎉 Your content is now live and engaging with your audience! Keep creating amazing content with TwitterAI Pro.
+                      </p>
+                      
+                      <div style="text-align: center; margin: 30px 0;">
+                        <a href="${process.env.FRONTEND_URL || 'https://twitteraipro.com'}/dashboard" 
+                           style="background: linear-gradient(135deg, #1DA1F2 0%, #0d8bd9 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+                          View Dashboard
+                        </a>
+                      </div>
+                    </td>
+                  </tr>
+                  
+                  <!-- Footer -->
+                  <tr>
+                    <td style="background-color: #f8f9fa; padding: 20px 30px; border-top: 1px solid #eee; text-align: center;">
+                      <p style="color: #777; font-size: 14px; margin: 0;">
+                        &copy; ${new Date().getFullYear()} TwitterAI Pro. All rights reserved.
+                      </p>
+                      <p style="color: #999; font-size: 12px; margin: 10px 0 0;">
+                        123 AI Street, Tech City, TC 10001
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+    };
+
+    // Send email
+    const result = await transporter.sendMail(mailOptions);
+    console.log('Post success email sent successfully to:', userEmail);
+    return { success: true, messageId: result.messageId };
+  } catch (error) {
+    console.error('Error sending post success email:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+module.exports = { sendWelcomeEmail, sendVerificationCodeEmail, sendPostSuccessEmail };

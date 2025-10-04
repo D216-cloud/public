@@ -44,7 +44,8 @@ const getUserStats = async (req, res) => {
       posts: 0,
       following: 0,
       followers: 0,
-      likes: 0
+      likes: 0,
+      description: ""
     };
 
     if (user.twitterId && process.env.TWITTER_BEARER_TOKEN) {
@@ -53,9 +54,9 @@ const getUserStats = async (req, res) => {
         // Initialize Twitter client with Bearer Token
         const twitterClient = new TwitterApi(process.env.TWITTER_BEARER_TOKEN);
         
-        // Fetch user info including public metrics
+        // Fetch user info including public metrics and description
         const userInfo = await twitterClient.v2.userByUsername(user.twitterUsername, {
-          'user.fields': ['public_metrics', 'tweet_count']
+          'user.fields': ['public_metrics', 'tweet_count', 'description']
         });
         
         if (userInfo.data) {
@@ -63,7 +64,8 @@ const getUserStats = async (req, res) => {
             posts: userInfo.data.tweet_count || 0,
             following: userInfo.data.public_metrics?.following_count || 0,
             followers: userInfo.data.public_metrics?.followers_count || 0,
-            likes: userInfo.data.public_metrics?.like_count || 0
+            likes: userInfo.data.public_metrics?.like_count || 0,
+            description: userInfo.data.description || ""
           };
         }
       } catch (twitterError) {
@@ -74,6 +76,7 @@ const getUserStats = async (req, res) => {
           following: 0,
           followers: 0,
           likes: 0,
+          description: "",
           error: 'Failed to fetch Twitter data',
           message: getTwitterErrorMessage(twitterError)
         };
@@ -86,6 +89,7 @@ const getUserStats = async (req, res) => {
         following: 0,
         followers: 0,
         likes: 0,
+        description: "",
         error: 'No Twitter connection',
         message: user.twitterId ? 'Twitter API not configured' : 'Twitter account not connected'
       };
@@ -96,7 +100,8 @@ const getUserStats = async (req, res) => {
       posts: twitterStats.posts,
       following: twitterStats.following,
       followers: twitterStats.followers,
-      likes: twitterStats.likes
+      likes: twitterStats.likes,
+      description: twitterStats.description
     };
     
     // Cache the response
