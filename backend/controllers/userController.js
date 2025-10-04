@@ -39,13 +39,19 @@ const getUserStats = async (req, res) => {
       }
     }
     
-    // Get Twitter connection stats if user has connected Twitter
+    // Aggregate full profile structure
     let twitterStats = {
       posts: 0,
       following: 0,
       followers: 0,
       likes: 0,
-      description: ""
+      description: "",
+      name: user.name || '',
+      username: user.twitterUsername || '',
+      location: user.twitterLocation || '',
+      profileImageUrl: user.twitterProfileImageUrl || '',
+      createdAt: null,
+      verified: false
     };
 
     if (user.twitterId && process.env.TWITTER_BEARER_TOKEN) {
@@ -55,44 +61,65 @@ const getUserStats = async (req, res) => {
         const twitterClient = new TwitterApi(process.env.TWITTER_BEARER_TOKEN);
         
         // Fetch user info including public metrics and description
-        const userInfo = await twitterClient.v2.userByUsername(user.twitterUsername, {
-          'user.fields': ['public_metrics', 'tweet_count', 'description']
-        });
+        let userInfo;
+        if (user.twitterUsername) {
+          try {
+            userInfo = await twitterClient.v2.userByUsername(user.twitterUsername, {
+              'user.fields': ['public_metrics', 'description', 'created_at', 'location', 'profile_image_url', 'verified']
+            });
+          } catch (e) {
+            console.log('Lookup by username failed, attempting by ID:', e.message);
+          }
+        }
+        if ((!userInfo || !userInfo.data) && user.twitterId) {
+          try {
+            userInfo = await twitterClient.v2.user(user.twitterId, {
+              'user.fields': ['public_metrics', 'description', 'created_at', 'location', 'profile_image_url', 'verified']
+            });
+          } catch (e2) {
+            console.log('Lookup by ID also failed:', e2.message);
+          }
+        }
         
         if (userInfo.data) {
+          const d = userInfo.data;
           twitterStats = {
-            posts: userInfo.data.tweet_count || 0,
-            following: userInfo.data.public_metrics?.following_count || 0,
-            followers: userInfo.data.public_metrics?.followers_count || 0,
-            likes: userInfo.data.public_metrics?.like_count || 0,
-            description: userInfo.data.description || ""
+            posts: d.public_metrics?.tweet_count ?? 0,
+            following: d.public_metrics?.following_count ?? 0,
+            followers: d.public_metrics?.followers_count ?? 0,
+            likes: d.public_metrics?.like_count ?? 0,
+            description: d.description || '',
+            name: d.name || twitterStats.name,
+            username: d.username || twitterStats.username,
+            location: d.location || '',
+            profileImageUrl: d.profile_image_url || twitterStats.profileImageUrl,
+            createdAt: d.created_at || null,
+            verified: !!d.verified
           };
+
+          // Persist any new profile info to User model for reuse
+          let dirty = false;
+          if (d.profile_image_url && user.twitterProfileImageUrl !== d.profile_image_url) { user.twitterProfileImageUrl = d.profile_image_url; dirty = true; }
+          if (d.location && user.twitterLocation !== d.location) { user.twitterLocation = d.location; dirty = true; }
+          if (d.description && user.twitterBio !== d.description) { user.twitterBio = d.description; dirty = true; }
+          if (d.created_at && user.twitterAccountCreatedAt?.toISOString() !== d.created_at) { user.twitterAccountCreatedAt = new Date(d.created_at); dirty = true; }
+          if (dirty) {
+            try { await user.save(); } catch (e) { console.log('Could not persist twitter profile info:', e.message); }
+          }
         }
       } catch (twitterError) {
         console.error('Error fetching Twitter stats:', twitterError);
         // Instead of mock data, return 0 values with error information
-        twitterStats = {
-          posts: 0,
-          following: 0,
-          followers: 0,
-          likes: 0,
-          description: "",
-          error: 'Failed to fetch Twitter data',
-          message: getTwitterErrorMessage(twitterError)
-        };
+        twitterStats.error = 'Failed to fetch Twitter data';
+        twitterStats.message = getTwitterErrorMessage(twitterError);
+        if (twitterError.code === 429 && twitterError.rateLimit?.reset) {
+          twitterStats.rateLimitResetAt = new Date(twitterError.rateLimit.reset * 1000).toISOString();
+        }
       }
     } else {
       console.log('User does not have Twitter connection or Bearer token not configured');
-      // Return 0 values with appropriate message
-      twitterStats = {
-        posts: 0,
-        following: 0,
-        followers: 0,
-        likes: 0,
-        description: "",
-        error: 'No Twitter connection',
-        message: user.twitterId ? 'Twitter API not configured' : 'Twitter account not connected'
-      };
+  twitterStats.error = 'No Twitter connection';
+  twitterStats.message = user.twitterId ? 'Twitter API not configured' : 'Twitter account not connected';
     }
 
     const response = {
@@ -101,7 +128,16 @@ const getUserStats = async (req, res) => {
       following: twitterStats.following,
       followers: twitterStats.followers,
       likes: twitterStats.likes,
-      description: twitterStats.description
+      description: twitterStats.description || user.twitterBio || '',
+      name: twitterStats.name || user.name || '',
+      username: twitterStats.username || user.twitterUsername || '',
+      location: twitterStats.location || user.twitterLocation || '',
+      profileImageUrl: twitterStats.profileImageUrl || user.twitterProfileImageUrl || '',
+      createdAt: twitterStats.createdAt || (user.twitterAccountCreatedAt ? user.twitterAccountCreatedAt.toISOString() : null),
+      verified: twitterStats.verified,
+      error: twitterStats.error,
+      message: twitterStats.message,
+      rateLimitResetAt: twitterStats.rateLimitResetAt
     };
     
     // Cache the response
@@ -202,13 +238,28 @@ const getUserTweets = async (req, res) => {
         
         // Handle rate limiting specifically
         if (twitterError.code === 429) {
-          console.log('Twitter API rate limited, returning cached or empty data');
+          console.log('Twitter API rate limited, returning empty set with reset hint');
           tweets = [];
+          let resetAt = null;
+          try {
+            // twitterError.data may include rate limit headers when using twitter-api-v2
+            const resetHeader = twitterError.rateLimit?.reset || twitterError.rateLimitReset || twitterError.data?.reset;
+            if (resetHeader) {
+              // If numeric seconds epoch
+              if (typeof resetHeader === 'number') {
+                resetAt = new Date(resetHeader * 1000).toISOString();
+              } else if (typeof resetHeader === 'string' && /\d+/.test(resetHeader)) {
+                const num = parseInt(resetHeader, 10);
+                if (!isNaN(num) && num > 1000000000) resetAt = new Date(num * 1000).toISOString();
+              }
+            }
+          } catch {}
           response = {
             success: true,
             tweets: [],
-            message: 'Twitter API rate limited. Please wait a few minutes and refresh.',
-            rateLimited: true
+            message: 'Twitter API rate limited. Please wait and try again.',
+            rateLimited: true,
+            rateLimitResetAt: resetAt
           };
         } else {
           // For other errors, return empty array with error information

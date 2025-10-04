@@ -19,6 +19,7 @@ import TwitterSetupPage from './pages/TwitterSetupPage'
 import TwitterSignupPage from './pages/TwitterSignupPage'
 import XProfilePage from './pages/XProfilePage'
 import ContentSchedulerPage from './pages/ContentSchedulerPage'
+import ProfilePage from './pages/ProfilePage'
 
 function App() {
   return (
@@ -52,6 +53,11 @@ function App() {
                 </ProtectedRoute>
               } />
               <Route path="/profile" element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              } />
+              <Route path="/xprofile" element={
                 <ProtectedRoute>
                   <XProfilePage />
                 </ProtectedRoute>

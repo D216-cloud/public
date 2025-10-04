@@ -35,6 +35,18 @@ const userSchema = new mongoose.Schema({
     type: String,
     sparse: true,
   },
+  twitterLocation: {
+    type: String,
+    sparse: true,
+  },
+  twitterBio: {
+    type: String,
+    sparse: true,
+  },
+  twitterAccountCreatedAt: {
+    type: Date,
+    sparse: true,
+  },
   twitterAccessToken: {
     type: String,
     sparse: true,
