@@ -8,6 +8,7 @@ const onboardingRoutes = require('./routes/onboardingRoutes');
 const twitterRoutes = require('./routes/twitterRoutes');
 const twitterSetupRoutes = require('./routes/twitterSetupRoutes');
 const userRoutes = require('./routes/userRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
 const { startScheduler } = require('./services/schedulerService');
 const path = require('path');
 
@@ -67,6 +68,7 @@ app.use('/api/onboarding', onboardingRoutes);
 app.use('/api/twitter', twitterRoutes);
 app.use('/api/twitter-setup', twitterSetupRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Health check endpoint
 app.get('/', (req, res) => {

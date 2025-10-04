@@ -1,683 +1,627 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Calendar as CalendarComponent } from "@/components/ui/calendar"
-import { DashboardHeader } from "@/components/dashboard-header"
-import {
-  Clock,
-  Edit,
-  Trash2,
-  Plus,
-  Twitter,
-  ImageIcon,
-  Video,
-  BarChart3,
-  CalendarIcon,
-  TrendingUp,
-  Eye,
-  Heart,
-  MessageCircle,
-  Repeat2,
-  Search,
-  Filter,
-  SlidersHorizontal,
-  X,
-  Menu,
-} from "lucide-react"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { DashboardHeader } from "@/components/dashboard-header"
+import { toast } from "@/hooks/use-toast"
+import {
+  CalendarIcon,
+  Send,
+  FileText,
+  BarChart3,
+  Twitter,
+  Zap,
+  ChevronLeft,
+  ChevronRight,
+  TrendingUp,
+  Clock,
+  Filter,
+  Search,
+} from "lucide-react"
 
-const scheduledPosts = [
-  {
-    id: 1,
-    content: "🚀 Exciting news coming tomorrow! Stay tuned for our biggest announcement yet. #Innovation #TechNews",
-    scheduledTime: "2024-01-15T10:00:00",
-    type: "text",
-    status: "scheduled",
-    engagement: { likes: 0, retweets: 0, comments: 0 },
-  },
-  {
-    id: 2,
-    content:
-      "Monday motivation: Success is not final, failure is not fatal. It's the courage to continue that counts. 💪",
-    scheduledTime: "2024-01-15T14:30:00",
-    type: "text",
-    status: "scheduled",
-    engagement: { likes: 0, retweets: 0, comments: 0 },
-  },
-  {
-    id: 3,
-    content: "Check out our latest product demo! Link in bio 👆",
-    scheduledTime: "2024-01-16T09:15:00",
-    type: "image",
-    status: "scheduled",
-    engagement: { likes: 0, retweets: 0, comments: 0 },
-  },
-  {
-    id: 4,
-    content: "Behind the scenes: How we built our AI-powered content generator. Thread 🧵",
-    scheduledTime: "2024-01-16T16:45:00",
-    type: "thread",
-    status: "scheduled",
-    engagement: { likes: 0, retweets: 0, comments: 0 },
-  },
-  {
-    id: 5,
-    content: "Weekly recap: 5 key insights from this week's industry trends. What caught your attention?",
-    scheduledTime: "2024-01-17T11:20:00",
-    type: "text",
-    status: "scheduled",
-    engagement: { likes: 0, retweets: 0, comments: 0 },
-  },
-]
+interface CalendarData {
+  year: number;
+  month: number;
+  monthName: string;
+  data: {
+    [date: string]: {
+      posts: Array<{
+        id: string;
+        content: string;
+        platform: string;
+        status: string;
+        time: string;
+        externalId?: string;
+      }>;
+      generated: Array<{
+        id: string;
+        prompt: string;
+        content: string;
+        time: string;
+        wordCount: number;
+      }>;
+    };
+  };
+  summary: {
+    totalPosts: number;
+    totalGenerated: number;
+    activeDays: number;
+  };
+}
 
-const publishedPosts = [
-  {
-    id: 6,
-    content: "Just shipped a major update! Our AI now generates 40% more engaging content. Try it out! 🎉",
-    publishedTime: "2024-01-14T15:30:00",
-    type: "text",
-    status: "published",
-    engagement: { likes: 234, retweets: 45, comments: 28 },
-  },
-  {
-    id: 7,
-    content: "Friday feeling: When your code works on the first try 😎 #DevLife #Programming",
-    publishedTime: "2024-01-12T17:00:00",
-    type: "text",
-    status: "published",
-    engagement: { likes: 156, retweets: 32, comments: 19 },
-  },
-]
+
+interface PostData {
+  _id: string;
+  content: string;
+  platform: string;
+  status: string;
+  createdAt: string;
+  externalId?: string;
+}
+
+interface GeneratedData {
+  _id: string;
+  prompt: string;
+  generatedText: string;
+  createdAt: string;
+  wordCount: number;
+}
 
 export default function CalendarPage() {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
-  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar")
-  const [searchQuery, setSearchQuery] = useState("")
-  const [filterStatus, setFilterStatus] = useState("all")
-  const [filterType, setFilterType] = useState("all")
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [calendar, setCalendar] = useState<CalendarData | null>(null);
+  const [allPosts, setAllPosts] = useState<PostData[]>([]);
+  const [allGenerated, setAllGenerated] = useState<GeneratedData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [calendarLoading, setCalendarLoading] = useState(false);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState('all'); // all, posts, generated
 
-  const getPostsForDate = (date: Date) => {
-    return scheduledPosts.filter((post) => {
-      const postDate = new Date(post.scheduledTime)
-      return postDate.toDateString() === date.toDateString()
-    })
-  }
+  useEffect(() => {
+    fetchAllData();
+  }, []);
 
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-  }
+  // Auto-refresh data every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log('Auto-refreshing calendar data...');
+      fetchAllData();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Auto-fetch calendar data when month changes
+  useEffect(() => {
+    fetchCalendarData();
+  }, [currentDate]);
+
+  const fetchAllData = async () => {
+    await Promise.all([
+      fetchCalendarData(),
+      fetchAllPosts(),
+      fetchAllGenerated()
+    ]);
+    setLoading(false);
+  };
+
+  const fetchCalendarData = async () => {
+    try {
+      setCalendarLoading(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast({
+          title: "Authentication Error",
+          description: "Please log in to view calendar data",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth() + 1;
+      
+      console.log(`Fetching real-time calendar data for ${year}-${month}`);
+      
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/analytics/calendar?year=${year}&month=${month}&_t=${Date.now()}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Real-time calendar data received:', data);
+      
+      if (data.success) {
+        setCalendar(data.calendar);
+        setLastRefresh(new Date());
+      } else {
+        console.error('Calendar API returned error:', data.message);
+        toast({
+          title: "Error",
+          description: data.message || "Failed to fetch calendar data",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch calendar data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load calendar data. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setCalendarLoading(false);
+    }
+  };
+
+  const fetchAllPosts = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/posts?_t=${Date.now()}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setAllPosts(data.posts || []);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch all posts:', error);
+    }
+  };
+
+  const fetchAllGenerated = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/generate/history?_t=${Date.now()}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setAllGenerated(data.generated || []);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch generated content:', error);
+    }
+  };
+
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    setCurrentDate(prev => {
+      const newDate = new Date(prev);
+      if (direction === 'prev') {
+        newDate.setMonth(prev.getMonth() - 1);
+      } else {
+        newDate.setMonth(prev.getMonth() + 1);
+      }
+      return newDate;
+    });
+  };
+
+  const renderCalendar = () => {
+    if (!calendar) return null;
+
+    const year = calendar.year;
+    const month = calendar.month - 1; // Convert to 0-indexed
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+
+    const days = [];
+    
+    // Empty cells for days before the first day of the month
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(<div key={`empty-${i}`} className="h-32 border border-gray-200/50 bg-gray-50/30"></div>);
+    }
+
+    // Days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const dayData = calendar.data[dateKey];
+      const hasActivity = dayData && (dayData.posts.length > 0 || dayData.generated.length > 0);
+      const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
+      
+      days.push(
+        <div key={day} className={`h-32 border border-gray-200/50 p-2 overflow-hidden transition-all duration-200 hover:shadow-lg hover:scale-[1.02] ${
+          hasActivity 
+            ? 'bg-gradient-to-br from-blue-50/80 to-purple-50/80 hover:from-blue-100/80 hover:to-purple-100/80' 
+            : 'bg-white/50 hover:bg-gray-50/80'
+        } ${isToday ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}`}>
+          <div className={`font-bold text-sm mb-2 ${isToday ? 'text-blue-600' : 'text-gray-700'} ${hasActivity ? 'text-gray-800' : ''}`}>
+            {day}
+            {isToday && <span className="text-xs ml-1 text-blue-500">Today</span>}
+          </div>
+          
+          {dayData && (
+            <div className="space-y-1">
+              {/* Posted Content */}
+              {dayData.posts.map((post, idx) => (
+                <div key={`post-${idx}`} className="text-xs bg-gradient-to-r from-blue-500 to-blue-600 text-white px-2 py-1 rounded-lg truncate shadow-sm hover:shadow-md transition-shadow cursor-pointer group relative">
+                  <div className="flex items-center space-x-1">
+                    <Twitter className="w-3 h-3 flex-shrink-0" />
+                    <span className="truncate font-medium">Posted</span>
+                  </div>
+                  <div className="text-xs opacity-90 truncate mt-0.5">
+                    {post.content.substring(0, 25)}...
+                  </div>
+                  
+                  {/* Tooltip on hover */}
+                  <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block z-50 bg-gray-900 text-white text-xs rounded-lg p-2 w-48 shadow-xl">
+                    <div className="font-medium mb-1">Posted Content</div>
+                    <div className="text-gray-300 mb-1">{post.content}</div>
+                    <div className="text-gray-400 text-xs">
+                      {post.time} • {post.platform || 'X'}
+                    </div>
+                    {post.externalId && (
+                      <div className="text-blue-300 text-xs mt-1">
+                        ID: {post.externalId}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+              
+              {/* Generated Content */}
+              {dayData.generated.map((gen, idx) => (
+                <div key={`gen-${idx}`} className="text-xs bg-gradient-to-r from-green-500 to-green-600 text-white px-2 py-1 rounded-lg truncate shadow-sm hover:shadow-md transition-shadow cursor-pointer group relative">
+                  <div className="flex items-center space-x-1">
+                    <Zap className="w-3 h-3 flex-shrink-0" />
+                    <span className="truncate font-medium">Generated</span>
+                  </div>
+                  <div className="text-xs opacity-90 truncate mt-0.5">
+                    {gen.content.substring(0, 25)}...
+                  </div>
+                  
+                  {/* Tooltip on hover */}
+                  <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block z-50 bg-gray-900 text-white text-xs rounded-lg p-2 w-48 shadow-xl">
+                    <div className="font-medium mb-1">AI Generated</div>
+                    <div className="text-gray-300 mb-1">{gen.content}</div>
+                    <div className="text-gray-400 text-xs">
+                      {gen.time} • {gen.wordCount} words
+                    </div>
+                    <div className="text-green-300 text-xs mt-1">
+                      Prompt: {gen.prompt}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              {/* Activity indicator */}
+              {hasActivity && (
+                <div className="text-xs text-gray-500 mt-1 font-medium">
+                  {dayData.posts.length > 0 && `${dayData.posts.length} posted`}
+                  {dayData.posts.length > 0 && dayData.generated.length > 0 && ' • '}
+                  {dayData.generated.length > 0 && `${dayData.generated.length} generated`}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-7 gap-0 border-2 border-gray-300 rounded-2xl overflow-hidden shadow-lg">
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+          <div key={day} className="bg-gradient-to-r from-gray-100 to-gray-200 p-3 text-center font-bold text-gray-700 text-sm border-b-2 border-gray-300">
+            {day}
+          </div>
+        ))}
+        {days}
+      </div>
+    );
+  };
+
+  // Filter content based on search and filter type
+  const getFilteredPosts = () => {
+    return allPosts.filter((post: PostData) => 
+      post.content.toLowerCase().includes(searchTerm.toLowerCase()) &&
+      (filterType === 'all' || filterType === 'posts')
+    );
+  };
+
+  const getFilteredGenerated = () => {
+    return allGenerated.filter((gen: GeneratedData) => 
+      (gen.generatedText.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       gen.prompt.toLowerCase().includes(searchTerm.toLowerCase())) &&
+      (filterType === 'all' || filterType === 'generated')
+    );
+  };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    })
-  }
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "image":
-        return <ImageIcon className="h-4 w-4" />
-      case "video":
-        return <Video className="h-4 w-4" />
-      case "thread":
-        return <Twitter className="h-4 w-4" />
-      default:
-        return <Twitter className="h-4 w-4" />
-    }
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      'posted': { variant: 'default' as const, icon: Send, color: 'bg-green-500' },
+      'scheduled': { variant: 'secondary' as const, icon: Clock, color: 'bg-blue-500' },
+      'draft': { variant: 'outline' as const, icon: FileText, color: 'bg-gray-500' },
+    };
+    
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.draft;
+    const Icon = config.icon;
+    
+    return (
+      <Badge variant={config.variant} className="flex items-center space-x-1">
+        <Icon className="w-3 h-3" />
+        <span className="capitalize">{status}</span>
+      </Badge>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+        <DashboardHeader />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading calendar data...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white pt-28">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       <DashboardHeader />
-
-      <main className="container mx-auto px-4 py-6 lg:py-8 relative">
-        {/* Mobile Menu Overlay */}
-        {isMobileMenuOpen && (
-          <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-            onClick={() => setIsMobileMenuOpen(false)}
-          />
-        )}
-        
-        {/* Mobile Menu Panel */}
-        <div className={`fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${
-          isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}>
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-xl font-bold text-gray-900">Filter & Search</h2>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="h-10 w-10 p-0 rounded-full hover:bg-gray-100"
-              >
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
-            
-            {/* Mobile Search */}
-            <div className="space-y-6">
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Search Posts</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Search posts..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 h-12 border-gray-200 rounded-xl"
-                  />
-                </div>
-              </div>
-              
-              {/* Mobile Filters */}
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Post Status</label>
-                <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger className="w-full h-12 border-gray-200 rounded-xl">
-                    <SelectValue placeholder="All Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="scheduled">Scheduled</SelectItem>
-                    <SelectItem value="published">Published</SelectItem>
-                    <SelectItem value="draft">Draft</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Post Type</label>
-                <Select value={filterType} onValueChange={setFilterType}>
-                  <SelectTrigger className="w-full h-12 border-gray-200 rounded-xl">
-                    <SelectValue placeholder="All Types" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="text">Text</SelectItem>
-                    <SelectItem value="image">Image</SelectItem>
-                    <SelectItem value="video">Video</SelectItem>
-                    <SelectItem value="thread">Thread</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {/* Mobile View Mode Toggle */}
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">View Mode</label>
-                <div className="flex items-center bg-gray-100 rounded-xl p-1">
-                  <Button
-                    variant={viewMode === "calendar" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setViewMode("calendar")}
-                    className={`flex-1 h-10 rounded-lg font-medium transition-all duration-200 ${
-                      viewMode === "calendar"
-                        ? "bg-blue-600 text-white shadow-md hover:bg-blue-700"
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
-                  >
-                    <CalendarIcon className="h-4 w-4 mr-2" />
-                    Calendar
-                  </Button>
-                  <Button
-                    variant={viewMode === "list" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setViewMode("list")}
-                    className={`flex-1 h-10 rounded-lg font-medium transition-all duration-200 ${
-                      viewMode === "list"
-                        ? "bg-blue-600 text-white shadow-md hover:bg-blue-700"
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
-                  >
-                    <BarChart3 className="h-4 w-4 mr-2" />
-                    List
-                  </Button>
-                </div>
-              </div>
-              
-              {/* Mobile Schedule Button */}
-              <Button className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold shadow-lg">
-                <Plus className="h-4 w-4 mr-2" />
-                Schedule Post
-              </Button>
-            </div>
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        {/* Header with Actions */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+              Content Calendar & Library
+            </h1>
+            <p className="text-gray-600 text-lg">
+              View all your posts and generated content in one place
+            </p>
+            {lastRefresh && (
+              <p className="text-sm text-gray-500 mt-1">
+                Last updated: {lastRefresh.toLocaleTimeString()}
+              </p>
+            )}
           </div>
         </div>
-        <div className="flex flex-col space-y-6 mb-8">
-          {/* Header with Mobile Menu Button */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between space-y-4 lg:space-y-0">
-            <div className="space-y-2">
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-blue-600 via-blue-500 to-purple-600 bg-clip-text text-transparent">
-                Content Calendar
-              </h1>
-              <p className="text-base sm:text-lg text-gray-600 font-medium">
-                Manage and schedule your Twitter content with AI precision
-              </p>
-            </div>
-            
-            {/* Desktop Controls */}
-            <div className="hidden lg:flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-              <div className="flex items-center bg-white rounded-xl border border-gray-200 p-1 shadow-sm">
-                <Button
-                  variant={viewMode === "calendar" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("calendar")}
-                  className={`h-10 px-6 rounded-lg font-medium transition-all duration-200 ${
-                    viewMode === "calendar"
-                      ? "bg-blue-600 text-white shadow-md hover:bg-blue-700"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
-                >
-                  <CalendarIcon className="h-4 w-4 mr-2" />
-                  Calendar
-                </Button>
-                <Button
-                  variant={viewMode === "list" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("list")}
-                  className={`h-10 px-6 rounded-lg font-medium transition-all duration-200 ${
-                    viewMode === "list"
-                      ? "bg-blue-600 text-white shadow-md hover:bg-blue-700"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
-                >
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  List
-                </Button>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="bg-white/80 backdrop-blur-sm border-blue-200 hover:shadow-lg transition-all duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Total Posts</CardTitle>
+              <Send className="w-4 h-4 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-900">{allPosts.length}</div>
+              <p className="text-xs text-gray-500 mt-1">All time posts</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/80 backdrop-blur-sm border-green-200 hover:shadow-lg transition-all duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Generated Content</CardTitle>
+              <Zap className="w-4 h-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-900">{allGenerated.length}</div>
+              <p className="text-xs text-gray-500 mt-1">AI generated texts</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/80 backdrop-blur-sm border-purple-200 hover:shadow-lg transition-all duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">This Month</CardTitle>
+              <CalendarIcon className="w-4 h-4 text-purple-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-900">
+                {calendar?.summary?.totalPosts || 0}
               </div>
-              <Button className="h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5">
-                <Plus className="h-4 w-4 mr-2" />
-                Schedule Post
-              </Button>
-            </div>
-            
-            {/* Mobile Controls */}
-            <div className="flex lg:hidden items-center justify-between">
+              <p className="text-xs text-gray-500 mt-1">Posts this month</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/80 backdrop-blur-sm border-orange-200 hover:shadow-lg transition-all duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Active Days</CardTitle>
+              <TrendingUp className="w-4 h-4 text-orange-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-900">
+                {calendar?.summary?.activeDays || 0}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Days with activity</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Calendar Display */}
+        <Card className="bg-white/80 backdrop-blur-sm border border-gray-200">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl font-bold text-gray-900">
+                  {calendar?.monthName} {calendar?.year}
+                </CardTitle>
+                <CardDescription>
+                  Your content activity calendar
+                  {calendarLoading && <span className="ml-2 text-blue-500">Refreshing...</span>}
+                </CardDescription>
+              </div>
+              
               <div className="flex items-center space-x-2">
                 <Button
-                  variant={viewMode === "calendar" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setViewMode("calendar")}
-                  className={`h-10 px-4 rounded-lg transition-all ${
-                    viewMode === "calendar" ? "bg-blue-600 text-white" : "text-gray-600"
-                  }`}
-                >
-                  <CalendarIcon className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === "list" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setViewMode("list")}
-                  className={`h-10 px-4 rounded-lg transition-all ${
-                    viewMode === "list" ? "bg-blue-600 text-white" : "text-gray-600"
-                  }`}
-                >
-                  <BarChart3 className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Button className="h-10 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 rounded-lg font-medium">
-                  <Plus className="h-4 w-4" />
-                </Button>
-                <Button
+                  onClick={() => navigateMonth('prev')}
                   variant="outline"
                   size="sm"
-                  onClick={() => setIsMobileMenuOpen(true)}
-                  className="h-10 w-10 p-0 border-gray-200 hover:bg-gray-50"
+                  className="bg-white/80 backdrop-blur-sm border-gray-200"
                 >
-                  <SlidersHorizontal className="h-4 w-4" />
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <Button
+                  onClick={() => navigateMonth('next')}
+                  variant="outline"
+                  size="sm"
+                  className="bg-white/80 backdrop-blur-sm border-gray-200"
+                >
+                  <ChevronRight className="w-4 h-4" />
                 </Button>
               </div>
             </div>
-          </div>
-        </div>
+          </CardHeader>
+          
+          <CardContent>
+            {renderCalendar()}
+          </CardContent>
+        </Card>
 
-        {/* Desktop Search & Filters */}
-        <div className="hidden lg:flex flex-col lg:flex-row gap-6 mb-8 p-6 bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200 shadow-lg">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <Input
-                placeholder="Search posts..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 h-12 border-gray-200 rounded-xl text-base bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-              />
+        {/* All Posts Section */}
+        <Card className="bg-white/80 backdrop-blur-sm border border-gray-200">
+          <CardHeader>
+            <CardTitle className="text-xl font-bold text-gray-900">All Posts</CardTitle>
+            <CardDescription>View all your posted content</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4">
+              {getFilteredPosts().length === 0 ? (
+                <div className="text-center py-8">
+                  <Send className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-600 mb-2">No posts found</h3>
+                  <p className="text-gray-500">No posts available yet</p>
+                </div>
+              ) : (
+                getFilteredPosts().map((post) => (
+                  <div key={post._id} className="bg-gradient-to-r from-blue-50 to-purple-50 border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                          <Twitter className="w-4 h-4 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-gray-900">Social Media Post</h3>
+                          <p className="text-sm text-gray-500">{formatDate(post.createdAt)}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        {getStatusBadge(post.status)}
+                        <Badge variant="outline" className="text-xs">
+                          {post.platform || 'X'}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    <div className="mb-2">
+                      <p className="text-gray-800 leading-relaxed">{post.content}</p>
+                    </div>
+                    
+                    {post.externalId && (
+                      <div className="pt-2 border-t border-gray-200">
+                        <p className="text-xs text-gray-500">
+                          External ID: {post.externalId}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-full sm:w-40 h-12 border-gray-200 rounded-xl bg-white/80 backdrop-blur-sm">
-                <SelectValue placeholder="All Status" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl border-gray-200">
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="scheduled">Scheduled</SelectItem>
-                <SelectItem value="published">Published</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-full sm:w-40 h-12 border-gray-200 rounded-xl bg-white/80 backdrop-blur-sm">
-                <SelectValue placeholder="All Types" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl border-gray-200">
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="text">Text</SelectItem>
-                <SelectItem value="image">Image</SelectItem>
-                <SelectItem value="video">Video</SelectItem>
-                <SelectItem value="thread">Thread</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        {viewMode === "calendar" ? (
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-            <Card className="xl:col-span-1 bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
-              <CardHeader className="px-6 py-5 bg-gradient-to-r from-gray-50 to-blue-50/30">
-                <CardTitle className="text-lg flex items-center space-x-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <CalendarIcon className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <span>Calendar</span>
-                </CardTitle>
-                <CardDescription className="text-sm text-gray-600 mt-1">Select a date to view scheduled posts</CardDescription>
-              </CardHeader>
-              <CardContent className="px-6 pb-8 pt-4">
-                <div className="p-4 sm:p-6 bg-gradient-to-br from-blue-50/30 via-white to-blue-50/20 rounded-2xl border-2 border-blue-100 shadow-inner">
-                  <CalendarComponent
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={setSelectedDate}
-                    className="w-full mx-auto [&_.rdp-day]:w-8 [&_.rdp-day]:h-8 sm:[&_.rdp-day]:w-10 sm:[&_.rdp-day]:h-10 [&_.rdp-day]:text-sm [&_.rdp-day]:font-medium [&_.rdp-day]:rounded-xl [&_.rdp-day]:transition-all [&_.rdp-day]:duration-200 [&_.rdp-day:hover]:bg-blue-50 [&_.rdp-day:hover]:text-blue-600 [&_.rdp-day:hover]:scale-105 [&_.rdp-day_selected]:bg-blue-600 [&_.rdp-day_selected]:text-white [&_.rdp-day_selected]:shadow-lg [&_.rdp-day_selected:hover]:bg-blue-700 [&_.rdp-day_today]:bg-blue-100 [&_.rdp-day_today]:text-blue-700 [&_.rdp-day_today]:font-bold [&_.rdp-nav_button]:h-8 [&_.rdp-nav_button]:w-8 sm:[&_.rdp-nav_button]:h-10 sm:[&_.rdp-nav_button]:w-10 [&_.rdp-nav_button]:rounded-xl [&_.rdp-nav_button]:hover:bg-blue-50 [&_.rdp-caption]:text-base sm:[&_.rdp-caption]:text-lg [&_.rdp-caption]:font-bold [&_.rdp-caption]:text-gray-900 [&_.rdp-table]:w-full [&_.rdp-table]:table-fixed [&_.rdp-head_cell]:text-muted-foreground [&_.rdp-head_cell]:rounded-md [&_.rdp-head_cell]:flex [&_.rdp-head_cell]:items-center [&_.rdp-head_cell]:justify-center [&_.rdp-head_cell]:font-medium [&_.rdp-head_cell]:text-[0.7rem] sm:[&_.rdp-head_cell]:text-xs [&_.rdp-head_cell]:select-none [&_.rdp-head_cell]:py-2"
-                  />
+        {/* Generated Content Section */}
+        <Card className="bg-white/80 backdrop-blur-sm border border-gray-200">
+          <CardHeader>
+            <CardTitle className="text-xl font-bold text-gray-900">Generated Content</CardTitle>
+            <CardDescription>AI-generated content library</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4">
+              {getFilteredGenerated().length === 0 ? (
+                <div className="text-center py-8">
+                  <Zap className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-600 mb-2">No generated content found</h3>
+                  <p className="text-gray-500">No generated content available yet</p>
                 </div>
-                <div className="mt-8 space-y-5">
-                  <div className="group flex items-center justify-between p-5 bg-gradient-to-r from-blue-50 via-blue-50 to-blue-100/70 rounded-2xl border border-blue-200/70 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                    <div className="flex items-center space-x-4">
-                      <div className="relative">
-                        <div className="w-6 h-6 bg-blue-500 rounded-full shadow-lg flex items-center justify-center ring-4 ring-blue-100">
-                          <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
+              ) : (
+                getFilteredGenerated().map((generated) => (
+                  <div key={generated._id} className="bg-gradient-to-r from-green-50 to-blue-50 border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center">
+                          <Zap className="w-4 h-4 text-white" />
                         </div>
-                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-400 rounded-full animate-pulse"></div>
+                        <div>
+                          <h3 className="font-medium text-gray-900">AI Generated Content</h3>
+                          <p className="text-sm text-gray-500">{formatDate(generated.createdAt)}</p>
+                        </div>
                       </div>
+                      
+                      <Badge variant="secondary" className="text-xs">
+                        {generated.wordCount} words
+                      </Badge>
+                    </div>
+                    
+                    <div className="space-y-3">
                       <div>
-                        <span className="font-bold text-gray-900 text-lg">Scheduled Posts</span>
-                        <p className="text-sm text-blue-700 font-medium mt-1">Ready to publish automatically</p>
+                        <h4 className="text-sm font-medium text-gray-600 mb-1">Prompt:</h4>
+                        <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded border">
+                          {generated.prompt}
+                        </p>
                       </div>
-                    </div>
-                    <Badge className="bg-blue-600 text-white px-4 py-2.5 rounded-full font-bold text-lg shadow-lg hover:bg-blue-700 transition-all duration-200 transform hover:scale-105">
-                      {scheduledPosts.length}
-                    </Badge>
-                  </div>
-                  <div className="group flex items-center justify-between p-5 bg-gradient-to-r from-green-50 via-green-50 to-green-100/70 rounded-2xl border border-green-200/70 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                    <div className="flex items-center space-x-4">
-                      <div className="relative">
-                        <div className="w-6 h-6 bg-green-500 rounded-full shadow-lg flex items-center justify-center ring-4 ring-green-100">
-                          <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
-                        </div>
-                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                      </div>
+                      
                       <div>
-                        <span className="font-bold text-gray-900 text-lg">Published Posts</span>
-                        <p className="text-sm text-green-700 font-medium mt-1">Live and engaging audience</p>
+                        <h4 className="text-sm font-medium text-gray-600 mb-1">Generated Text:</h4>
+                        <p className="text-gray-800 leading-relaxed bg-white p-3 rounded border">
+                          {generated.generatedText}
+                        </p>
                       </div>
                     </div>
-                    <Badge className="bg-green-600 text-white px-4 py-2.5 rounded-full font-bold text-lg shadow-lg hover:bg-green-700 transition-all duration-200 transform hover:scale-105">
-                      {publishedPosts.length}
-                    </Badge>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="xl:col-span-2 bg-white/90 backdrop-blur-sm border border-gray-200 shadow-xl rounded-2xl overflow-hidden hover:shadow-2xl transition-all duration-300">
-              <CardHeader className="px-6 py-6 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-100">
-                <CardTitle className="text-xl font-semibold text-gray-900">
-                  Posts for{" "}
-                  {selectedDate?.toLocaleDateString("en-US", {
-                    weekday: "long",
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </CardTitle>
-                <CardDescription className="text-sm text-gray-600 mt-2">
-                  {selectedDate && getPostsForDate(selectedDate).length} scheduled posts
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="px-6 pb-6">
-                <div className="space-y-4">
-                  {selectedDate && getPostsForDate(selectedDate).length > 0 ? (
-                    <div className="space-y-4">
-                      {getPostsForDate(selectedDate).map((post) => (
-                        <div
-                          key={post.id}
-                          className="group p-6 border border-gray-200 rounded-xl hover:shadow-lg transition-all duration-300 bg-gradient-to-r from-white via-gray-50/30 to-white hover:from-blue-50/50 hover:to-purple-50/50 hover:border-blue-200"
-                        >
-                          <div className="flex flex-col lg:flex-row lg:items-start justify-between space-y-4 lg:space-y-0">
-                            <div className="flex-1 space-y-4">
-                              <div className="flex flex-wrap items-center gap-3">
-                                <div className="flex items-center space-x-2 bg-white rounded-full px-4 py-2 shadow-sm border border-gray-200">
-                                  {getTypeIcon(post.type)}
-                                  <Badge variant="secondary" className="text-xs font-semibold bg-blue-100 text-blue-700">
-                                    {post.type}
-                                  </Badge>
-                                </div>
-                                <div className="flex items-center space-x-2 text-sm text-gray-600 bg-white rounded-full px-4 py-2 shadow-sm border border-gray-200">
-                                  <Clock className="h-4 w-4" />
-                                  <span className="font-medium">{formatTime(post.scheduledTime)}</span>
-                                </div>
-                              </div>
-                              <p className="text-base text-gray-800 leading-relaxed bg-white/80 p-4 rounded-xl border border-gray-100 shadow-sm">
-                                {post.content}
-                              </p>
-                            </div>
-                            <div className="flex items-center justify-end space-x-2 lg:ml-6">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-10 w-10 p-0 hover:bg-blue-100 hover:text-blue-600 transition-all duration-200 rounded-xl"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-10 w-10 p-0 hover:bg-green-100 hover:text-green-600 transition-all duration-200 rounded-xl"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-10 w-10 p-0 hover:bg-red-100 hover:text-red-600 transition-all duration-200 rounded-xl"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-20">
-                      <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm">
-                        <CalendarIcon className="h-12 w-12 text-blue-600" />
-                      </div>
-                      <h3 className="text-2xl font-semibold text-gray-900 mb-3">No posts scheduled</h3>
-                      <p className="text-gray-600 mb-8 max-w-lg mx-auto leading-relaxed">
-                        Create engaging content for {selectedDate?.toLocaleDateString("en-US", { 
-                          month: "long", 
-                          day: "numeric" 
-                        })} to keep your audience engaged and grow your following.
-                      </p>
-                      <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5">
-                        <Plus className="h-5 w-5 mr-2" />
-                        Schedule Your First Post
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            <Card className="hover:shadow-xl transition-all duration-300 border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-              <CardHeader className="px-4 sm:px-6 bg-gradient-to-r from-blue-50 to-purple-50">
-                <CardTitle className="text-lg sm:text-xl flex items-center justify-between">
-                  <span className="flex items-center space-x-2">
-                    <Clock className="h-5 w-5 text-blue-600" />
-                    <span>Scheduled Posts</span>
-                  </span>
-                  <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                    {scheduledPosts.length} pending
-                  </Badge>
-                </CardTitle>
-                <CardDescription className="text-sm">Posts waiting to be published automatically</CardDescription>
-              </CardHeader>
-              <CardContent className="px-4 sm:px-6">
-                <div className="space-y-4">
-                  {scheduledPosts.map((post) => (
-                    <div
-                      key={post.id}
-                      className="group p-4 border rounded-xl hover:shadow-md transition-all duration-200 bg-gradient-to-r from-white to-gray-50/50 hover:from-blue-50/30 hover:to-purple-50/30"
-                    >
-                      <div className="flex flex-col sm:flex-row sm:items-start justify-between space-y-3 sm:space-y-0">
-                        <div className="flex-1 space-y-3">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <div className="flex items-center space-x-2 bg-white rounded-full px-3 py-1 shadow-sm">
-                              {getTypeIcon(post.type)}
-                              <Badge variant="secondary" className="text-xs font-medium">
-                                {post.type}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center space-x-1 text-xs text-muted-foreground bg-white rounded-full px-3 py-1 shadow-sm">
-                              <Clock className="h-3 w-3" />
-                              <span className="font-medium">
-                                {formatDate(post.scheduledTime)} at {formatTime(post.scheduledTime)}
-                              </span>
-                            </div>
-                          </div>
-                          <p className="text-sm text-foreground leading-relaxed bg-white/60 p-3 rounded-lg">
-                            {post.content}
-                          </p>
-                        </div>
-                        <div className="flex items-center justify-end space-x-2 sm:ml-4">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-9 w-9 p-0 hover:bg-blue-100 hover:text-blue-600 transition-colors"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-9 w-9 p-0 hover:bg-green-100 hover:text-green-600 transition-colors"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-9 w-9 p-0 hover:bg-red-100 hover:text-red-600 transition-colors"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-xl transition-all duration-300 border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-              <CardHeader className="px-4 sm:px-6 bg-gradient-to-r from-green-50 to-blue-50">
-                <CardTitle className="text-lg sm:text-xl flex items-center justify-between">
-                  <span className="flex items-center space-x-2">
-                    <TrendingUp className="h-5 w-5 text-green-600" />
-                    <span>Recently Published</span>
-                  </span>
-                  <Badge variant="default" className="bg-green-100 text-green-700">
-                    {publishedPosts.length} published
-                  </Badge>
-                </CardTitle>
-                <CardDescription className="text-sm">
-                  Posts that have been published with performance metrics
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="px-4 sm:px-6">
-                <div className="space-y-4">
-                  {publishedPosts.map((post) => (
-                    <div
-                      key={post.id}
-                      className="group p-4 border rounded-xl hover:shadow-md transition-all duration-200 bg-gradient-to-r from-white to-gray-50/50 hover:from-green-50/30 hover:to-blue-50/30"
-                    >
-                      <div className="flex flex-col sm:flex-row sm:items-start justify-between space-y-3 sm:space-y-0">
-                        <div className="flex-1 space-y-3">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <div className="flex items-center space-x-2 bg-white rounded-full px-3 py-1 shadow-sm">
-                              {getTypeIcon(post.type)}
-                              <Badge variant="default" className="text-xs bg-green-100 text-green-700">
-                                Published
-                              </Badge>
-                            </div>
-                            <div className="flex items-center space-x-1 text-xs text-muted-foreground bg-white rounded-full px-3 py-1 shadow-sm">
-                              <Clock className="h-3 w-3" />
-                              <span className="font-medium">
-                                {formatDate(post.publishedTime)} at {formatTime(post.publishedTime)}
-                              </span>
-                            </div>
-                          </div>
-                          <p className="text-sm text-foreground leading-relaxed bg-white/60 p-3 rounded-lg">
-                            {post.content}
-                          </p>
-                          <div className="flex flex-wrap items-center gap-3 text-xs">
-                            <div className="flex items-center space-x-1 bg-red-50 text-red-600 px-3 py-1 rounded-full">
-                              <Heart className="h-3 w-3" />
-                              <span className="font-medium">{post.engagement.likes}</span>
-                            </div>
-                            <div className="flex items-center space-x-1 bg-green-50 text-green-600 px-3 py-1 rounded-full">
-                              <Repeat2 className="h-3 w-3" />
-                              <span className="font-medium">{post.engagement.retweets}</span>
-                            </div>
-                            <div className="flex items-center space-x-1 bg-blue-50 text-blue-600 px-3 py-1 rounded-full">
-                              <MessageCircle className="h-3 w-3" />
-                              <span className="font-medium">{post.engagement.comments}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="self-end sm:self-start h-9 w-9 p-0 sm:ml-4 hover:bg-blue-100 hover:text-blue-600 transition-colors"
-                        >
-                          <BarChart3 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-      </main>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
-  )
+  );
 }
